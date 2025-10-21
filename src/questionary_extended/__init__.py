@@ -5,79 +5,54 @@ This package provides advanced input types, enhanced UI components, workflow man
 and data integration features for building sophisticated command-line interfaces.
 """
 
+# Version management
+__version__ = "0.1.0"
+
 try:
     from importlib.metadata import version
+
+    __version__ = version("questionary-extended")
 except ImportError:
-    # Python < 3.8
-    from importlib_metadata import version
+    # Fallback to hardcoded version
+    pass
 
-from .prompts import (
-    # Basic enhanced prompts
-    enhanced_text,
-    rich_text,
-    
-    # Numeric prompts  
-    number,
-    integer,
-    float_input,
-    percentage,
-    
-    # Date/Time prompts
-    date,
-    time, 
-    datetime_input,
-    
-    # Color prompts
-    color,
-    
-    # Selection prompts
-    tree_select,
-    multi_level_select,
-    tag_select,
-    fuzzy_select,
-    grouped_select,
-    
-    # Advanced input prompts
-    rating,
-    slider,
-    table,
-    
-    # Workflow prompts
-    form,
-    wizard,
-    progress_tracker,
-)
-
+# Import core functionality - start with basics that work
 from .components import (
     Choice,
-    Separator,
-    Column,
-    TableRow,
-    TreeNode,
     ProgressStep,
+    Separator,
+    ValidationResult,
 )
 
-from .validators import (
-    NumberValidator,
-    DateValidator,
-    EmailValidator,
-    URLValidator,
-    RangeValidator,
-    RegexValidator,
+# Import working prompts from our core implementation
+from .prompts_core import (
+    # Basic enhanced prompts that work
+    enhanced_text,
+    form,
+    integer,
+    number,
+    progress_tracker,
+    rating,
 )
-
 from .styles import (
-    Theme,
-    ColorPalette,
-    create_theme,
     THEMES,
+    ColorPalette,
+    Theme,
+    create_theme,
 )
-
 from .utils import (
     format_date,
     format_number,
     parse_color,
     render_markdown,
+)
+from .validators import (
+    DateValidator,
+    EmailValidator,
+    NumberValidator,
+    RangeValidator,
+    RegexValidator,
+    URLValidator,
 )
 
 __version__ = version("questionary-extended")
@@ -85,55 +60,33 @@ __version__ = version("questionary-extended")
 __all__ = [
     # Version
     "__version__",
-    
-    # Prompts
+    # Working prompts (core functionality)
     "enhanced_text",
-    "rich_text", 
     "number",
     "integer",
-    "float_input",
-    "percentage",
-    "date",
-    "time",
-    "datetime_input",
-    "color",
-    "tree_select",
-    "multi_level_select", 
-    "tag_select",
-    "fuzzy_select",
-    "grouped_select",
     "rating",
-    "slider",
-    "table",
     "form",
-    "wizard",
     "progress_tracker",
-    
     # Components
     "Choice",
     "Separator",
-    "Column", 
-    "TableRow",
-    "TreeNode",
     "ProgressStep",
-    
+    "ValidationResult",
     # Validators
     "NumberValidator",
-    "DateValidator", 
+    "DateValidator",
     "EmailValidator",
     "URLValidator",
     "RangeValidator",
     "RegexValidator",
-    
     # Styles
     "Theme",
     "ColorPalette",
-    "create_theme", 
+    "create_theme",
     "THEMES",
-    
     # Utils
     "format_date",
     "format_number",
-    "parse_color", 
+    "parse_color",
     "render_markdown",
 ]

@@ -1,7 +1,13 @@
 # Questionary Extended
 
+[![CI/CD Pipeline](https://github.com/JustinCBates/tui-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/JustinCBates/tui-engine/actions/workflows/ci.yml)
+[![Publish to PyPI](https://github.com/JustinCBates/tui-engine/actions/workflows/publish.yml/badge.svg)](https://github.com/JustinCBates/tui-engine/actions/workflows/publish.yml)
+[![Security Audit](https://github.com/JustinCBates/tui-engine/actions/workflows/security.yml/badge.svg)](https://github.com/JustinCBates/tui-engine/actions/workflows/security.yml)
+[![Performance](https://github.com/JustinCBates/tui-engine/actions/workflows/performance.yml/badge.svg)](https://github.com/JustinCBates/tui-engine/actions/workflows/performance.yml)
+
 [![PyPI version](https://badge.fury.io/py/questionary-extended.svg)](https://badge.fury.io/py/questionary-extended)
 [![Python Support](https://img.shields.io/pypi/pyversions/questionary-extended.svg)](https://pypi.org/project/questionary-extended/)
+[![codecov](https://codecov.io/gh/JustinCBates/tui-engine/branch/main/graph/badge.svg)](https://codecov.io/gh/JustinCBates/tui-engine)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
