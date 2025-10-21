@@ -1,0 +1,110 @@
+name: Performance Testing
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run performance tests weekly
+    - cron: '0 2 * * 1'
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install pytest-benchmark memory-profiler
+
+      - name: Run performance benchmarks
+        run: |
+          # Create benchmark tests if they don't exist
+          mkdir -p benchmarks
+          
+          # Run benchmarks with pytest-benchmark
+          pytest benchmarks/ --benchmark-json=benchmark-results.json
+        continue-on-error: true
+
+      - name: Memory profiling
+        run: |
+          # Create a simple memory profiling script
+          cat > profile_memory.py << 'EOF'
+          #!/usr/bin/env python3
+          """Memory profiling for questionary-extended"""
+          
+          from memory_profiler import profile
+          import questionary_extended as qe
+          
+          @profile
+          def test_validators():
+              """Test memory usage of validators"""
+              for _ in range(1000):
+                  validator = qe.NumberValidator(min_value=0, max_value=100)
+                  validator.validate("50")
+          
+          @profile  
+          def test_progress_tracker():
+              """Test memory usage of progress tracker"""
+              for _ in range(100):
+                  tracker = qe.progress_tracker("Test", total=10)
+                  for i in range(10):
+                      tracker.update(i+1, f"Step {i+1}")
+          
+          if __name__ == "__main__":
+              print("=== Memory Profiling Results ===")
+              test_validators()
+              test_progress_tracker()
+          EOF
+          
+          python profile_memory.py > memory-profile.txt
+
+      - name: Import speed test
+        run: |
+          # Test import speed
+          cat > import_speed.py << 'EOF'
+          #!/usr/bin/env python3
+          import time
+          
+          # Test cold import
+          start = time.perf_counter()
+          import questionary_extended
+          end = time.perf_counter()
+          
+          print(f"Cold import time: {(end - start) * 1000:.2f}ms")
+          
+          # Test specific imports
+          start = time.perf_counter()
+          from questionary_extended import enhanced_text, number, rating, progress_tracker
+          end = time.perf_counter()
+          
+          print(f"Specific imports time: {(end - start) * 1000:.2f}ms")
+          EOF
+          
+          python import_speed.py > import-speed.txt
+
+      - name: Upload performance reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-reports
+          path: |
+            benchmark-results.json
+            memory-profile.txt
+            import-speed.txt
+
+      - name: Performance regression check
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "TODO: Compare benchmark results with main branch"
+          # This would compare current results with stored baseline
+          # and comment on PR if performance regression is detected
