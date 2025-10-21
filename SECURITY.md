@@ -51,6 +51,7 @@ questionary-extended processes user input through terminal interfaces. Be aware 
 ## Security Updates
 
 Security updates will be:
+
 - Released as patch versions (e.g., 0.1.1, 0.1.2)
 - Documented in the CHANGELOG.md
 - Announced through GitHub releases

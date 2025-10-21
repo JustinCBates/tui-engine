@@ -12,6 +12,7 @@ Questionary Extended builds upon the excellent [questionary](https://github.com/
 ## ✨ Features
 
 ### 🎯 Advanced Input Types
+
 - **Numeric Input**: Integer/float inputs with range validation and increment controls
 - **Date/Time Input**: Date picker, time picker, datetime picker with smart validation
 - **Color Picker**: Terminal-based color selection (hex, RGB, HSL, named colors)
@@ -20,6 +21,7 @@ Questionary Extended builds upon the excellent [questionary](https://github.com/
 - **Rich Text**: Markdown-enabled text input with syntax highlighting
 
 ### 🎨 Enhanced Selection & Navigation
+
 - **Multi-level Menus**: Hierarchical navigation with breadcrumbs
 - **Tree Browser**: File system tree, nested data structure explorer
 - **Tag Input**: Multi-tag selection with fuzzy auto-completion
@@ -27,18 +29,21 @@ Questionary Extended builds upon the excellent [questionary](https://github.com/
 - **Grouped Choices**: Categorized selections with collapsible sections
 
 ### 🎪 Visual Enhancements
+
 - **Rich Text Support**: Markdown rendering, syntax highlighting
 - **Icons & Emojis**: Built-in icon sets for common actions and types
 - **Charts & Graphs**: ASCII charts, progress bars, sparklines
 - **Layout Engine**: Multi-column layouts, panels, borders, and frames
 
 ### ⚡ Workflow & Logic Extensions
+
 - **Form Builder**: Declarative form definitions with complex validation rules
 - **Conditional Logic**: Advanced branching, loops, dynamic question generation
 - **State Management**: Session persistence, undo/redo, bookmarks
 - **Template System**: Reusable question templates with parameter substitution
 
 ### 🔗 Data Integration
+
 - **File Operations**: CSV/JSON import/export, configuration loading
 - **External APIs**: REST API integration for dynamic choices
 - **Database Connections**: Simple database queries for data-driven prompts
@@ -91,7 +96,7 @@ choice = qe.tree_select(
 form_result = qe.form([
     {
         "name": "project_type",
-        "type": "select", 
+        "type": "select",
         "message": "Project type:",
         "choices": ["Web App", "Mobile App", "Desktop App", "CLI Tool"]
     },

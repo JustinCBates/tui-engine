@@ -7,16 +7,19 @@ This package extends the excellent `questionary` library with advanced input typ
 ## Installation for Development
 
 1. **Install Poetry** (if not already installed):
+
    ```powershell
    (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
    ```
 
 2. **Install dependencies**:
+
    ```powershell
    poetry install --with dev,test
    ```
 
 3. **Activate the virtual environment**:
+
    ```powershell
    poetry shell
    ```
@@ -48,24 +51,28 @@ questionary-extended/
 ## Key Features
 
 ### 🎯 Advanced Input Types
+
 - **Numeric Input**: `qe.number()`, `qe.integer()`, `qe.percentage()`
 - **Date/Time**: `qe.date()`, `qe.time()`, `qe.datetime_input()`
 - **Enhanced Text**: `qe.rich_text()`, `qe.enhanced_text()`
 - **Rating**: `qe.rating()`, `qe.slider()`
 
 ### 🎨 Enhanced Selection
+
 - **Tree Navigation**: `qe.tree_select()`, `qe.multi_level_select()`
 - **Fuzzy Search**: `qe.fuzzy_select()`
 - **Grouped Choices**: `qe.grouped_select()`
 - **Tag Selection**: `qe.tag_select()`
 
 ### 🎪 Advanced Features
+
 - **Forms**: `qe.form()` with validation and conditional logic
 - **Wizards**: `qe.wizard()` with progress tracking
 - **Themes**: Multiple built-in themes and custom styling
 - **Validation**: Comprehensive validators for all input types
 
 ### 🔗 Integration
+
 - **CLI Tool**: `qext` command for demos and testing
 - **Rich Integration**: Beautiful formatting with the `rich` library
 - **Async Support**: All prompts support async/await
@@ -73,6 +80,7 @@ questionary-extended/
 ## Usage Examples
 
 ### Basic Usage
+
 ```python
 import questionary_extended as qe
 
@@ -88,12 +96,13 @@ rating = qe.rating("Rate this (1-5):", max_rating=5).ask()
 ```
 
 ### Advanced Forms
+
 ```python
 # Complex form with validation
 result = qe.form([
     {
         "type": "text",
-        "name": "name", 
+        "name": "name",
         "message": "Name:",
         "validate": lambda x: len(x) > 0
     },
@@ -107,6 +116,7 @@ result = qe.form([
 ```
 
 ### Tree Selection
+
 ```python
 choice = qe.tree_select(
     "Choose technology:",

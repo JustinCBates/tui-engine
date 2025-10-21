@@ -13,22 +13,26 @@ Thank you for your interest in contributing to Questionary Extended! This docume
 ### Development Setup
 
 1. **Fork and clone the repository:**
+
    ```bash
    git clone https://github.com/yourusername/questionary-extended.git
    cd questionary-extended
    ```
 
 2. **Install dependencies with Poetry:**
+
    ```bash
    poetry install --with dev,test
    ```
 
 3. **Activate the virtual environment:**
+
    ```bash
    poetry shell
    ```
 
 4. **Install pre-commit hooks:**
+
    ```bash
    pre-commit install
    ```
@@ -107,6 +111,7 @@ type(scope): description
 ```
 
 Types:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -116,6 +121,7 @@ Types:
 - `chore`: Maintenance tasks
 
 Examples:
+
 ```
 feat(prompts): add color picker with preview support
 fix(validators): handle edge case in number validation
@@ -125,16 +131,19 @@ docs: update README with new examples
 ### Pull Request Process
 
 1. **Create a feature branch:**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
 2. **Make your changes:**
+
    - Write tests for new functionality
    - Update documentation as needed
    - Follow coding standards
 
 3. **Test your changes:**
+
    ```bash
    pytest
    black --check src/ tests/
@@ -143,6 +152,7 @@ docs: update README with new examples
    ```
 
 4. **Commit and push:**
+
    ```bash
    git add .
    git commit -m "feat: add amazing new feature"
@@ -160,7 +170,7 @@ docs: update README with new examples
 ### High Priority
 
 - **New Prompt Types:** Date/time pickers, color selectors, table editors
-- **Enhanced Validation:** More validator types and better error messages  
+- **Enhanced Validation:** More validator types and better error messages
 - **Styling Improvements:** New themes and better customization options
 - **Documentation:** More examples, tutorials, and API documentation
 
@@ -190,38 +200,47 @@ When reporting bugs, please include:
 
 Use this template:
 
-```markdown
+````markdown
 ## Bug Report
 
 ### Environment
+
 - Python version: 3.10.0
 - OS: Windows 11
 - Terminal: Windows Terminal
 
 ### Description
+
 Brief description of the issue.
 
 ### Steps to Reproduce
+
 1. Step one
 2. Step two
 3. Step three
 
 ### Expected Behavior
+
 What you expected to happen.
 
 ### Actual Behavior
+
 What actually happened.
 
 ### Code Sample
+
 ```python
 # Minimal reproducing code
 import questionary_extended as qe
 result = qe.number("Test").ask()
 ```
+````
 
 ### Additional Context
+
 Any other relevant information.
-```
+
+````
 
 ## 💡 Feature Requests
 
@@ -248,23 +267,23 @@ For feature requests, please:
 ```python
 class TestNewFeature:
     """Test the new feature functionality."""
-    
+
     def test_basic_usage(self):
         """Test basic usage of the feature."""
         # Arrange
         input_data = "test_input"
-        
+
         # Act
         result = process_input(input_data)
-        
+
         # Assert
         assert result == expected_output
-    
+
     def test_edge_case(self):
         """Test edge case handling."""
         # Test implementation
         pass
-```
+````
 
 ### Coverage Guidelines
 
@@ -278,7 +297,7 @@ class TestNewFeature:
 ### Documentation Types
 
 - **API Documentation:** Comprehensive docstrings
-- **User Guide:** How-to guides and tutorials  
+- **User Guide:** How-to guides and tutorials
 - **Examples:** Real-world usage examples
 - **Contributing Guide:** This document
 

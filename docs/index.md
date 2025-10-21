@@ -15,6 +15,7 @@ Welcome to the documentation for **Questionary Extended**, an advanced extension
 Questionary Extended builds upon the excellent [questionary](https://github.com/tmbo/questionary) library to provide:
 
 ### 🎯 Advanced Input Types
+
 - **Numeric Input**: Integer/float with range validation and formatting
 - **Date/Time Input**: Smart date pickers with validation
 - **Color Input**: Hex, RGB, HSL color selection with preview
@@ -22,18 +23,21 @@ Questionary Extended builds upon the excellent [questionary](https://github.com/
 - **Rich Text**: Markdown-enabled text with syntax highlighting
 
 ### 🎨 Enhanced Selection
+
 - **Tree Navigation**: Hierarchical menu systems
 - **Fuzzy Search**: Smart search with ranking
 - **Grouped Choices**: Categorized selections
 - **Multi-Tag Input**: Tag selection with auto-completion
 
 ### 🎪 Advanced Features
+
 - **Forms**: Complex forms with validation and conditional logic
 - **Wizards**: Multi-step workflows with progress tracking
 - **Table Input**: Spreadsheet-like data entry
 - **Theming**: Beautiful built-in themes and custom styling
 
 ### 🔗 Integration
+
 - **Drop-in Compatibility**: Works alongside existing questionary code
 - **Rich Integration**: Beautiful formatting with the rich library
 - **Async Support**: Full async/await compatibility

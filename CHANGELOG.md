@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Initial package structure
 - Advanced prompt types (number, date, rating, tree_select, etc.)
 - Enhanced validators with comprehensive validation rules
@@ -18,23 +19,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Type hints throughout the codebase
 
 ### Changed
+
 - N/A (initial release)
 
 ### Deprecated
+
 - N/A (initial release)
 
 ### Removed
+
 - N/A (initial release)
 
 ### Fixed
+
 - N/A (initial release)
 
 ### Security
+
 - N/A (initial release)
 
 ## [0.1.0] - 2025-10-21
 
 ### Added
+
 - Initial release of questionary-extended
 - Core package structure following Python packaging best practices
 - Foundation for advanced CLI prompts and forms
