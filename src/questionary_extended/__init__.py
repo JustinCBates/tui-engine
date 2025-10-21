@@ -5,66 +5,59 @@ This package provides advanced input types, enhanced UI components, workflow man
 and data integration features for building sophisticated command-line interfaces.
 """
 
+# Version management
+__version__ = "0.1.0"
+
 try:
     from importlib.metadata import version
+    __version__ = version("questionary-extended")
 except ImportError:
-    # Python < 3.8
-    from importlib_metadata import version
+    # Fallback to hardcoded version
+    pass
 
-from .prompts import (
-    # Basic enhanced prompts
+# Import core functionality - start with basics that work
+from .validators import (
+    NumberValidator,
+    DateValidator, 
+    EmailValidator,
+    URLValidator,
+    RangeValidator,
+    RegexValidator,
+)
+
+from .styles import (
+    Theme,
+    ColorPalette,
+    create_theme,
+    THEMES,
+)
+
+from .utils import (
+    format_date,
+    format_number,
+    parse_color,
+    render_markdown,
+)
+
+# Import working prompts from our core implementation
+from .prompts_core import (
+    # Basic enhanced prompts that work
     enhanced_text,
-    rich_text,
-    
-    # Numeric prompts  
     number,
     integer,
-    float_input,
-    percentage,
-    
-    # Date/Time prompts
-    date,
-    time, 
-    datetime_input,
-    
-    # Color prompts
-    color,
-    
-    # Selection prompts
-    tree_select,
-    multi_level_select,
-    tag_select,
-    fuzzy_select,
-    grouped_select,
-    
-    # Advanced input prompts
     rating,
-    slider,
-    table,
-    
-    # Workflow prompts
     form,
-    wizard,
     progress_tracker,
 )
 
 from .components import (
     Choice,
     Separator,
-    Column,
-    TableRow,
-    TreeNode,
     ProgressStep,
+    ValidationResult,
 )
 
-from .validators import (
-    NumberValidator,
-    DateValidator,
-    EmailValidator,
-    URLValidator,
-    RangeValidator,
-    RegexValidator,
-)
+
 
 from .styles import (
     Theme,
@@ -86,36 +79,19 @@ __all__ = [
     # Version
     "__version__",
     
-    # Prompts
+    # Working prompts (core functionality)
     "enhanced_text",
-    "rich_text", 
     "number",
-    "integer",
-    "float_input",
-    "percentage",
-    "date",
-    "time",
-    "datetime_input",
-    "color",
-    "tree_select",
-    "multi_level_select", 
-    "tag_select",
-    "fuzzy_select",
-    "grouped_select",
+    "integer", 
     "rating",
-    "slider",
-    "table",
     "form",
-    "wizard",
     "progress_tracker",
     
     # Components
     "Choice",
     "Separator",
-    "Column", 
-    "TableRow",
-    "TreeNode",
     "ProgressStep",
+    "ValidationResult",
     
     # Validators
     "NumberValidator",

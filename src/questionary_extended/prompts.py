@@ -1,14 +1,38 @@
 """
 Advanced prompt types that extend questionary's capabilities.
+This is the main prompts module - imports working implementations from prompts_core.
 """
 
+# Import working core implementations
+from .prompts_core import (
+    enhanced_text,
+    number,
+    integer, 
+    rating,
+    form,
+    progress_tracker,
+    confirm_enhanced as confirm,
+    select_enhanced as select,
+    checkbox_enhanced as checkbox,
+)
+
+# Re-export questionary's standard prompts for convenience
+import questionary
+from questionary import (
+    text,
+    password,
+    path,
+    autocomplete,
+    Question,  # Import Question type
+)
+
+# Import types for advanced features  
 from typing import Any, Callable, Dict, List, Optional, Union
 from datetime import date as Date, datetime, time as Time
-import questionary
-from questionary import Question
 
-from .components import Choice, TreeNode, Column, ProgressStep
+# Import our validators and components
 from .validators import NumberValidator, DateValidator
+from .components import Choice, Column, ProgressStep
 from .styles import Theme
 
 
