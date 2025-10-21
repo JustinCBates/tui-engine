@@ -1,315 +1,38 @@
-# Byte-compiled / optimized / DLL files
+# Build Branch .gitignore
+# This is a minimal .gitignore for the production build branch
+# Only essential files should be tracked in the build branch
+
+# Python runtime files
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
-
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/#use-with-ide
-.pdm.toml
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
+# Virtual environments  
 .env
-.venv
+.venv/
 env/
 venv/
-ENV/
-env.bak/
-venv.bak/
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be added to the global gitignore or merged into this project gitignore.  For a PyCharm
-#  project, it is generally recommended to include the .idea directory in version control
-#  https://intellij-support.jetbrains.com/hc/en-us/articles/206827587
-.idea/
-
-# VS Code
+# IDE files
 .vscode/
-*.code-workspace
+.idea/
+*.sublime-*
 
-# Local configuration files
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# macOS
+# OS files
 .DS_Store
-.AppleDouble
-.LSOverride
-
-# Windows
 Thumbs.db
-ehthumbs.db
 Desktop.ini
-
-# Linux
-*~
 
 # Temporary files
 *.tmp
 *.temp
-.temp/
-
-# Log files
 *.log
-logs/
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
+# Local configuration
+.env.local
 
-# Backup files
-*.bak
-*.backup
-*.orig
-
-# Editor temporary files
-.#*
-*~
-*.swp
-*.swo
-
-# pytest
+# Cache directories
+.mypy_cache/
 .pytest_cache/
-
-# ruff
 .ruff_cache/
-
-# Pre-commit
-.pre-commit-config.yaml.bak
-
-# =============================================================================
-# BUILD BRANCH EXCLUSIONS
-# Files that should NOT be included in the production build branch
-# =============================================================================
-
-# Test files and directories
-tests/
-test_*.py
-*_test.py
-benchmarks/
-test_fundamental_core.py
-demo_fundamental_features.py
-
-# Development and design documentation
-*.md
-!README.md                    # Keep main README for production
-!CHANGELOG.md                 # Keep changelog for production
-!LICENSE.md                   # Keep license for production
-DESIGN_*.md
-STATUS_REPORT.md
-GITHUB_ACTIONS_COMPLETE.md
-docs/design/
-docs/development/
-docs/internal/
-
-# Development scripts and tools
-scripts/
-dev_tools/
-tools/
-check_structure.py
-scripts/test_ci_local.py
-
-# GitHub Actions (for build branch - may want separate minimal CI)
-.github/workflows/ci.yml
-.github/workflows/security.yml  
-.github/workflows/performance.yml
-.github/ACTIONS_DOCUMENTATION.md
-
-# Development configuration files
-.pre-commit-config.yaml
-.editorconfig
-tox.ini
-noxfile.py
-
-# Local development files
-*.local
-local_*
-scratch/
-playground/
-experiments/
-
-# Security and audit reports
-*-report.json
-bandit-report.json
-safety-report.json
-pip-audit-report.json
-security-audit-reports/
-
-# Performance and profiling outputs
-benchmark-results.json
-memory-profile.txt
-import-speed.txt
-*.prof
-*.pstats
-
-# Development examples and demos
-examples/development/
-examples/internal/
-demo_*.py
-example_*.py
-
-# Optional dependencies for development only
-requirements-dev.txt
-requirements-test.txt
-dev-requirements.txt
-
-# IDE and editor specific files (expanded)
-.vscode/settings.json
-.vscode/launch.json
-.vscode/tasks.json
-*.sublime-project
-*.sublime-workspace
-
-# OS specific files (expanded)
-.DS_Store?
-.Spotlight-V100
-.Trashes
-Icon?
-._*
-Thumbs.db.bak
-[Dd]esktop.ini
-$RECYCLE.BIN/
-
-# Build artifacts to exclude from source but include in build
-*.whl
-*.tar.gz
-dist-info/

@@ -1,1 +1,0 @@
-"""Tests for questionary_extended package."""

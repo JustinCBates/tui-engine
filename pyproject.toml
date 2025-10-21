@@ -47,7 +47,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
     "pytest>=7.4.3",
     "pytest-cov>=4.1.0",
     "pytest-asyncio>=0.21.1",
@@ -65,7 +64,6 @@ dev = [
     "pip-audit>=2.6.0",
     "memory-profiler>=0.61.0",
 ]
-test = [
     "pytest>=7.4.3",
     "pytest-cov>=4.1.0",
     "pytest-asyncio>=0.21.1",
@@ -80,14 +78,12 @@ docs = [
     "mkdocs>=1.5.3",
     "mkdocs-material>=9.4.8",
 ]
-quality = [
     "black>=23.11.0",
     "isort>=5.12.0",
     "flake8>=6.1.0",
     "mypy>=1.7.1",
     "ruff>=0.1.6",
 ]
-security = [
     "bandit>=1.7.5",
     "safety>=3.0.0",
     "pip-audit>=2.6.0",
