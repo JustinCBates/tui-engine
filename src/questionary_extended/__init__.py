@@ -24,9 +24,8 @@ from .components import (
     ValidationResult,
 )
 
-# Import working prompts from our core implementation
+# Import existing prompts and utilities
 from .prompts_core import (
-    # Basic enhanced prompts that work
     enhanced_text,
     form,
     integer,
@@ -53,6 +52,20 @@ from .validators import (
     RangeValidator,
     RegexValidator,
     URLValidator,
+)
+
+# Export newly implemented core API (Page/Card/Assembly/components)
+from .core import (
+    Page,
+    Card,
+    Assembly,
+    Component,
+    text as text_component,
+    select as select_component,
+    confirm as confirm_component,
+    password as password_component,
+    checkbox as checkbox_component,
+    PageState,
 )
 
 __version__ = version("questionary-extended")
