@@ -351,7 +351,7 @@ Features:
         },
         "progress_tracker": {
             "name": "Progress Tracker",
-                        "description": """
+            "description": """
 Track progress through multi-step operations with visual feedback.
 
 Usage:

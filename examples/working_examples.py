@@ -1,6 +1,5 @@
 """Example: Working basic usage of questionary-extended."""
 
-
 import questionary_extended as qe
 
 

@@ -43,6 +43,11 @@ class QuestionaryBridge:
             # those errors into RuntimeError for callers/tests.
             prompt = component.create_questionary_component()
         except Exception as e:
+            # If prompt_toolkit reports a NoConsoleScreenBufferError, present
+            # a clearer RuntimeError to callers. For any other exception,
+            # wrap and re-raise so the caller does not continue with an
+            # uninitialized prompt variable (which would cause an
+            # UnboundLocalError later).
             try:
                 from prompt_toolkit.output.win32 import NoConsoleScreenBufferError
 
@@ -51,7 +56,11 @@ class QuestionaryBridge:
                         "questionary not usable in this environment"
                     ) from e
             except Exception:
-                raise RuntimeError(f"questionary prompt creation failed: {e}") from e
+                # If importing prompt_toolkit fails, fall through and raise
+                # a generic runtime error below.
+                pass
+
+            raise RuntimeError(f"questionary prompt creation failed: {e}") from e
 
         # The object returned by questionary functions normally implements `.ask()`
         try:
@@ -65,7 +74,11 @@ class QuestionaryBridge:
                         "questionary not usable in this environment"
                     ) from e
             except Exception:
-                raise RuntimeError(f"questionary prompt failed: {e}") from e
+                # If importing prompt_toolkit fails, allow the generic
+                # runtime error to be raised below.
+                pass
+
+            raise RuntimeError(f"questionary prompt failed: {e}") from e
 
         # Persist into state using the component name (global key)
         # Callers may prefer to namespace the key (assembly.field) themselves
@@ -83,19 +96,17 @@ class QuestionaryBridge:
                     if isinstance(c, Component):
                         yield c
                     else:
-                        # Nested containers (Assembly) handled below
-                        for c2 in self._walk_components(
-                            getattr(item, "components", [])
-                        ):
+                        # Nested containers (Assembly) handled below: descend into
+                        # the child's components rather than the parent's so we
+                        # correctly traverse nested container objects.
+                        for c2 in self._walk_components(getattr(c, "components", [])):
                             yield c2
             elif isinstance(item, Assembly):
                 for c in getattr(item, "components", []):
                     if isinstance(c, Component):
                         yield c
                     else:
-                        for c2 in self._walk_components(
-                            getattr(item, "components", [])
-                        ):
+                        for c2 in self._walk_components(getattr(c, "components", [])):
                             yield c2
             else:
                 # Unknown item types are ignored for now
