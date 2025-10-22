@@ -1,151 +1,129 @@
 """Example: Advanced form building with questionary-extended."""
 
 import questionary_extended as qe
-from questionary_extended import Choice, Separator
+import questionary
+from questionary_extended import EmailValidator
 
 
 def build_user_profile_form():
     """Build a comprehensive user profile form."""
     
-    form_questions = [
-        # Personal Information
-        {
-            "type": "text",
-            "name": "full_name",
-            "message": "Full Name:",
-            "validate": lambda text: len(text) > 0 or "Name is required"
-        },
-        {
-            "type": "text", 
-            "name": "email",
-            "message": "Email Address:",
-            "validate": qe.EmailValidator()
-        },
-        {
-            "type": "number",
-            "name": "age", 
-            "message": "Age:",
-            "min_value": 18,
-            "max_value": 120,
-            "allow_float": False
-        },
-        
-        # Professional Information
-        {
-            "type": "select",
-            "name": "experience_level",
-            "message": "Experience Level:",
-            "choices": [
-                Choice("Junior (0-2 years)", "junior"),
-                Choice("Mid-level (2-5 years)", "mid"),  
-                Choice("Senior (5-10 years)", "senior"),
-                Choice("Lead/Principal (10+ years)", "lead")
+    # Use questionary's form functionality with our validators
+    form_data = questionary.form(
+        full_name=questionary.text(
+            "Full Name:",
+            validate=lambda text: len(text) > 0 or "Name is required"
+        ),
+        email=questionary.text(
+            "Email Address:",
+            validate=EmailValidator()
+        ),
+        age=qe.number(
+            "Age:",
+            min_value=18,
+            max_value=120,
+            allow_float=False
+        ),
+        experience_level=questionary.select(
+            "Experience Level:",
+            choices=[
+                "Junior (0-2 years)",
+                "Mid-level (2-5 years)",  
+                "Senior (5-10 years)",
+                "Lead/Principal (10+ years)"
             ]
-        },
-        {
-            "type": "checkbox",
-            "name": "skills",
-            "message": "Technical Skills:",
-            "choices": [
-                Separator("=== Frontend ==="),
+        ),
+        skills=questionary.checkbox(
+            "Technical Skills:",
+            choices=[
+                questionary.Separator("=== Frontend ==="),
                 "JavaScript",
                 "TypeScript", 
                 "React",
                 "Vue.js",
-                Separator("=== Backend ==="),
+                questionary.Separator("=== Backend ==="),
                 "Python",
                 "Node.js",
                 "Java",
                 "Go",
-                Separator("=== Database ==="),
+                questionary.Separator("=== Database ==="),
                 "PostgreSQL",
                 "MongoDB", 
                 "Redis"
             ]
-        },
-        
-        # Preferences
-        {
-            "type": "select",
-            "name": "work_style",
-            "message": "Preferred work style:",
-            "choices": ["Remote", "Hybrid", "On-site", "Flexible"]
-        },
-        {
-            "type": "rating",
-            "name": "collaboration_importance",
-            "message": "How important is team collaboration?",
-            "max_rating": 5
-        },
-        
-        # Conditional questions
-        {
-            "type": "confirm",
-            "name": "open_to_relocation", 
-            "message": "Open to relocation?",
-            "default": False
-        },
-        {
-            "type": "text",
-            "name": "preferred_locations",
-            "message": "Preferred locations (comma-separated):",
-            "when": lambda answers: answers.get("open_to_relocation", False)
-        }
-    ]
+        ),
+        work_style=questionary.select(
+            "Preferred work style:",
+            choices=["Remote", "Hybrid", "On-site", "Flexible"]
+        ),
+        open_to_relocation=questionary.confirm(
+            "Open to relocation?",
+            default=False
+        )
+    ).ask()
     
-    return qe.form(form_questions)
+    # Handle conditional question
+    if form_data and form_data.get("open_to_relocation"):
+        preferred_locations = questionary.text(
+            "Preferred locations (comma-separated):"
+        ).ask()
+        form_data["preferred_locations"] = preferred_locations
+    
+    return form_data
 
 
 def build_project_setup_wizard():
     """Build a multi-step project setup wizard."""
     
-    steps = [
-        qe.ProgressStep(
-            name="project_type",
-            description="Choose project type",
-            question={
-                "type": "select",
-                "message": "What type of project?",
-                "choices": ["Web Application", "Mobile App", "Desktop App", "CLI Tool", "Library"]
-            }
-        ),
-        qe.ProgressStep(
-            name="framework",
-            description="Select framework", 
-            question={
-                "type": "select",
-                "message": "Choose framework:",
-                "choices": lambda answers: {
-                    "Web Application": ["Django", "Flask", "FastAPI", "React", "Vue.js"],
-                    "Mobile App": ["React Native", "Flutter", "Ionic"],
-                    "Desktop App": ["Electron", "Tkinter", "PyQt"],
-                    "CLI Tool": ["Click", "Typer", "Fire"],
-                    "Library": ["Pure Python", "C Extension", "Cython"]
-                }.get(answers.get("project_type"), [])
-            }
-        ),
-        qe.ProgressStep(
-            name="features",
-            description="Select features",
-            question={
-                "type": "checkbox", 
-                "message": "Which features do you need?",
-                "choices": ["Database", "Authentication", "API", "Tests", "Documentation", "CI/CD"]
-            }
-        ),
-        qe.ProgressStep(
-            name="database",
-            description="Configure database",
-            question={
-                "type": "select",
-                "message": "Choose database:",
-                "choices": ["PostgreSQL", "MySQL", "SQLite", "MongoDB", "None"],
-                "when": lambda answers: "Database" in answers.get("features", [])
-            }
-        )
-    ]
+    # Step 1: Project Type
+    project_type = questionary.select(
+        "What type of project?",
+        choices=["Web Application", "Mobile App", "Desktop App", "CLI Tool", "Library"]
+    ).ask()
     
-    return qe.wizard(steps, allow_back=True, save_progress=True)
+    if not project_type:
+        return None
+    
+    # Step 2: Framework (based on project type)
+    framework_choices = {
+        "Web Application": ["Django", "Flask", "FastAPI", "React", "Vue.js"],
+        "Mobile App": ["React Native", "Flutter", "Ionic"],
+        "Desktop App": ["Electron", "Tkinter", "PyQt"],
+        "CLI Tool": ["Click", "Typer", "Fire"],
+        "Library": ["Pure Python", "C Extension", "Cython"]
+    }
+    
+    framework = questionary.select(
+        "Choose framework:",
+        choices=framework_choices.get(project_type, [])
+    ).ask()
+    
+    if not framework:
+        return None
+    
+    # Step 3: Features
+    features = questionary.checkbox(
+        "Which features do you need?",
+        choices=["Database", "Authentication", "API", "Tests", "Documentation", "CI/CD"]
+    ).ask()
+    
+    if not features:
+        features = []
+    
+    # Step 4: Database (conditional)
+    database = None
+    if "Database" in features:
+        database = questionary.select(
+            "Choose database:",
+            choices=["PostgreSQL", "MySQL", "SQLite", "MongoDB", "None"]
+        ).ask()
+    
+    return {
+        "project_type": project_type,
+        "framework": framework,
+        "features": features,
+        "database": database
+    }
 
 
 def main():
@@ -158,7 +136,7 @@ def main():
     print("\n📋 User Profile Form")
     print("-" * 20)
     
-    profile_data = build_user_profile_form().ask()
+    profile_data = build_user_profile_form()
     
     if profile_data:
         print("\n✅ Profile created successfully!")
@@ -173,32 +151,38 @@ def main():
     print("\n\n🧙‍♂️ Project Setup Wizard")
     print("-" * 25)
     
-    project_config = build_project_setup_wizard().ask()
+    with qe.progress_tracker("Project Setup", total_steps=4) as progress:
+        progress.step("Selecting project type...")
+        project_config = build_project_setup_wizard()
+        
+        if project_config:
+            progress.step("Validating configuration...")
+            progress.step("Creating project structure...")
+            progress.complete("Project setup complete!")
+            
+            print("\n✅ Project configured successfully!")
+            print("Configuration:")
+            for key, value in project_config.items():
+                if value:
+                    if isinstance(value, list):
+                        print(f"  {key}: {', '.join(value)}")
+                    else:
+                        print(f"  {key}: {value}")
+        else:
+            print("Project setup cancelled.")
     
-    if project_config:
-        print("\n✅ Project configured successfully!")
-        print("Configuration:")
-        for key, value in project_config.items():
-            print(f"  {key}: {value}")
+    # Rating Example
+    print("\n\n⭐ Experience Rating")
+    print("-" * 18)
     
-    # Table Input Example  
-    print("\n\n📊 Table Input Example")
-    print("-" * 22)
-    
-    team_data = qe.table(
-        "Enter team member information:",
-        columns=[
-            qe.Column(name="name", type=qe.ColumnType.TEXT, width=20, required=True),
-            qe.Column(name="role", type=qe.ColumnType.SELECT, width=15, 
-                     choices=["Developer", "Designer", "Manager", "QA"]),
-            qe.Column(name="experience", type=qe.ColumnType.NUMBER, width=10, min_value=0, max_value=50)
-        ],
-        min_rows=1,
-        max_rows=5
+    overall_rating = qe.rating(
+        "How would you rate this experience?",
+        max_rating=5,
+        icon="⭐"
     ).ask()
     
-    if team_data:
-        print(f"\n✅ Team data collected: {len(team_data)} members")
+    if overall_rating:
+        print(f"\n✅ Thank you for rating: {overall_rating}/5 stars!")
 
 
 if __name__ == "__main__":
