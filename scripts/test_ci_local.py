@@ -50,7 +50,7 @@ def test_workflow():
     
     # Run tests
     run_command(
-        "pytest --cov=questionary_extended --cov-report=xml --cov-report=term-missing --cov-report=html",
+        f'"{sys.executable}" -m pytest --cov=questionary_extended --cov-report=xml --cov-report=term-missing --cov-report=html',
         "Running tests with coverage"
     )
 

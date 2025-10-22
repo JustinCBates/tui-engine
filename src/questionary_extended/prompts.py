@@ -4,9 +4,7 @@ This is the main prompts module - imports working implementations from prompts_c
 """
 
 # Import working core implementations
-from datetime import date as Date
-from datetime import datetime
-from datetime import time as Time
+import datetime as _datetime
 
 # Import types for advanced features
 from typing import Any, Dict, List, Optional, Union
@@ -17,15 +15,11 @@ from questionary import (
     Question,  # Import Question type
 )
 
-from .components import Choice, Column, ProgressStep
-from .prompts_core import (
-    enhanced_text,
-    form,
-    integer,
-    number,
-    progress_tracker,
-    rating,
-)
+from .components import Column, ProgressStep
+from .prompts_core import LazyQuestion
+
+# Re-export core helpers
+from .prompts_core import ProgressTracker as CoreProgressTracker
 from .styles import Theme
 
 # Import our validators and components
@@ -39,25 +33,14 @@ def enhanced_text(
     placeholder: Optional[str] = None,
     auto_complete: Optional[List[str]] = None,
     history: Optional[List[str]] = None,
-    **kwargs,
-) -> Question:
+    **kwargs: Any,
+) -> "LazyQuestion | Question":
     """
     Enhanced text input with placeholder, auto-complete, and history support.
 
-    Args:
-        message: The question to ask
-        default: Default value
-        multiline: Enable multiline input
-        placeholder: Placeholder text to show when empty
-        auto_complete: List of auto-completion suggestions
-        history: List of previous inputs for history navigation
-        **kwargs: Additional questionary arguments
-
-    Returns:
-        Question instance
+    Returns a simple questionary.text for now.
     """
-    # Implementation will be added
-    return questionary.text(message, default=default, **kwargs)
+    return LazyQuestion(questionary.text, message, default=default, **kwargs)
 
 
 def rich_text(
@@ -65,22 +48,11 @@ def rich_text(
     default: str = "",
     syntax_highlighting: Optional[str] = None,
     line_numbers: bool = False,
-    **kwargs,
-) -> Question:
+    **kwargs: Any,
+) -> "LazyQuestion | Question":
     """
-    Rich text input with syntax highlighting and formatting.
-
-    Args:
-        message: The question to ask
-        default: Default value
-        syntax_highlighting: Language for syntax highlighting (e.g., 'python', 'json')
-        line_numbers: Show line numbers
-        **kwargs: Additional questionary arguments
-
-    Returns:
-        Question instance
+    Rich text input with syntax highlighting and formatting (stub).
     """
-    # Implementation will be added
     return questionary.text(message, default=default, **kwargs)
 
 
@@ -92,29 +64,17 @@ def number(
     step: Union[int, float] = 1,
     allow_float: bool = True,
     format_str: Optional[str] = None,
-    **kwargs,
-) -> Question:
+    **kwargs: Any,
+) -> "LazyQuestion | Question":
     """
     Numeric input with validation and formatting.
-
-    Args:
-        message: The question to ask
-        default: Default numeric value
-        min_value: Minimum allowed value
-        max_value: Maximum allowed value
-        step: Step size for increment/decrement
-        allow_float: Allow floating point numbers
-        format_str: Format string for display (e.g., '${:.2f}')
-        **kwargs: Additional questionary arguments
-
-    Returns:
-        Question instance
     """
     validator = NumberValidator(
         min_value=min_value, max_value=max_value, allow_float=allow_float
     )
 
-    return questionary.text(
+    return LazyQuestion(
+        questionary.text,
         message,
         default=str(default) if default is not None else "",
         validate=validator,
@@ -126,8 +86,8 @@ def integer(
     message: str,
     min_value: Optional[int] = None,
     max_value: Optional[int] = None,
-    **kwargs,
-) -> Question:
+    **kwargs: Any,
+) -> "LazyQuestion | Question":
     """Integer input with validation."""
     return number(
         message, min_value=min_value, max_value=max_value, allow_float=False, **kwargs
@@ -138,26 +98,26 @@ def float_input(
     message: str,
     min_value: Optional[float] = None,
     max_value: Optional[float] = None,
-    **kwargs,
-) -> Question:
+    **kwargs: Any,
+) -> "LazyQuestion | Question":
     """Float input with validation."""
     return number(
         message, min_value=min_value, max_value=max_value, allow_float=True, **kwargs
     )
 
 
-def percentage(message: str, **kwargs) -> Question:
+def percentage(message: str, **kwargs: Any) -> "LazyQuestion | Question":
     """Percentage input (0-100)."""
     return number(message, min_value=0, max_value=100, format_str="{:.1f}%", **kwargs)
 
 
 def date(
     message: str,
-    default: Optional[Date] = None,
-    min_date: Optional[Date] = None,
-    max_date: Optional[Date] = None,
+    default: Optional[_datetime.date] = None,
+    min_date: Optional[_datetime.date] = None,
+    max_date: Optional[_datetime.date] = None,
     format_str: str = "%Y-%m-%d",
-    **kwargs,
+    **kwargs: Any,
 ) -> Question:
     """
     Date input with validation and formatting.
@@ -183,7 +143,10 @@ def date(
 
 
 def time(
-    message: str, default: Optional[Time] = None, format_str: str = "%H:%M:%S", **kwargs
+    message: str,
+    default: Optional[_datetime.time] = None,
+    format_str: str = "%H:%M:%S",
+    **kwargs: Any,
 ) -> Question:
     """Time input with validation and formatting."""
     default_str = default.strftime(format_str) if default else ""
@@ -192,9 +155,9 @@ def time(
 
 def datetime_input(
     message: str,
-    default: Optional[datetime] = None,
+    default: Optional[_datetime.datetime] = None,
     format_str: str = "%Y-%m-%d %H:%M:%S",
-    **kwargs,
+    **kwargs: Any,
 ) -> Question:
     """Datetime input with validation and formatting."""
     default_str = default.strftime(format_str) if default else ""
@@ -203,10 +166,10 @@ def datetime_input(
 
 def color(
     message: str,
-    formats: List[str] = ["hex"],
+    formats: Optional[List[str]] = None,
     preview: bool = True,
     palette: Optional[List[str]] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> Question:
     """
     Color picker with multiple format support.
@@ -221,6 +184,9 @@ def color(
     Returns:
         Question instance
     """
+    # Avoid mutable default
+    if formats is None:
+        formats = ["hex"]
     # Implementation will be added - for now return basic text
     return questionary.text(message, **kwargs)
 
@@ -230,8 +196,8 @@ def tree_select(
     choices: Dict[str, Any],
     expanded: bool = False,
     show_icons: bool = True,
-    **kwargs,
-) -> Question:
+    **kwargs: Any,
+) -> "LazyQuestion | Question":
     """
     Tree-based selection with hierarchical navigation.
 
@@ -262,12 +228,12 @@ def tree_select(
         return items
 
     flat_choices = flatten_dict(choices)
-    return questionary.select(message, choices=flat_choices, **kwargs)
+    return LazyQuestion(questionary.select, message, choices=flat_choices, **kwargs)
 
 
 def multi_level_select(
-    message: str, choices: Dict[str, Any], breadcrumbs: bool = True, **kwargs
-) -> Question:
+    message: str, choices: Dict[str, Any], breadcrumbs: bool = True, **kwargs: Any
+) -> "LazyQuestion | Question":
     """Multi-level menu with breadcrumb navigation."""
     return tree_select(message, choices, **kwargs)
 
@@ -277,8 +243,8 @@ def tag_select(
     available_tags: List[str],
     max_tags: Optional[int] = None,
     allow_custom: bool = False,
-    **kwargs,
-) -> Question:
+    **kwargs: Any,
+) -> "LazyQuestion | Question":
     """
     Multi-tag selection with auto-completion.
 
@@ -292,7 +258,7 @@ def tag_select(
     Returns:
         Question instance
     """
-    return questionary.checkbox(message, choices=available_tags, **kwargs)
+    return LazyQuestion(questionary.checkbox, message, choices=available_tags, **kwargs)
 
 
 def fuzzy_select(
@@ -300,8 +266,8 @@ def fuzzy_select(
     choices: List[str],
     min_score: float = 0.6,
     case_sensitive: bool = False,
-    **kwargs,
-) -> Question:
+    **kwargs: Any,
+) -> "LazyQuestion | Question":
     """
     Fuzzy search selection with ranking.
 
@@ -315,12 +281,12 @@ def fuzzy_select(
     Returns:
         Question instance
     """
-    return questionary.autocomplete(message, choices=choices, **kwargs)
+    return LazyQuestion(questionary.autocomplete, message, choices=choices, **kwargs)
 
 
 def grouped_select(
-    message: str, groups: Dict[str, List[str]], collapsible: bool = True, **kwargs
-) -> Question:
+    message: str, groups: Dict[str, List[str]], collapsible: bool = True, **kwargs: Any
+) -> "LazyQuestion | Question":
     """
     Grouped selection with collapsible categories.
 
@@ -333,12 +299,17 @@ def grouped_select(
     Returns:
         Question instance
     """
-    choices = []
+    choices: List[Any] = []
     for group_name, group_choices in groups.items():
         choices.append(questionary.Separator(f"--- {group_name} ---"))
-        choices.extend(group_choices)
+        # Ensure each choice is questionary-compatible (str or dict)
+        for c in group_choices:
+            if isinstance(c, dict):
+                choices.append(c)
+            else:
+                choices.append(str(c))
 
-    return questionary.select(message, choices=choices, **kwargs)
+    return LazyQuestion(questionary.select, message, choices=choices, **kwargs)
 
 
 def rating(
@@ -346,8 +317,8 @@ def rating(
     max_rating: int = 5,
     icon: str = "★",
     allow_zero: bool = False,
-    **kwargs,
-) -> Question:
+    **kwargs: Any,
+) -> "LazyQuestion | Question":
     """
     Star rating input.
 
@@ -365,9 +336,10 @@ def rating(
     choices = []
     for i in range(min_val, max_rating + 1):
         display = icon * i + "☆" * (max_rating - i)
-        choices.append(Choice(title=f"{display} ({i})", value=i))
+        # Use questionary-compatible dict for each rating
+        choices.append({"name": f"{display} ({i})", "value": i})
 
-    return questionary.select(message, choices=choices, **kwargs)
+    return LazyQuestion(questionary.select, message, choices=choices, **kwargs)
 
 
 def slider(
@@ -376,8 +348,8 @@ def slider(
     max_value: Union[int, float] = 100,
     step: Union[int, float] = 1,
     default: Optional[Union[int, float]] = None,
-    **kwargs,
-) -> Question:
+    **kwargs: Any,
+) -> "LazyQuestion | Question":
     """
     Slider input for numeric ranges.
 
@@ -407,8 +379,8 @@ def table(
     columns: List[Column],
     min_rows: int = 0,
     max_rows: Optional[int] = None,
-    **kwargs,
-) -> Question:
+    **kwargs: Any,
+) -> "LazyQuestion | Question":
     """
     Table/spreadsheet input for structured data.
 
@@ -424,14 +396,14 @@ def table(
     """
     # For now, return a simple text input
     # Implementation will be added for actual table editing
-    return questionary.text(
-        f"{message} (Table input - implementation pending)", **kwargs
+    return LazyQuestion(
+        questionary.text, f"{message} (Table input - implementation pending)", **kwargs
     )
 
 
 def form(
-    questions: List[Dict[str, Any]], theme: Optional[Theme] = None, **kwargs
-) -> Question:
+    questions: List[Dict[str, Any]], theme: Optional[Theme] = None, **kwargs: Any
+) -> Dict[str, Any]:
     """
     Enhanced form with validation and conditional logic.
 
@@ -450,8 +422,8 @@ def wizard(
     steps: List[ProgressStep],
     allow_back: bool = True,
     save_progress: bool = False,
-    **kwargs,
-) -> Question:
+    **kwargs: Any,
+) -> Dict[str, Any]:
     """
     Multi-step wizard with progress tracking.
 
@@ -470,42 +442,5 @@ def wizard(
     return questionary.prompt(questions, **kwargs)
 
 
-class progress_tracker:
-    """
-    Context manager for tracking progress through multi-step operations.
-
-    Usage:
-        with progress_tracker("Operation", total_steps=5) as progress:
-            progress.step("Step 1...")
-            # do work
-            progress.step("Step 2...")
-            # do work
-            progress.complete("Done!")
-    """
-
-    def __init__(self, title: str, total_steps: int):
-        self.title = title
-        self.total_steps = total_steps
-        self.current_step = 0
-
-    def __enter__(self):
-        print(f"🚀 {self.title}")
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is None:
-            print("✅ Operation completed successfully!")
-        else:
-            print("❌ Operation failed!")
-
-    def step(self, description: str):
-        """Advance to the next step."""
-        self.current_step += 1
-        progress = (self.current_step / self.total_steps) * 100
-        print(
-            f"  [{self.current_step}/{self.total_steps}] ({progress:.1f}%) {description}"
-        )
-
-    def complete(self, message: str = "Complete!"):
-        """Mark the operation as complete."""
-        print(f"🎉 {message}")
+# Re-export canonical class name
+ProgressTracker = CoreProgressTracker

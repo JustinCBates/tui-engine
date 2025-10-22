@@ -24,14 +24,32 @@ from .components import (
     ValidationResult,
 )
 
+# Export newly implemented core API (Page/Card/Assembly/components)
+from .core import (
+    Assembly,
+    Card,
+    Component,
+    Page,
+    # convenience wrappers also available
+    # autocomplete and path are available via core.component
+    PageState,
+    autocomplete,
+    checkbox,
+    confirm,
+    password,
+    path,
+    select,
+    text,
+)
+from .prompts import rating
+
 # Import existing prompts and utilities
 from .prompts_core import (
+    ProgressTracker,
     enhanced_text,
     form,
     integer,
     number,
-    progress_tracker,
-    rating,
 )
 from .styles import (
     THEMES,
@@ -54,25 +72,6 @@ from .validators import (
     URLValidator,
 )
 
-# Export newly implemented core API (Page/Card/Assembly/components)
-from .core import (
-    Page,
-    Card,
-    Assembly,
-    Component,
-    text,
-    select,
-    confirm,
-    password,
-    checkbox,
-    autocomplete,
-    path,
-    # convenience wrappers also available
-    # autocomplete and path are available via core.component
-    
-    PageState,
-)
-
 __version__ = version("questionary-extended")
 
 __all__ = [
@@ -84,7 +83,13 @@ __all__ = [
     "integer",
     "rating",
     "form",
-    "progress_tracker",
+    "ProgressTracker",
+    # Core types
+    "Assembly",
+    "Card",
+    "Component",
+    "Page",
+    "PageState",
     # Components
     "Choice",
     "Separator",
@@ -116,3 +121,7 @@ __all__ = [
     "autocomplete",
     "path",
 ]
+
+
+# NOTE: The lowercase `progress_tracker` factory was removed to keep the
+# public API clean. Use the canonical `ProgressTracker` class instead.

@@ -1,14 +1,19 @@
 """Interactive explorer for ALL questionary and questionary-extended components."""
 
-import questionary_extended as qe
-import questionary
-from questionary_extended import (
-    EmailValidator, DateValidator, URLValidator, NumberValidator, 
-    RangeValidator, RegexValidator, Choice, Separator, Theme, ColorPalette
-)
-from datetime import date, datetime
-import os
+from datetime import date
 
+import questionary
+
+import questionary_extended as qe
+from questionary_extended import (
+    ColorPalette,
+    DateValidator,
+    EmailValidator,
+    NumberValidator,
+    RangeValidator,
+    RegexValidator,
+    URLValidator,
+)
 
 # Component definitions with descriptions and demos
 COMPONENT_CATALOG = {
@@ -27,10 +32,10 @@ Features:
 - Multiline support
 - History navigation
             """.strip(),
-            "demo": lambda: demo_text()
+            "demo": lambda: demo_text(),
         },
         "password": {
-            "name": "Password Input", 
+            "name": "Password Input",
             "description": """
 Hidden text input for sensitive data like passwords.
 
@@ -43,7 +48,7 @@ Features:
 - Security-focused
 - Can validate strength
             """.strip(),
-            "demo": lambda: demo_password()
+            "demo": lambda: demo_password(),
         },
         "enhanced_text": {
             "name": "Enhanced Text Input",
@@ -59,10 +64,9 @@ Features:
 - Input history
 - Rich formatting support
             """.strip(),
-            "demo": lambda: demo_enhanced_text()
-        }
+            "demo": lambda: demo_enhanced_text(),
+        },
     },
-    
     "🔢 Numeric Input Components": {
         "number": {
             "name": "Number Input",
@@ -78,7 +82,7 @@ Features:
 - Step increment support
 - Formatting options
             """.strip(),
-            "demo": lambda: demo_number()
+            "demo": lambda: demo_number(),
         },
         "integer": {
             "name": "Integer Input",
@@ -94,7 +98,7 @@ Features:
 - Step increments
 - No decimal places
             """.strip(),
-            "demo": lambda: demo_integer()
+            "demo": lambda: demo_integer(),
         },
         "rating": {
             "name": "Rating Input",
@@ -110,10 +114,9 @@ Features:
 - Visual star display
 - Allow zero ratings option
             """.strip(),
-            "demo": lambda: demo_rating()
-        }
+            "demo": lambda: demo_rating(),
+        },
     },
-
     "🎯 Selection Components": {
         "select": {
             "name": "Single Select",
@@ -129,7 +132,7 @@ Features:
 - Custom choice objects
 - Separators for grouping
             """.strip(),
-            "demo": lambda: demo_select()
+            "demo": lambda: demo_select(),
         },
         "checkbox": {
             "name": "Multiple Select (Checkbox)",
@@ -145,7 +148,7 @@ Features:
 - Pre-checked options
 - Visual grouping
             """.strip(),
-            "demo": lambda: demo_checkbox()
+            "demo": lambda: demo_checkbox(),
         },
         "autocomplete": {
             "name": "Autocomplete",
@@ -161,7 +164,7 @@ Features:
 - Custom completion logic
 - Fast typing support
             """.strip(),
-            "demo": lambda: demo_autocomplete()
+            "demo": lambda: demo_autocomplete(),
         },
         "rawselect": {
             "name": "Raw Select",
@@ -177,10 +180,9 @@ Features:
 - Fast selection
 - Keyboard shortcuts
             """.strip(),
-            "demo": lambda: demo_rawselect()
-        }
+            "demo": lambda: demo_rawselect(),
+        },
     },
-
     "✅ Confirmation Components": {
         "confirm": {
             "name": "Yes/No Confirmation",
@@ -196,10 +198,9 @@ Features:
 - Custom yes/no text
 - Clear visual feedback
             """.strip(),
-            "demo": lambda: demo_confirm()
+            "demo": lambda: demo_confirm(),
         }
     },
-
     "🔐 Validation Components": {
         "email_validator": {
             "name": "Email Validator",
@@ -215,7 +216,7 @@ Features:
 - Custom error text
 - International domains
             """.strip(),
-            "demo": lambda: demo_email_validator()
+            "demo": lambda: demo_email_validator(),
         },
         "url_validator": {
             "name": "URL Validator",
@@ -231,7 +232,7 @@ Features:
 - Domain validation
 - Port support
             """.strip(),
-            "demo": lambda: demo_url_validator()
+            "demo": lambda: demo_url_validator(),
         },
         "date_validator": {
             "name": "Date Validator",
@@ -247,7 +248,7 @@ Features:
 - Locale support
 - Clear error messages
             """.strip(),
-            "demo": lambda: demo_date_validator()
+            "demo": lambda: demo_date_validator(),
         },
         "number_validator": {
             "name": "Number Validator",
@@ -263,7 +264,7 @@ Features:
 - Step validation
 - Formatting options
             """.strip(),
-            "demo": lambda: demo_number_validator()
+            "demo": lambda: demo_number_validator(),
         },
         "range_validator": {
             "name": "Range Validator",
@@ -279,7 +280,7 @@ Features:
 - Custom error messages
 - Type coercion
             """.strip(),
-            "demo": lambda: demo_range_validator()
+            "demo": lambda: demo_range_validator(),
         },
         "regex_validator": {
             "name": "Regex Validator",
@@ -295,10 +296,9 @@ Features:
 - Custom error messages
 - Pattern examples
             """.strip(),
-            "demo": lambda: demo_regex_validator()
-        }
+            "demo": lambda: demo_regex_validator(),
+        },
     },
-
     "🎨 Utility & Theming": {
         "format_date": {
             "name": "Date Formatting",
@@ -314,7 +314,7 @@ Features:
 - Relative dates
 - Custom formatting
             """.strip(),
-            "demo": lambda: demo_format_date()
+            "demo": lambda: demo_format_date(),
         },
         "format_number": {
             "name": "Number Formatting",
@@ -330,7 +330,7 @@ Features:
 - Currency formatting
 - Percentage mode
             """.strip(),
-            "demo": lambda: demo_format_number()
+            "demo": lambda: demo_format_number(),
         },
         "theming": {
             "name": "Theme System",
@@ -346,7 +346,7 @@ Features:
 - Component styling
 - Theme inheritance
             """.strip(),
-            "demo": lambda: demo_theming()
+            "demo": lambda: demo_theming(),
         },
         "progress_tracker": {
             "name": "Progress Tracker",
@@ -354,8 +354,8 @@ Features:
 Track progress through multi-step operations with visual feedback.
 
 Usage:
-  with qe.progress_tracker("Task", total_steps=3) as progress:
-      progress.step("Step 1...")
+    with qe.ProgressTracker("Task", total_steps=3) as progress:
+            progress.step("Step 1...")
 
 Features:
 - Visual progress bars
@@ -363,10 +363,9 @@ Features:
 - Error handling
 - Completion messages
             """.strip(),
-            "demo": lambda: demo_progress_tracker()
-        }
+            "demo": lambda: demo_progress_tracker(),
+        },
     },
-
     "📋 Advanced Components": {
         "form": {
             "name": "Forms",
@@ -385,7 +384,7 @@ Features:
 - Conditional questions
 - Data collection
             """.strip(),
-            "demo": lambda: demo_form()
+            "demo": lambda: demo_form(),
         },
         "path": {
             "name": "Path Selection",
@@ -401,7 +400,7 @@ Features:
 - File filtering
 - Validation
             """.strip(),
-            "demo": lambda: demo_path()
+            "demo": lambda: demo_path(),
         },
         "press_key": {
             "name": "Press Any Key",
@@ -417,7 +416,7 @@ Features:
 - Any key detection
 - Flow control
             """.strip(),
-            "demo": lambda: demo_press_key()
+            "demo": lambda: demo_press_key(),
         },
         "print": {
             "name": "Styled Print",
@@ -433,44 +432,46 @@ Features:
 - Multiple styles
 - Rich formatting
             """.strip(),
-            "demo": lambda: demo_print()
-        }
-    }
+            "demo": lambda: demo_print(),
+        },
+    },
 }
 
 
 def show_component_menu():
     """Show interactive menu of all components."""
-    
+
     # Flatten component catalog for menu
     menu_choices = []
     component_map = {}
-    
+
     for category, components in COMPONENT_CATALOG.items():
         menu_choices.append(questionary.Separator(f"--- {category} ---"))
         for key, info in components.items():
             choice_text = f"{info['name']}"
             menu_choices.append(choice_text)
             component_map[choice_text] = (key, info)
-    
-    menu_choices.extend([
-        questionary.Separator("--- Actions ---"),
-        "🚀 Run All Components Demo",
-        "❌ Exit"
-    ])
-    
+
+    menu_choices.extend(
+        [
+            questionary.Separator("--- Actions ---"),
+            "🚀 Run All Components Demo",
+            "❌ Exit",
+        ]
+    )
+
     while True:
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("🎯 QUESTIONARY COMPONENT EXPLORER")
-        print("="*60)
+        print("=" * 60)
         print("Select a component to learn more about it:")
-        
+
         choice = questionary.select(
             "Choose a component:",
             choices=menu_choices,
-            instruction="(Use ↑↓ arrows, Enter to select)"
+            instruction="(Use ↑↓ arrows, Enter to select)",
         ).ask()
-        
+
         if not choice:
             break
         elif choice == "❌ Exit":
@@ -485,56 +486,52 @@ def show_component_menu():
 
 def show_component_details(key: str, info: dict):
     """Show detailed information about a specific component."""
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print(f"📖 {info['name']}")
-    print("="*60)
-    print(info['description'])
-    print("\n" + "-"*60)
-    
+    print("=" * 60)
+    print(info["description"])
+    print("\n" + "-" * 60)
+
     action = questionary.select(
         "What would you like to do?",
-        choices=[
-            "🎮 Run Demo",
-            "📝 Copy Usage Example", 
-            "🔙 Back to Menu"
-        ]
+        choices=["🎮 Run Demo", "📝 Copy Usage Example", "🔙 Back to Menu"],
     ).ask()
-    
+
     if action == "🎮 Run Demo":
         print(f"\n🎬 Running demo for {info['name']}...")
         print("-" * 40)
         try:
-            info['demo']()
+            info["demo"]()
             print("-" * 40)
             print("✅ Demo completed!")
         except Exception as e:
             print(f"❌ Demo error: {e}")
-        
+
         questionary.press_any_key_to_continue("\nPress any key to continue...").ask()
-    
+
     elif action == "📝 Copy Usage Example":
         # Extract usage example from description
-        lines = info['description'].split('\n')
+        lines = info["description"].split("\n")
         usage_lines = []
         in_usage = False
-        
+
         for line in lines:
-            if line.strip().startswith('Usage:'):
+            if line.strip().startswith("Usage:"):
                 in_usage = True
                 continue
-            elif in_usage and line.strip().startswith('Features:'):
+            elif in_usage and line.strip().startswith("Features:"):
                 break
             elif in_usage:
                 usage_lines.append(line)
-        
-        usage_text = '\n'.join(usage_lines).strip()
+
+        usage_text = "\n".join(usage_lines).strip()
         print(f"\n📋 Usage Example for {info['name']}:")
         print("-" * 40)
         print(usage_text)
         print("-" * 40)
         print("💡 Tip: Copy the code above to use in your project!")
-        
+
         questionary.press_any_key_to_continue("\nPress any key to continue...").ask()
 
 
@@ -543,28 +540,28 @@ def demo_text():
     """Demo basic text input."""
     name = questionary.text("What's your name?", default="Demo User").ask()
     print(f"✅ You entered: {name}")
-    
+
     # 2. Password input (hidden)
     print("\n2. Password Input")
     # password = questionary.password("Enter password:").ask()
     print("   (Skipping password input for demo)")
-    
+
     # 3. Confirm (Yes/No)
     print("\n3. Confirmation")
     confirmed = questionary.confirm("Continue with demo?", default=True).ask()
     print(f"   Result: {confirmed}")
-    
+
     if not confirmed:
         return
-    
+
     # 4. Select (single choice)
     print("\n4. Select (Single Choice)")
     color = questionary.select(
         "Choose your favorite color:",
-        choices=["Red", "Green", "Blue", "Yellow", "Purple"]
+        choices=["Red", "Green", "Blue", "Yellow", "Purple"],
     ).ask()
     print(f"   Result: {color}")
-    
+
     # 5. Checkbox (multiple choices)
     print("\n5. Checkbox (Multiple Choices)")
     hobbies = questionary.checkbox(
@@ -572,42 +569,48 @@ def demo_text():
         choices=[
             questionary.Separator("=== Indoor ==="),
             "Reading",
-            "Gaming", 
+            "Gaming",
             "Cooking",
             questionary.Separator("=== Outdoor ==="),
             "Hiking",
             "Cycling",
-            "Swimming"
-        ]
+            "Swimming",
+        ],
     ).ask()
     print(f"   Result: {hobbies}")
-    
+
     # 6. Autocomplete
     print("\n6. Autocomplete")
-    programming_languages = ["Python", "JavaScript", "Java", "C++", "Go", "Rust", "TypeScript"]
+    programming_languages = [
+        "Python",
+        "JavaScript",
+        "Java",
+        "C++",
+        "Go",
+        "Rust",
+        "TypeScript",
+    ]
     language = questionary.autocomplete(
-        "Choose a programming language:",
-        choices=programming_languages
+        "Choose a programming language:", choices=programming_languages
     ).ask()
     print(f"   Result: {language}")
-    
+
     # 7. Path selection
     print("\n7. Path Selection")
     # file_path = questionary.path("Select a file:").ask()
     print("   (Skipping path selection for demo - would open file browser)")
-    
+
     # 8. Raw select (no fancy UI)
     print("\n8. Raw Select")
     option = questionary.rawselect(
-        "Choose an option (raw select):",
-        choices=["Option A", "Option B", "Option C"]
+        "Choose an option (raw select):", choices=["Option A", "Option B", "Option C"]
     ).ask()
     print(f"   Result: {option}")
-    
+
     # 9. Press any key to continue
     print("\n9. Press Any Key")
     questionary.press_any_key_to_continue("Press any key to continue...").ask()
-    
+
     # 10. Print (styled output)
     print("\n10. Styled Print")
     questionary.print("This is styled output!", style="bold fg:green")
@@ -615,56 +618,45 @@ def demo_text():
 
 def demo_questionary_extended():
     """Demonstrate all questionary-extended components."""
-    
+
     print("\n\n🔸 QUESTIONARY-EXTENDED COMPONENTS")
     print("=" * 50)
-    
+
     # Enhanced text input
     print("\n1. Enhanced Text Input")
     enhanced_name = qe.enhanced_text(
-        "Enhanced text input:",
-        default="Enhanced User"
+        "Enhanced text input:", default="Enhanced User"
     ).ask()
     print(f"   Result: {enhanced_name}")
-    
+
     # Numeric inputs
     print("\n2. Numeric Input")
     age = qe.number(
-        "Enter your age:",
-        min_value=0,
-        max_value=120,
-        allow_float=False
+        "Enter your age:", min_value=0, max_value=120, allow_float=False
     ).ask()
     if age:
         print(f"   Result: {age}")
-    
+
     print("\n3. Integer Input")
-    score = qe.integer(
-        "Enter a score (0-100):",
-        min_value=0,
-        max_value=100
-    ).ask()
+    score = qe.integer("Enter a score (0-100):", min_value=0, max_value=100).ask()
     if score:
         print(f"   Result: {score}")
-    
+
     # Rating system
     print("\n4. Rating Input")
-    rating = qe.rating(
-        "Rate this demo:",
-        max_rating=5,
-        icon="⭐"
-    ).ask()
+    rating = qe.rating("Rate this demo:", max_rating=5, icon="⭐").ask()
     if rating:
         print(f"   Result: {rating}/5 stars")
-    
+
     # Progress tracker
     print("\n5. Progress Tracker")
-    with qe.progress_tracker("Demo Process", total_steps=3) as progress:
+    with qe.ProgressTracker("Demo Process", total_steps=3) as progress:
         import time
+
         progress.step("Step 1 - Initializing...")
         time.sleep(0.5)
         progress.step("Step 2 - Processing...")
-        time.sleep(0.5) 
+        time.sleep(0.5)
         progress.step("Step 3 - Finalizing...")
         time.sleep(0.5)
         progress.complete("Process completed!")
@@ -672,63 +664,55 @@ def demo_questionary_extended():
 
 def demo_validators():
     """Demonstrate all validation components."""
-    
+
     print("\n\n🔹 VALIDATION COMPONENTS")
     print("=" * 50)
-    
+
     # Email validator
     print("\n1. Email Validator")
-    email = questionary.text(
-        "Enter your email:",
-        validate=EmailValidator()
-    ).ask()
+    email = questionary.text("Enter your email:", validate=EmailValidator()).ask()
     if email:
         print(f"   Valid email: {email}")
-    
+
     # URL validator
     print("\n2. URL Validator")
-    url = questionary.text(
-        "Enter a website URL:",
-        validate=URLValidator()
-    ).ask()
+    url = questionary.text("Enter a website URL:", validate=URLValidator()).ask()
     if url:
         print(f"   Valid URL: {url}")
-    
+
     # Date validator
     print("\n3. Date Validator")
     birthday = questionary.text(
         "Enter your birthday (YYYY-MM-DD):",
-        validate=DateValidator(format_str="%Y-%m-%d", max_date=date.today())
+        validate=DateValidator(format_str="%Y-%m-%d", max_date=date.today()),
     ).ask()
     if birthday:
         print(f"   Valid date: {birthday}")
-    
+
     # Number validator
     print("\n4. Number Validator")
     temperature = questionary.text(
         "Enter temperature (-50 to 50):",
-        validate=NumberValidator(min_value=-50, max_value=50, allow_float=True)
+        validate=NumberValidator(min_value=-50, max_value=50, allow_float=True),
     ).ask()
     if temperature:
         print(f"   Valid temperature: {temperature}")
-    
-    # Range validator  
+
+    # Range validator
     print("\n5. Range Validator")
     percentage = questionary.text(
-        "Enter percentage (0-100):",
-        validate=RangeValidator(0, 100)
+        "Enter percentage (0-100):", validate=RangeValidator(0, 100)
     ).ask()
     if percentage:
         print(f"   Valid percentage: {percentage}")
-    
+
     # Regex validator
     print("\n6. Regex Validator (Phone Number)")
     phone = questionary.text(
         "Enter phone number (XXX-XXX-XXXX):",
         validate=RegexValidator(
-            r"^\d{3}-\d{3}-\d{4}$",
-            "Please enter phone in format XXX-XXX-XXXX"
-        )
+            r"^\d{3}-\d{3}-\d{4}$", "Please enter phone in format XXX-XXX-XXXX"
+        ),
     ).ask()
     if phone:
         print(f"   Valid phone: {phone}")
@@ -736,22 +720,22 @@ def demo_validators():
 
 def demo_utility_functions():
     """Demonstrate utility functions."""
-    
+
     print("\n\n🔸 UTILITY FUNCTIONS")
     print("=" * 50)
-    
+
     # Date formatting
     print("\n1. Date Formatting")
     today = date.today()
     formatted_date = qe.format_date(today, "%B %d, %Y")
     print(f"   Today: {formatted_date}")
-    
+
     # Number formatting
     print("\n2. Number Formatting")
     number = 1234567.89
     formatted_number = qe.format_number(number, decimal_places=2, thousands_sep=True)
     print(f"   Formatted: {formatted_number}")
-    
+
     # Color parsing
     print("\n3. Color Parsing")
     try:
@@ -759,7 +743,7 @@ def demo_utility_functions():
         print(f"   Color info: RGB{color_info.rgb}, HSL{color_info.hsl}")
     except Exception as e:
         print(f"   Color parsing: {e}")
-    
+
     # Markdown rendering
     print("\n4. Markdown Rendering")
     markdown_text = "**Bold** text with *italic* and `code`"
@@ -769,59 +753,54 @@ def demo_utility_functions():
 
 def demo_theming():
     """Demonstrate theming system."""
-    
+
     print("\n\n🔹 THEMING SYSTEM")
     print("=" * 50)
-    
+
     # Available themes
     print("\n1. Available Themes")
     for theme_name in qe.THEMES:
         print(f"   • {theme_name}")
-    
+
     # Custom theme creation
     print("\n2. Custom Theme")
     custom_palette = ColorPalette(
-        primary="#00ff00",
-        secondary="#ff00ff",
-        success="#00ff00",
-        error="#ff0000"
+        primary="#00ff00", secondary="#ff00ff", success="#00ff00", error="#ff0000"
     )
-    
-    custom_theme = qe.create_theme(
-        name="Custom Demo Theme",
-        palette=custom_palette
-    )
-    
+
+    custom_theme = qe.create_theme(name="Custom Demo Theme", palette=custom_palette)
+
     print(f"   Created theme: {custom_theme.name}")
     print(f"   Primary color: {custom_theme.palette.primary}")
 
 
 def demo_advanced_forms():
     """Demonstrate advanced form capabilities."""
-    
+
     print("\n\n🔸 ADVANCED FORMS")
     print("=" * 50)
-    
+
     # Complex form with all components
     print("\n1. Comprehensive Form")
-    
+
     form_result = questionary.form(
         # Basic inputs
         name=questionary.text("Full Name:", validate=lambda x: len(x) > 0),
         email=questionary.text("Email:", validate=EmailValidator()),
-        
         # Enhanced inputs
         age=qe.number("Age:", min_value=13, max_value=120, allow_float=False),
-        
         # Selections
-        country=questionary.select("Country:", choices=["USA", "Canada", "UK", "Australia", "Other"]),
-        interests=questionary.checkbox("Interests:", choices=["Technology", "Sports", "Music", "Travel", "Reading"]),
-        
+        country=questionary.select(
+            "Country:", choices=["USA", "Canada", "UK", "Australia", "Other"]
+        ),
+        interests=questionary.checkbox(
+            "Interests:", choices=["Technology", "Sports", "Music", "Travel", "Reading"]
+        ),
         # Confirmations
         subscribe=questionary.confirm("Subscribe to newsletter?", default=False),
-        terms=questionary.confirm("Accept terms and conditions?", default=False)
+        terms=questionary.confirm("Accept terms and conditions?", default=False),
     ).ask()
-    
+
     if form_result:
         print("\n   📋 Form Results:")
         for key, value in form_result.items():
@@ -833,25 +812,25 @@ def demo_advanced_forms():
 
 def main():
     """Run complete demonstration of all components."""
-    
+
     print("🚀 COMPLETE QUESTIONARY & QUESTIONARY-EXTENDED DEMO")
     print("=" * 60)
     print("This demo covers ALL available components and features.")
     print()
-    
+
     try:
         # Run all demonstrations
         demo_basic_questionary()
-        demo_questionary_extended() 
+        demo_questionary_extended()
         demo_validators()
         demo_utility_functions()
         demo_theming()
         demo_advanced_forms()
-        
+
         print("\n\n✅ COMPLETE DEMO FINISHED!")
         print("=" * 60)
         print("All questionary and questionary-extended components demonstrated.")
-        
+
     except KeyboardInterrupt:
         print("\n\n⚠️  Demo interrupted by user")
     except Exception as e:

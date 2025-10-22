@@ -6,7 +6,7 @@ simulates answers (non-interactive), runs a tiny simulated bridge that
 writes namespaced keys into PageState, and prints the flat results.
 
 Run from the repository root with:
-    python .\examples\first_working_prototype.py
+    python .\\examples\first_working_prototype.py
 """
 
 import os
@@ -22,6 +22,7 @@ if SRC not in sys.path:
 # Import minimal core pieces directly
 import importlib.util
 
+
 # Load core modules directly from source files to avoid executing package
 # level imports in questionary_extended.__init__ (which may reference
 # optional utilities not present in this prototype environment).
@@ -34,6 +35,7 @@ def _load_module_from_path(name: str, path: str):
     sys.modules[name] = module
     spec.loader.exec_module(module)  # type: ignore
     return module
+
 
 CORE_DIR = os.path.join(SRC, "questionary_extended", "core")
 
@@ -55,10 +57,18 @@ if core_pkg_name not in sys.modules:
     sys.modules[core_pkg_name] = core_pkg
 
 # Load modules under the package-qualified names so their relative imports work
-page_mod = _load_module_from_path("questionary_extended.core.page", os.path.join(CORE_DIR, "page.py"))
-assembly_mod = _load_module_from_path("questionary_extended.core.assembly", os.path.join(CORE_DIR, "assembly.py"))
-component_mod = _load_module_from_path("questionary_extended.core.component", os.path.join(CORE_DIR, "component.py"))
-state_mod = _load_module_from_path("questionary_extended.core.state", os.path.join(CORE_DIR, "state.py"))
+page_mod = _load_module_from_path(
+    "questionary_extended.core.page", os.path.join(CORE_DIR, "page.py")
+)
+assembly_mod = _load_module_from_path(
+    "questionary_extended.core.assembly", os.path.join(CORE_DIR, "assembly.py")
+)
+component_mod = _load_module_from_path(
+    "questionary_extended.core.component", os.path.join(CORE_DIR, "component.py")
+)
+state_mod = _load_module_from_path(
+    "questionary_extended.core.state", os.path.join(CORE_DIR, "state.py")
+)
 
 Page = page_mod.Page
 Assembly = assembly_mod.Assembly
@@ -107,7 +117,9 @@ def main():
 
     # Create components using convenience wrappers and attach them
     name_comp = text("name", message="Full name:")
-    color_comp = select("favorite_color", message="Favorite color:", choices=["red", "green", "blue"]) 
+    color_comp = select(
+        "favorite_color", message="Favorite color:", choices=["red", "green", "blue"]
+    )
 
     # Append components to the assembly's components list (method-chaining not implemented yet)
     asm.components.append(name_comp)

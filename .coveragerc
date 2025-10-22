@@ -1,0 +1,12 @@
+[run]
+omit =
+    tests/*
+    examples/*
+    examples/**
+    bench*/*
+    benchmarks/*
+    integration/*
+    docs/*
+    scripts/*
+    src/questionary_extended/styling/__init__.py
+    src/questionary_extended/events/__init__.py

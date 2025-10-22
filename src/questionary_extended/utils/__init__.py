@@ -3,16 +3,16 @@ Utility functions for questionary-extended core functionality.
 
 This module provides helper functions and debugging tools:
 - Helpers: Common utility functions for component management
-- Debugging: Debug tools, error reporting, and development aids  
+- Debugging: Debug tools, error reporting, and development aids
 - Type Utilities: Type checking and conversion helpers
 """
 
-from datetime import date, datetime
-from dataclasses import dataclass
-from typing import Any, List, Tuple
 import re
 import textwrap
+from dataclasses import dataclass
+from datetime import date, datetime
 from difflib import SequenceMatcher
+from typing import Any, List, Tuple
 from urllib.parse import urlparse
 
 
@@ -48,14 +48,18 @@ def format_number(
         s = f"{num:.1f}%"
     else:
         if decimal_places is not None:
-            fmt = f"{{:,.{decimal_places}f}}" if thousands_sep else f"{{:.{decimal_places}f}}"
+            fmt = (
+                f"{{:,.{decimal_places}f}}"
+                if thousands_sep
+                else f"{{:.{decimal_places}f}}"
+            )
             s = fmt.format(num)
         else:
             s = f"{int(num)}" if num.is_integer() else f"{num}"
             if thousands_sep:
                 # apply thousands separator to integer portion
-                if '.' in s:
-                    intpart, frac = s.split('.', 1)
+                if "." in s:
+                    intpart, frac = s.split(".", 1)
                     intpart = f"{int(intpart):,}"
                     s = f"{intpart}.{frac}"
                 else:
@@ -72,16 +76,16 @@ def parse_number(s: str, allow_float: bool = True) -> float | int:
     if isinstance(s, (int, float)):
         return s
     st = str(s).strip()
-    is_percent = st.endswith('%')
+    is_percent = st.endswith("%")
     if is_percent:
         st = st[:-1]
     # remove currency symbols and commas
-    st = st.replace(',', '')
+    st = st.replace(",", "")
     st = re.sub(r"[^0-9.+-eE]", "", st)
     try:
         val = float(st)
-    except Exception:
-        raise ValueError(f"Cannot parse number: {s}")
+    except Exception as e:
+        raise ValueError(f"Cannot parse number: {s}") from e
     if is_percent:
         val = val
     if not allow_float and val.is_integer():
@@ -164,7 +168,9 @@ def create_progress_bar(current: float, total: float, width: int = 20) -> str:
     return f"{bar} {int(current)}/{int(total)} {pct:.1f}%"
 
 
-def fuzzy_match(q: str, choices: List[str], threshold: float = 0.0) -> List[Tuple[str, float]]:
+def fuzzy_match(
+    q: str, choices: List[str], threshold: float = 0.0
+) -> List[Tuple[str, float]]:
     results: List[Tuple[str, float]] = []
     for c in choices:
         score = SequenceMatcher(None, q, c).ratio()
@@ -182,7 +188,8 @@ def validate_url(s: str) -> bool:
     try:
         p = urlparse(s)
         return p.scheme in ("http", "https") and bool(p.netloc)
-    except Exception:
+    except Exception:  # pragma: no cover - defensive
+        # Preserve original exception context for easier debugging
         return False
 
 

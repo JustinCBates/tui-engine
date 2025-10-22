@@ -5,12 +5,23 @@ Command-line interface for questionary-extended.
 import sys
 
 import click
+import questionary
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
 from . import __version__
-from .prompts import *
+from .prompts import (
+    ProgressTracker,
+    color,
+    enhanced_text,
+    number,
+    rating,
+    tree_select,
+)
+from .prompts import (
+    date as date_prompt,
+)
 from .styles import THEMES, get_theme_names
 from .utils import format_date, format_number
 
@@ -26,7 +37,7 @@ console = Console()
     help="Theme to use for prompts",
 )
 @click.pass_context
-def cli(ctx: click.Context, theme: str):
+def cli(ctx: click.Context, theme: str) -> None:
     """
     Questionary Extended - Advanced CLI prompts and forms.
 
@@ -38,7 +49,7 @@ def cli(ctx: click.Context, theme: str):
 
 
 @cli.command()
-def demo():
+def demo() -> None:
     """Run an interactive demo of questionary-extended features."""
     console.print(
         Panel.fit(
@@ -61,10 +72,9 @@ def demo():
         console.print(f"You are [bold]{age}[/bold] years old.")
 
     # Date input
-    from datetime import date
-
-    birthday = date(
-        "When is your birthday?", max_date=date.today(), format_str="%Y-%m-%d"
+    # Use the prompts.date helper (renamed to avoid collision with datetime.date)
+    birthday = date_prompt(
+        "When is your birthday?", max_date=None, format_str="%Y-%m-%d"
     ).ask()
 
     if birthday:
@@ -99,7 +109,7 @@ def demo():
 
 @cli.command()
 @click.option("--output", "-o", type=click.Path(), help="Save form data to file")
-def form_builder():
+def form_builder() -> None:
     """Interactive form builder."""
     console.print("[bold]Interactive Form Builder[/bold]")
 
@@ -153,7 +163,7 @@ def form_builder():
 
 
 @cli.command()
-def themes():
+def themes() -> None:
     """List available themes."""
     table = Table(title="Available Themes")
     table.add_column("Name", style="cyan")
@@ -175,7 +185,7 @@ def themes():
     "prompt_type",
     type=click.Choice(["text", "number", "date", "select", "rating", "color"]),
 )
-def quick(prompt_type: str):
+def quick(prompt_type: str) -> None:
     """Quick prompt for testing different input types."""
 
     if prompt_type == "text":
@@ -187,9 +197,7 @@ def quick(prompt_type: str):
             result = format_number(int(result), thousands_sep=True)
 
     elif prompt_type == "date":
-        from datetime import date
-
-        result = date("Enter a date:", format_str="%Y-%m-%d").ask()
+        result = date_prompt("Enter a date:", format_str="%Y-%m-%d").ask()
         if result:
             result = format_date(result, "%B %d, %Y")
 
@@ -212,11 +220,10 @@ def quick(prompt_type: str):
 
 @cli.command()
 @click.option("--steps", "-s", default=3, help="Number of wizard steps")
-def wizard_demo(steps: int):
+def wizard_demo(steps: int) -> None:
     """Demonstrate wizard functionality."""
 
-    with progress_tracker("Wizard Demo", total_steps=steps) as progress:
-
+    with ProgressTracker("Wizard Demo", total_steps=steps) as progress:
         for i in range(1, steps + 1):
             progress.step(f"Step {i} of {steps}")
 
@@ -233,7 +240,7 @@ def wizard_demo(steps: int):
         progress.complete("Wizard completed successfully!")
 
 
-def main():
+def main() -> None:
     """Entry point for the CLI."""
     try:
         cli()

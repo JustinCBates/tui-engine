@@ -12,6 +12,6 @@ This module provides the event-driven interaction framework:
 # from .handlers import EventHandlers
 
 __all__ = [
-    # "EventManager", 
+    # "EventManager",
     # "EventHandlers",
 ]

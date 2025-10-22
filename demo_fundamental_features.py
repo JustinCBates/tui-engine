@@ -17,7 +17,6 @@ from questionary_extended import (
     enhanced_text, 
     number, 
     rating,
-    progress_tracker,
     NumberValidator,
     EmailValidator
 )
@@ -90,7 +89,9 @@ def main():
         "Finalizing output"
     ]
     
-    with progress_tracker("Demo Process", total=len(tasks)) as tracker:
+    from questionary_extended import ProgressTracker
+
+    with ProgressTracker("Demo Process", total_steps=len(tasks)) as tracker:
         for i, task in enumerate(tasks, 1):
             tracker.update(i, task)
             time.sleep(0.8)  # Simulate work

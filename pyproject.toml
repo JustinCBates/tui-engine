@@ -141,7 +141,7 @@ line_length = 88
 known_first_party = ["questionary_extended"]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.12"
 check_untyped_defs = true
 disallow_any_generics = true
 disallow_incomplete_defs = true

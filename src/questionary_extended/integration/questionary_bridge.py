@@ -7,6 +7,7 @@ into runnable questionary prompts and collect their results into PageState.
 This is a minimal, incremental implementation intended to be expanded as the
 core Page/Card/Assembly APIs are completed.
 """
+
 from typing import Any, Iterable
 
 try:
@@ -14,13 +15,13 @@ try:
 except Exception:  # pragma: no cover - runtime environment dependent
     questionary = None  # type: ignore
 
-from ..core import Component, PageState, Card, Assembly
+from ..core import Assembly, Card, Component, PageState
 
 
 class QuestionaryBridge:
     """Lightweight bridge to run questionary prompts from core components."""
 
-    def __init__(self, state: PageState):
+    def __init__(self, state: PageState) -> None:
         self.state = state
 
     def ask_component(self, component: Component) -> Any:
@@ -46,9 +47,11 @@ class QuestionaryBridge:
                 from prompt_toolkit.output.win32 import NoConsoleScreenBufferError
 
                 if isinstance(e, NoConsoleScreenBufferError):
-                    raise RuntimeError("questionary not usable in this environment")
+                    raise RuntimeError(
+                        "questionary not usable in this environment"
+                    ) from e
             except Exception:
-                raise RuntimeError("questionary prompt creation failed: %s" % e)
+                raise RuntimeError(f"questionary prompt creation failed: {e}") from e
 
         # The object returned by questionary functions normally implements `.ask()`
         try:
@@ -58,9 +61,11 @@ class QuestionaryBridge:
                 from prompt_toolkit.output.win32 import NoConsoleScreenBufferError
 
                 if isinstance(e, NoConsoleScreenBufferError):
-                    raise RuntimeError("questionary not usable in this environment")
+                    raise RuntimeError(
+                        "questionary not usable in this environment"
+                    ) from e
             except Exception:
-                raise RuntimeError("questionary prompt failed: %s" % e)
+                raise RuntimeError(f"questionary prompt failed: {e}") from e
 
         # Persist into state using the component name (global key)
         # Callers may prefer to namespace the key (assembly.field) themselves
@@ -79,14 +84,18 @@ class QuestionaryBridge:
                         yield c
                     else:
                         # Nested containers (Assembly) handled below
-                        for c2 in self._walk_components(getattr(item, "components", [])):
+                        for c2 in self._walk_components(
+                            getattr(item, "components", [])
+                        ):
                             yield c2
             elif isinstance(item, Assembly):
                 for c in getattr(item, "components", []):
                     if isinstance(c, Component):
                         yield c
                     else:
-                        for c2 in self._walk_components(getattr(item, "components", [])):
+                        for c2 in self._walk_components(
+                            getattr(item, "components", [])
+                        ):
                             yield c2
             else:
                 # Unknown item types are ignored for now
@@ -103,6 +112,8 @@ class QuestionaryBridge:
             try:
                 visible = component.is_visible(self.state.get_all_state())
             except Exception:
+                # If visibility evaluation fails, default to visible.
+                # Capture exception in `exc` for debugging but continue.
                 visible = True
 
             if not visible:

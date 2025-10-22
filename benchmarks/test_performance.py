@@ -8,7 +8,6 @@ import pytest
 from questionary_extended import (
     NumberValidator,
     EmailValidator, 
-    progress_tracker,
     enhanced_text,
     number,
     rating
@@ -83,7 +82,9 @@ class TestProgressTrackerPerformance:
     def test_progress_tracker_updates(self, benchmark):
         """Benchmark progress tracker update performance."""
         def progress_updates():
-            tracker = progress_tracker("Benchmark Test", total=100)
+            from questionary_extended import ProgressTracker
+
+            tracker = ProgressTracker("Benchmark Test", total_steps=100)
             with tracker:
                 for i in range(100):
                     tracker.update(i + 1, f"Step {i + 1}")
@@ -136,7 +137,9 @@ class TestMemoryUsage:
         try:
             trackers = []
             for i in range(100):
-                tracker = progress_tracker(f"Test {i}", total=10)
+                from questionary_extended import ProgressTracker
+
+                tracker = ProgressTracker(f"Test {i}", total_steps=10)
                 with tracker:
                     for j in range(10):
                         tracker.update(j + 1, f"Step {j + 1}")

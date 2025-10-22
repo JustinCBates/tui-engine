@@ -1,10 +1,12 @@
-"""
-Core components used throughout questionary-extended.
+"""Core components used throughout questionary-extended.
+
+This file contains dataclass definitions used by the rest of the
+library. Types are annotated precisely to make mypy checks easier.
 """
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 
 class ColumnType(Enum):
@@ -31,7 +33,7 @@ class Choice:
     description: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.value is None:
             self.value = self.title
 
@@ -56,8 +58,8 @@ class Column:
     min_value: Optional[Union[int, float]] = None
     max_value: Optional[Union[int, float]] = None
     choices: Optional[List[str]] = None
-    validator: Optional[Callable] = None
-    formatter: Optional[Callable] = None
+    validator: Optional[Callable[..., Any]] = None
+    formatter: Optional[Callable[..., Any]] = None
 
 
 @dataclass
@@ -80,7 +82,7 @@ class TreeNode:
     icon: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.value is None:
             self.value = self.name
 
@@ -154,8 +156,8 @@ class FormField:
     message: str
     required: bool = False
     default: Any = None
-    validator: Optional[Callable] = None
-    when: Optional[Callable] = None
+    validator: Optional[Callable[..., Any]] = None
+    when: Optional[Callable[..., Any]] = None
     choices: Optional[List[Any]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -175,8 +177,8 @@ class ColorInfo:
     """Color information with multiple format support."""
 
     hex: str
-    rgb: tuple[int, int, int]
-    hsl: tuple[int, int, int]
+    rgb: Tuple[int, int, int]
+    hsl: Tuple[int, int, int]
     name: Optional[str] = None
 
     @classmethod
@@ -185,8 +187,9 @@ class ColorInfo:
         # Remove # if present
         hex_color = hex_color.lstrip("#")
 
-        # Convert hex to RGB
-        rgb = tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
+        # Convert hex to RGB (explicit 3-tuple)
+        rgb_list = [int(hex_color[i : i + 2], 16) for i in (0, 2, 4)]
+        rgb: Tuple[int, int, int] = (rgb_list[0], rgb_list[1], rgb_list[2])
 
         # Convert RGB to HSL (simplified)
         r, g, b = [x / 255.0 for x in rgb]
@@ -195,15 +198,20 @@ class ColorInfo:
         diff = max_val - min_val
 
         # Lightness
-        l = (max_val + min_val) / 2
+        lightness = (max_val + min_val) / 2.0
+
+        # Initialize h and s as floats
+        h: float = 0.0
+        s: float = 0.0
 
         if diff == 0:
-            h = s = 0
+            h = 0.0
+            s = 0.0
         else:
             # Saturation
             s = (
                 diff / (2 - max_val - min_val)
-                if l > 0.5
+                if lightness > 0.5
                 else diff / (max_val + min_val)
             )
 
@@ -215,6 +223,6 @@ class ColorInfo:
             else:
                 h = ((r - g) / diff + 4) / 6
 
-        hsl = (int(h * 360), int(s * 100), int(l * 100))
+        hsl: Tuple[int, int, int] = (int(h * 360), int(s * 100), int(lightness * 100))
 
         return cls(hex=f"#{hex_color}", rgb=rgb, hsl=hsl)

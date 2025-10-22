@@ -145,7 +145,7 @@ color = qe.color(
 ).ask()
 
 # Progress tracking for multi-step workflows
-with qe.progress_tracker("Setting up project", total_steps=5) as progress:
+with qe.ProgressTracker("Setting up project", total_steps=5) as progress:
     progress.step("Creating directory structure...")
     # ... do work ...
     progress.step("Installing dependencies...")

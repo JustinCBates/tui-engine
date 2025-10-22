@@ -95,8 +95,8 @@ def parse_color(color_input: str) -> ColorInfo:
     # Default to treating as hex without #
     try:
         return ColorInfo.from_hex(f"#{color_input}")
-    except ValueError:
-        raise ValueError(f"Unable to parse color: {color_input}")
+    except ValueError as e:
+        raise ValueError(f"Unable to parse color: {color_input}") from e
 
 
 def render_markdown(text: str, width: Optional[int] = None) -> str:
@@ -278,7 +278,11 @@ def fuzzy_match(
 
 def validate_email(email: str) -> bool:
     """Validate email address format."""
-    pattern = r"^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+    pattern = (
+        r"^[a-zA-Z0-9.!#$%&'\*+/=?^_`{|}~-]+@"
+        r"[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?"
+        r"(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+    )
     return re.match(pattern, email) is not None
 
 

@@ -195,13 +195,20 @@ def apply_theme_to_style(theme: Theme, base_style: Optional[Style] = None) -> St
     # Add base styles first
     if hasattr(base_style, "_style_rules"):
         for rule in base_style._style_rules:
-            if hasattr(rule, "token") and hasattr(rule, "style"):
+            # rule may be a (token, style) tuple, or an object with token/style
+            if isinstance(rule, tuple) and len(rule) >= 2:
+                key, val = rule[0], rule[1]
+                merged_styles[key] = val
+            elif hasattr(rule, "token") and hasattr(rule, "style"):
                 merged_styles[rule.token] = rule.style
 
     # Override with theme styles
     if hasattr(theme_style, "_style_rules"):
         for rule in theme_style._style_rules:
-            if hasattr(rule, "token") and hasattr(rule, "style"):
+            if isinstance(rule, tuple) and len(rule) >= 2:
+                key, val = rule[0], rule[1]
+                merged_styles[key] = val
+            elif hasattr(rule, "token") and hasattr(rule, "style"):
                 merged_styles[rule.token] = rule.style
 
     return Style(list(merged_styles.items()))
@@ -210,7 +217,7 @@ def apply_theme_to_style(theme: Theme, base_style: Optional[Style] = None) -> St
 class StyleBuilder:
     """Builder pattern for creating custom styles."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.styles: Dict[str, str] = {}
 
     def set(self, token: str, style: str) -> "StyleBuilder":

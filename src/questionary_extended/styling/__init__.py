@@ -7,11 +7,11 @@ This module handles visual presentation and responsive layouts:
 - Styling Options: Card styling, component grouping, and visual enhancements
 """
 
-# Styling components will be imported here when implemented  
+# Styling components will be imported here when implemented
 # from .themes import ThemeManager
 # from .layouts import LayoutManager
 
 __all__ = [
     # "ThemeManager",
-    # "LayoutManager", 
+    # "LayoutManager",
 ]
