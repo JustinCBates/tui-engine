@@ -7,11 +7,8 @@ This module handles seamless integration with the original questionary library:
 - Result Conversion: Format conversion between questionary and qe results
 """
 
-# Integration components will be imported here when implemented
-# from .questionary_bridge import QuestionaryBridge
-# from .validators import EnhancedValidators
+from .questionary_bridge import QuestionaryBridge
 
 __all__ = [
-    # "QuestionaryBridge",
-    # "EnhancedValidators",
+    "QuestionaryBridge",
 ]

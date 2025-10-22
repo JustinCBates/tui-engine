@@ -35,9 +35,32 @@ class QuestionaryBridge:
                 "questionary is not available in the current environment."
             )
 
-        prompt = component.create_questionary_component()
+        try:
+            # Creating the prompt object may itself access prompt_toolkit's
+            # console output and raise NoConsoleScreenBufferError on Windows
+            # in headless environments. Wrap creation and asking to normalize
+            # those errors into RuntimeError for callers/tests.
+            prompt = component.create_questionary_component()
+        except Exception as e:
+            try:
+                from prompt_toolkit.output.win32 import NoConsoleScreenBufferError
+
+                if isinstance(e, NoConsoleScreenBufferError):
+                    raise RuntimeError("questionary not usable in this environment")
+            except Exception:
+                raise RuntimeError("questionary prompt creation failed: %s" % e)
+
         # The object returned by questionary functions normally implements `.ask()`
-        answer = prompt.ask()
+        try:
+            answer = prompt.ask()
+        except Exception as e:
+            try:
+                from prompt_toolkit.output.win32 import NoConsoleScreenBufferError
+
+                if isinstance(e, NoConsoleScreenBufferError):
+                    raise RuntimeError("questionary not usable in this environment")
+            except Exception:
+                raise RuntimeError("questionary prompt failed: %s" % e)
 
         # Persist into state using the component name (global key)
         # Callers may prefer to namespace the key (assembly.field) themselves

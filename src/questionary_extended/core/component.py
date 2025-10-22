@@ -108,6 +108,22 @@ def checkbox(name: str, message: str = None, choices: List[str] = None, **kwargs
     return Component(name, 'checkbox', message=message, choices=choices, **kwargs)
 
 
+def autocomplete(name: str, message: str = None, choices: List[str] = None, **kwargs) -> Component:
+    """Create an autocomplete component."""
+    if message is None:
+        message = f"Choose {name.replace('_', ' ')}:"
+    if choices is None:
+        choices = []
+    return Component(name, 'autocomplete', message=message, choices=choices, **kwargs)
+
+
+def path(name: str, message: str = None, **kwargs) -> Component:
+    """Create a path selection component."""
+    if message is None:
+        message = f"{name.replace('_', ' ').title()}:"
+    return Component(name, 'path', message=message, **kwargs)
+
+
 __all__ = [
     "Component",
     "text", 
@@ -115,4 +131,6 @@ __all__ = [
     "confirm", 
     "password",
     "checkbox",
+    "autocomplete",
+    "path",
 ]

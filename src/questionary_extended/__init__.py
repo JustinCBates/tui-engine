@@ -60,11 +60,16 @@ from .core import (
     Card,
     Assembly,
     Component,
-    text as text_component,
-    select as select_component,
-    confirm as confirm_component,
-    password as password_component,
-    checkbox as checkbox_component,
+    text,
+    select,
+    confirm,
+    password,
+    checkbox,
+    autocomplete,
+    path,
+    # convenience wrappers also available
+    # autocomplete and path are available via core.component
+    
     PageState,
 )
 
@@ -102,4 +107,12 @@ __all__ = [
     "format_number",
     "parse_color",
     "render_markdown",
+    # Core wrappers (compatibility)
+    "text",
+    "select",
+    "confirm",
+    "password",
+    "checkbox",
+    "autocomplete",
+    "path",
 ]

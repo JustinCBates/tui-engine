@@ -13,6 +13,7 @@ from .page import Page
 from .card import Card  
 from .assembly import Assembly
 from .component import Component, text, select, confirm, password, checkbox
+from .component import autocomplete, path
 from .state import PageState
 
 __all__ = [
@@ -27,4 +28,6 @@ __all__ = [
     "confirm",
     "password",
     "checkbox",
+    "autocomplete",
+    "path",
 ]
