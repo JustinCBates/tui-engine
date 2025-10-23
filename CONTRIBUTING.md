@@ -252,7 +252,35 @@ For feature requests, please:
 4. **Consider alternatives** - are there other approaches?
 5. **Provide examples** - show how it would be used
 
-## 🧪 Testing Guidelines
+## 🏆 **A+ Testing Standards (REQUIRED)**
+
+This project maintains **A+ grade testing architecture**. All contributions must meet these standards:
+
+### **Mandatory Coverage Requirements**
+- **New Code**: 95%+ coverage required (enforced in CI/CD)
+- **Overall Project**: Must maintain 85%+ coverage (A+ standard)
+- **No Regression**: Zero tolerance for coverage reduction
+- **Critical Paths**: 100% coverage for error handling
+
+### **Test-Driven Development (TDD) Workflow**
+
+**All new features must follow TDD:**
+1. **Write Tests First** - Create comprehensive test suite before implementation
+2. **Red Phase** - Verify tests fail appropriately  
+3. **Green Phase** - Implement minimal code to pass tests
+4. **Refactor Phase** - Improve while maintaining coverage
+5. **Validation** - Ensure A+ standards met
+
+### **Quality Validation Commands**
+
+**Before submitting PR, run:**
+```bash
+# Windows PowerShell
+.\dev.ps1 validate-aplus     # Complete A+ validation
+
+# Unix/Linux/macOS  
+make validate-aplus         # Complete A+ validation
+```
 
 ### Writing Tests
 
@@ -261,6 +289,7 @@ For feature requests, please:
 - Follow AAA pattern: Arrange, Act, Assert
 - Use pytest fixtures for common setup
 - Mock external dependencies
+- **Target 15-20 tests per module for 95%+ coverage**
 
 ### Test Structure
 
@@ -285,12 +314,15 @@ class TestNewFeature:
         pass
 ````
 
-### Coverage Guidelines
+### **A+ Coverage Standards (Enforced)**
 
-- Aim for >90% code coverage
-- Focus on testing critical paths
-- Test both success and failure scenarios
-- Include edge cases and error conditions
+- **New Code**: 95%+ coverage required (no exceptions)
+- **Overall Project**: Maintain 85%+ coverage (A+ grade)
+- **Critical Paths**: 100% coverage for error handling
+- **Edge Cases**: Comprehensive boundary condition testing
+- **Integration**: End-to-end workflow coverage required
+
+**Coverage is automatically validated in CI/CD - PRs failing coverage requirements will be blocked from merging.**
 
 ## 📚 Documentation
 

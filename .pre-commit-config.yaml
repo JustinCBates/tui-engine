@@ -39,6 +39,15 @@ repos:
 
   - repo: local
     hooks:
+      - id: coverage-check
+        name: Coverage Quality Gate (A+ Standard)
+        entry: python -m pytest --cov=src --cov-fail-under=85 --cov-report=term-missing -x
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]
+        verbose: true
+
       - id: pytest-check
         name: pytest-check
         entry: pytest

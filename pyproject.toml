@@ -157,16 +157,44 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
-addopts = "--cov=questionary_extended --cov-report=html --cov-report=term-missing"
+# A+ Grade: Enforce 85% coverage minimum with comprehensive reporting
+addopts = "--cov=src --cov-report=html --cov-report=term-missing --cov-report=json --cov-fail-under=85 --tb=short"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "property: marks property-based tests",
+]
 
 [tool.coverage.run]
 source = ["src/questionary_extended"]
-omit = ["*/tests/*", "*/test_*.py"]
+omit = [
+    "*/tests/*", 
+    "*/test_*.py",
+    "*/scripts/*",
+    "*/__pycache__/*",
+]
+branch = true  # Enable branch coverage for more thorough analysis
 
 [tool.coverage.report]
+# A+ Grade Standards
+precision = 2
+show_missing = true
+sort = "Cover"
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
+    "def __str__",
     "raise AssertionError",
-    "raise NotImplementedError",
+    "raise NotImplementedError", 
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
 ]
+
+[tool.coverage.html]
+directory = "htmlcov"
+title = "TUI-Engine Coverage Report (A+ Grade: 85%+ Required)"
+
+[tool.coverage.json]
+output = "coverage.json"
