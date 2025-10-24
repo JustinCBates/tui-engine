@@ -1,47 +1,108 @@
-# Questionary Extended Documentation
+# questionary-extended Documentation
 
-Welcome to the documentation for **Questionary Extended**, an advanced extension library for the popular `questionary` CLI prompt package.
+Welcome to the documentation for **questionary-extended**, a sophisticated extension library that enhances the popular `questionary` CLI prompt package with multi-page TUI capabilities while maintaining 100% backward compatibility.
 
-## Quick Links
+## 📋 Project Documentation
 
-- [Installation Guide](installation.md)
-- [Quick Start Tutorial](quickstart.md)
-- [API Reference](api/index.md)
-- [Examples](examples/index.md)
-- [Contributing](../CONTRIBUTING.md)
+### 🏗️ Architecture & Design
 
-## Overview
+- **[Architecture Design](architecture-design.md)** - Complete system design with all technical decisions
+- **[Implementation Plan](implementation-plan.md)** - Detailed development roadmap and milestones
+- **[Development Roadmap](development-roadmap.md)** - Week-by-week progress tracking and next steps
 
-Questionary Extended builds upon the excellent [questionary](https://github.com/tmbo/questionary) library to provide:
+### 📚 User Guides
 
-### 🎯 Advanced Input Types
+- [Installation Guide](installation.md) _(Coming Soon)_
+- [Quick Start Tutorial](quickstart.md) _(Coming Soon)_
+- [API Reference](api/index.md) _(Coming Soon)_
+- [Examples](examples/index.md) _(Coming Soon)_
+- [Migration Guide](migration.md) _(Coming Soon)_
 
-- **Numeric Input**: Integer/float with range validation and formatting
-- **Date/Time Input**: Smart date pickers with validation
-- **Color Input**: Hex, RGB, HSL color selection with preview
-- **Rating Input**: Star ratings, sliders, and scales
-- **Rich Text**: Markdown-enabled text with syntax highlighting
+### 🤝 Development
 
-### 🎨 Enhanced Selection
+- [Contributing Guidelines](../CONTRIBUTING.md)
+- [Testing Strategy](testing.md) _(Coming Soon)_
+- [Performance Benchmarks](benchmarks.md) _(Coming Soon)_
 
-- **Tree Navigation**: Hierarchical menu systems
-- **Fuzzy Search**: Smart search with ranking
-- **Grouped Choices**: Categorized selections
-- **Multi-Tag Input**: Tag selection with auto-completion
+## 🎯 Project Overview
 
-### 🎪 Advanced Features
+**questionary-extended** transforms the excellent [questionary](https://github.com/tmbo/questionary) library from simple CLI prompts into a powerful framework for building sophisticated Terminal User Interfaces (TUIs).
 
-- **Forms**: Complex forms with validation and conditional logic
-- **Wizards**: Multi-step workflows with progress tracking
-- **Table Input**: Spreadsheet-like data entry
-- **Theming**: Beautiful built-in themes and custom styling
+### ✨ Key Features
 
-### 🔗 Integration
+#### 🏗️ **Hierarchical Architecture**
 
-- **Drop-in Compatibility**: Works alongside existing questionary code
-- **Rich Integration**: Beautiful formatting with the rich library
-- **Async Support**: Full async/await compatibility
-- **Type Safety**: Complete type hints for better development
+- **Pages**: Top-level containers for complex workflows
+- **Cards**: Visual groupings with multiple styling options
+- **Assemblies**: Interactive component groups with conditional logic
+- **Components**: All questionary elements enhanced with new capabilities
+
+#### ⚡ **Event-Driven Interactions**
+
+- **Real-time Updates**: Components respond instantly to user input
+- **Conditional Logic**: Dynamic show/hide based on selections
+- **Cross-field Validation**: Sophisticated validation across multiple inputs
+- **Dependent Dropdowns**: Cascading selections with dynamic options
+
+#### 🎨 **Advanced UI Capabilities**
+
+- **Multi-page Wizards**: Complex workflows with progress tracking
+- **Responsive Layouts**: Horizontal groupings that adapt to terminal width
+- **Visual Styling**: Bordered cards, highlighted sections, collapsible areas
+- **Smart Navigation**: Intelligent scrolling and pagination
+
+#### 🔗 **100% Backward Compatibility**
+
+- **Seamless Integration**: Existing `questionary` code works unchanged
+- **Graduated Adoption**: Add features incrementally without breaking changes
+- **Familiar APIs**: Enhanced components maintain questionary behavior
+- **Easy Migration**: Clear upgrade path with comprehensive guides
+
+### 🚀 **Why questionary-extended?**
+
+Transform this simple questionary form:
+
+```python
+import questionary
+
+result = questionary.form(
+    name=questionary.text("App name"),
+    type=questionary.select("Type", ["web", "api"])
+).ask()
+```
+
+Into this sophisticated multi-page wizard:
+
+```python
+import questionary_extended as qe
+
+result = qe.Page("Application Setup")
+  .progress_bar(current=1, total=3)
+
+  .card("Basic Configuration")
+    .text("name", validator=qe.validators.required)
+    .select("type", ["web", "api", "cli"])
+
+  .assembly("web_config")
+    .select("framework", ["flask", "django", "fastapi"], when="type == 'web'")
+    .text("port", when="type == 'web'", default="8000")
+    .on_change("framework", lambda value, assembly:
+        assembly.show_card("advanced") if value == "django" else assembly.hide_card("advanced")
+    )
+
+  .card("advanced", style="collapsible")
+    .text("secret_key", when="web_config.framework == 'django'")
+    .checkbox("debug", when="web_config.framework == 'django'")
+
+  .run()
+```
+
+### � **Project Status**
+
+- **✅ Architecture**: Complete design with all technical decisions finalized
+- **🚧 Implementation**: Ready to begin Phase 1 development
+- **📋 Planning**: Detailed 8-week roadmap with clear milestones
+- **🎯 Timeline**: Core features delivery in 6-8 weeks
 
 ## Getting Started
 
