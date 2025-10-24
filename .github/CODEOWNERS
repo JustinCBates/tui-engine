@@ -1,0 +1,9 @@
+# Code owners for excluded wrapper files — require review for changes
+
+# Assign ownership to repository owner
+
+/src/questionary_extended/prompts.py @JustinCBates
+/src/questionary_extended/prompts_core.py @JustinCBates
+/src/questionary_extended/cli.py @JustinCBates
+/src/questionary_extended/integration/ @JustinCBates
+/src/questionary_extended/styles.py @JustinCBates

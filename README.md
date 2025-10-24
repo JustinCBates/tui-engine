@@ -162,7 +162,7 @@ Full documentation is available at: [questionary-extended.readthedocs.io](https:
 This project maintains professional-grade testing standards:
 
 - **204 comprehensive tests** with 100% pass rate
-- **85%+ code coverage** enforced in CI/CD pipeline  
+- **85%+ code coverage** enforced in CI/CD pipeline
 - **Automated quality gates** preventing regression
 - **TDD workflow** with pre-commit hooks and coverage tracking
 
@@ -173,7 +173,7 @@ This project maintains professional-grade testing standards:
 .\dev.ps1 coverage          # Run tests with A+ coverage validation
 .\dev.ps1 validate-aplus    # Complete A+ standards validation
 
-# Unix/Linux/macOS  
+# Unix/Linux/macOS
 make coverage               # Run tests with A+ coverage validation
 make validate-aplus         # Complete A+ standards validation
 ```

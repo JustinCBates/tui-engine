@@ -15,7 +15,7 @@ try:
 except Exception:  # pragma: no cover - runtime environment dependent
     questionary = None  # type: ignore
 
-from ..core import Assembly, Card, Component, PageState
+from ..core import Component, PageState
 
 
 class QuestionaryBridge:
@@ -88,29 +88,27 @@ class QuestionaryBridge:
     def _walk_components(self, items: Iterable[Any]) -> Iterable[Component]:
         """Yield Component instances from nested Card/Assembly/component containers."""
         for item in items:
-            if isinstance(item, Component):
+            # Prefer duck-typing over strict isinstance checks so tests that
+            # load modules in isolation (file-based imports) still work when
+            # objects implement the expected interface.
+            if hasattr(item, "create_questionary_component") and hasattr(item, "name"):
+                # Component-like object
                 yield item
-            elif isinstance(item, Card):
-                # Yield components inside the Card
-                for c in getattr(item, "components", []):
-                    if isinstance(c, Component):
-                        yield c
-                    else:
-                        # Nested containers (Assembly) handled below: descend into
-                        # the child's components rather than the parent's so we
-                        # correctly traverse nested container objects.
-                        for c2 in self._walk_components(getattr(c, "components", [])):
-                            yield c2
-            elif isinstance(item, Assembly):
-                for c in getattr(item, "components", []):
-                    if isinstance(c, Component):
-                        yield c
-                    else:
-                        for c2 in self._walk_components(getattr(c, "components", [])):
-                            yield c2
-            else:
-                # Unknown item types are ignored for now
                 continue
+
+            # Container-like: object that exposes a `components` attribute
+            comps = getattr(item, "components", None)
+            if comps is None:
+                # Unknown/unsupported item: ignore
+                continue
+
+            # Iterate the child components and recurse where necessary
+            for c in comps:
+                # If child looks like a Component, yield it; otherwise recurse
+                if hasattr(c, "create_questionary_component") and hasattr(c, "name"):
+                    yield c
+                else:
+                    yield from self._walk_components(getattr(c, "components", []))
 
     def run(self, root_items: Iterable[Any]) -> None:
         """

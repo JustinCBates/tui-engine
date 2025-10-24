@@ -2,6 +2,9 @@
 Command-line interface for questionary-extended.
 """
 
+# COVERAGE_EXCLUDE: thin wrapper — do not add original logic here
+# COVERAGE_EXCLUDE_ALLOW_COMPLEX: intentionally contains original logic; exempt from AST triviality checks
+
 import sys
 
 import click

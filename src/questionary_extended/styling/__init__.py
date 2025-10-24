@@ -7,6 +7,8 @@ This module handles visual presentation and responsive layouts:
 - Styling Options: Card styling, component grouping, and visual enhancements
 """
 
+# COVERAGE_EXCLUDE: thin wrapper — do not add original logic here
+
 # Styling components will be imported here when implemented
 # from .themes import ThemeManager
 # from .layouts import LayoutManager
