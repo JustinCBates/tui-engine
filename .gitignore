@@ -234,6 +234,7 @@ demo_fundamental_features.py
 !README.md                    # Keep main README for production
 !CHANGELOG.md                 # Keep changelog for production
 !LICENSE.md                   # Keep license for production
+!TESTING_ARCHITECTURE.md      # Keep the test framework design doc tracked
 DESIGN_*.md
 STATUS_REPORT.md
 GITHUB_ACTIONS_COMPLETE.md
