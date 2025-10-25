@@ -9,7 +9,6 @@ This repository configures a per-test logging fixture used during pytest runs. L
 
   ```powershell
   $env:TEST_LOG_ECHO = '1'
-  Set-Location 'C:\Development\tui\tui-engine'
   python -m pytest -q tests/unit/path/to/test_file.py::test_name
   ```
 
