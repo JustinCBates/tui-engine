@@ -160,8 +160,7 @@ cython_debug/
 .idea/
 
 # VS Code
-.vscode/
-*.code-workspace
+# Workspace editor settings are tracked in the repository (see .gitignore.build for build-only ignores)
 
 # Local configuration files
 .env.local
@@ -226,3 +225,4 @@ logs/
 
 # See `.gitignore.build` for build-specific excludes.
 dist-info/
+# VS Code\n.vscode/\n*.code-workspace\n
