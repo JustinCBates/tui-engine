@@ -1,0 +1,36 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "python.defaultInterpreterPath": "/usr/bin/python3",
+        "python.terminal.activateEnvironment": false,
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestArgs": [
+            "tests",
+            "--cov=src",
+            "--cov-report=term-missing",
+            "--cov-report=html",
+            "--cov-report=json",
+            "--cov-fail-under=85",
+            "--tb=short",
+            "-v"
+        ],
+        "python.testing.cwd": "${workspaceFolder}",
+        "python.testing.autoTestDiscoverOnSaveEnabled": true,
+        "terminal.integrated.env.linux": {
+            "PATH": "/home/vpsuser/.local/bin:${env:PATH}"
+        }
+    },
+    "extensions": {
+        "recommendations": [
+            "ms-python.python",
+            "ryanluker.vscode-coverage-gutters",
+            "ms-python.pylint",
+            "ms-python.black-formatter"
+        ]
+    }
+}

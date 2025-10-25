@@ -1,0 +1,141 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run All Tests",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "-m", "pytest",
+                "tests",
+                "--cov=src",
+                "--cov-report=term-missing",
+                "--cov-report=html",
+                "--cov-report=json",
+                "--cov-fail-under=85",
+                "--tb=short",
+                "-v"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "PATH": "/home/vpsuser/.local/bin:${env:PATH}"
+                }
+            }
+        },
+        {
+            "label": "Run Tests with Coverage",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "-m", "pytest",
+                "tests",
+                "--cov=src/questionary_extended",
+                "--cov-report=html:htmlcov",
+                "--cov-report=term-missing",
+                "--cov-report=json:coverage.json",
+                "--cov-fail-under=85",
+                "-v"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "PATH": "/home/vpsuser/.local/bin:${env:PATH}"
+                }
+            }
+        },
+        {
+            "label": "Run Current Test File",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "-m", "pytest",
+                "${file}",
+                "-v",
+                "--tb=short"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "PATH": "/home/vpsuser/.local/bin:${env:PATH}"
+                }
+            }
+        },
+        {
+            "label": "Quick Test (No Coverage)",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "-m", "pytest",
+                "tests",
+                "-v",
+                "--tb=short"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "PATH": "/home/vpsuser/.local/bin:${env:PATH}"
+                }
+            }
+        },
+        {
+            "label": "Install Dev Dependencies",
+            "type": "shell",
+            "command": "pip3",
+            "args": [
+                "install", "-e", ".[dev]"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "PATH": "/home/vpsuser/.local/bin:${env:PATH}"
+                }
+            }
+        }
+    ]
+}
