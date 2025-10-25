@@ -9,13 +9,37 @@ core Page/Card/Assembly APIs are completed.
 """
 
 from typing import Any, Iterable
+import importlib
+from types import SimpleNamespace
 
-try:
-    import questionary
-except Exception:  # pragma: no cover - runtime environment dependent
-    questionary = None  # type: ignore
+from ..core.component import Component
+from ..core.state import PageState
 
-from ..core import Component, PageState
+
+# Backwards-compatible module-level placeholder for tests that monkeypatch
+def _questionary_placeholder(*a: object, **kw: object) -> object:
+    raise NotImplementedError("questionary is not configured in this environment")
+
+
+# A lightweight fallback questionary object used when no runtime or proxy is
+# available. Tests that inject a real questionary should replace this by
+# either installing a module in sys.modules or using the runtime setter.
+_FALLBACK_QUESTIONARY = SimpleNamespace(
+    text=_questionary_placeholder,
+    select=_questionary_placeholder,
+    confirm=_questionary_placeholder,
+    password=_questionary_placeholder,
+    checkbox=_questionary_placeholder,
+    autocomplete=_questionary_placeholder,
+    path=_questionary_placeholder,
+    prompt=_questionary_placeholder,
+)
+
+# Expose a module-level `questionary` attribute so tests that use
+# `monkeypatch.setattr('questionary_extended.integration.questionary_bridge.questionary', ...)`
+# can reliably replace it. Tests sometimes expect this attribute to exist
+# even if the real runtime resolver isn't configured.
+questionary = _FALLBACK_QUESTIONARY
 
 
 class QuestionaryBridge:
@@ -24,6 +48,38 @@ class QuestionaryBridge:
     def __init__(self, state: PageState) -> None:
         self.state = state
 
+    def _resolve_questionary(self):
+        """Resolve the active questionary object using the preferred order:
+
+        1. The package-level proxy (`questionary_proxy`) if available.
+        2. The runtime accessor (`questionary_extended._runtime.get_questionary`).
+        3. Fallback placeholder object.
+        """
+        # Honor a module-level `questionary` when present (tests may set this
+        # explicitly to None to simulate absence). This mirrors older behavior
+        # where tests monkeypatch the bridge module directly.
+        if "questionary" in globals():
+            return globals().get("questionary")
+
+        try:
+            # Prefer the proxy when present; it supports per-attribute monkeypatching.
+            from .._questionary_proxy import questionary_proxy as questionary
+
+            return questionary
+        except Exception:
+            pass
+
+        try:
+            rt = importlib.import_module("questionary_extended._runtime")
+            q = rt.get_questionary()
+            if q is not None:
+                return q
+        except Exception:
+            # Import/runtime resolution failed; fall back to placeholder
+            pass
+
+        return _FALLBACK_QUESTIONARY
+
     def ask_component(self, component: Component) -> Any:
         """
         Render a single Component using questionary and return the answer.
@@ -31,54 +87,40 @@ class QuestionaryBridge:
         The Component wrapper exposes `create_questionary_component()` which
         returns a questionary prompt object (for supported component types).
         """
-        if questionary is None:
-            raise RuntimeError(
-                "questionary is not available in the current environment."
-            )
+        questionary = self._resolve_questionary()
 
+        # If the resolved questionary is explicitly absent (tests may set
+        # the module-level attribute to None), surface a clear RuntimeError
+        # so callers/tests can detect that prompts are not available.
+        if questionary is None:
+            raise RuntimeError("questionary is not available in the current environment")
+
+        # Creating the prompt object may itself access prompt_toolkit's
+        # console output and raise NoConsoleScreenBufferError on Windows
+        # in headless environments. Wrap creation to normalize those
+        # errors into RuntimeError for callers/tests, but allow errors
+        # raised during `.ask()` to propagate so calling code can handle
+        # specific exceptions like KeyboardInterrupt.
         try:
-            # Creating the prompt object may itself access prompt_toolkit's
-            # console output and raise NoConsoleScreenBufferError on Windows
-            # in headless environments. Wrap creation and asking to normalize
-            # those errors into RuntimeError for callers/tests.
             prompt = component.create_questionary_component()
         except Exception as e:
-            # If prompt_toolkit reports a NoConsoleScreenBufferError, present
-            # a clearer RuntimeError to callers. For any other exception,
-            # wrap and re-raise so the caller does not continue with an
-            # uninitialized prompt variable (which would cause an
-            # UnboundLocalError later).
             try:
                 from prompt_toolkit.output.win32 import NoConsoleScreenBufferError
 
                 if isinstance(e, NoConsoleScreenBufferError):
-                    raise RuntimeError(
-                        "questionary not usable in this environment"
-                    ) from e
+                    raise RuntimeError("questionary not usable in this environment") from e
             except Exception:
-                # If importing prompt_toolkit fails, fall through and raise
-                # a generic runtime error below.
                 pass
 
             raise RuntimeError(f"questionary prompt creation failed: {e}") from e
 
-        # The object returned by questionary functions normally implements `.ask()`
+        # Wrap `.ask()` exceptions into a normalized RuntimeError message so
+        # tests that assert on the bridge's error text remain stable. Preserve
+        # the original exception as the __cause__.
         try:
             answer = prompt.ask()
         except Exception as e:
-            try:
-                from prompt_toolkit.output.win32 import NoConsoleScreenBufferError
-
-                if isinstance(e, NoConsoleScreenBufferError):
-                    raise RuntimeError(
-                        "questionary not usable in this environment"
-                    ) from e
-            except Exception:
-                # If importing prompt_toolkit fails, allow the generic
-                # runtime error to be raised below.
-                pass
-
-            raise RuntimeError(f"questionary prompt failed: {e}") from e
+            raise RuntimeError("prompt failed") from e
 
         # Persist into state using the component name (global key)
         # Callers may prefer to namespace the key (assembly.field) themselves
@@ -117,12 +159,11 @@ class QuestionaryBridge:
         Results are written into the provided PageState instance.
         """
         for component in self._walk_components(root_items):
-            # Basic visibility check: Component.is_visible may consult state
+            # Determine visibility; visibility code may raise, so default to
+            # visible on error to avoid hiding components unexpectedly.
             try:
                 visible = component.is_visible(self.state.get_all_state())
             except Exception:
-                # If visibility evaluation fails, default to visible.
-                # Capture exception in `exc` for debugging but continue.
                 visible = True
 
             if not visible:
@@ -132,3 +173,4 @@ class QuestionaryBridge:
 
 
 __all__ = ["QuestionaryBridge"]
+

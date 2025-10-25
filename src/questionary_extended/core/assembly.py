@@ -49,8 +49,24 @@ class Assembly:
         Returns:
             Self for method chaining
         """
-        # Implementation pending Component wrappers
-        raise NotImplementedError("Component wrappers not yet implemented")
+        # Provide a minimal implementation that creates a Component using
+        # the core convenience wrapper and appends it to this assembly's
+        # component list. This keeps smoke tests simple while concrete
+        # runners may override rendering behaviour.
+        from .component import text as _text_component
+
+        comp = _text_component(name, **kwargs)
+        # Namespace the component name with the assembly's name so that
+        # PageState receives keys like 'assembly.field' when the bridge
+        # persists answers. Tests expect assembly-scoped keys (e.g. 'a.x').
+        try:
+            comp.name = f"{self.name}.{name}"
+        except Exception:
+            # If the component is not writable for some reason, fall back
+            # to leaving the original name to avoid breaking callers.
+            pass
+        self.components.append(comp)
+        return self
 
     def select(self, name: str, choices: List[str], **kwargs: Any) -> "Assembly":
         """
@@ -64,8 +80,17 @@ class Assembly:
         Returns:
             Self for method chaining
         """
-        # Implementation pending Component wrappers
-        raise NotImplementedError("Component wrappers not yet implemented")
+        from .component import select as _select_component
+
+        comp = _select_component(name, choices=choices, **kwargs)
+        # Namespace the component name with the assembly's name so that
+        # answers are stored under 'assembly.field' in PageState.
+        try:
+            comp.name = f"{self.name}.{name}"
+        except Exception:
+            pass
+        self.components.append(comp)
+        return self
 
     def on_change(self, field: str, handler: Callable[..., Any]) -> "Assembly":
         """
@@ -113,23 +138,19 @@ class Assembly:
 
     def show_components(self, component_names: List[str]) -> None:
         """Show specified components."""
-        # Implementation pending Component system
-        raise NotImplementedError("Component interactions not yet implemented")
+        raise NotImplementedError("Assembly show_components is not implemented")
 
     def hide_components(self, component_names: List[str]) -> None:
         """Hide specified components."""
-        # Implementation pending Component system
-        raise NotImplementedError("Component interactions not yet implemented")
+        raise NotImplementedError("Assembly hide_components is not implemented")
 
     def get_value(self, field: str) -> Any:
         """Get value from assembly's local state."""
-        # Implementation pending State system
-        raise NotImplementedError("State management not yet implemented")
+        raise NotImplementedError("Assembly get_value is not implemented")
 
     def get_related_value(self, field_path: str) -> Any:
         """Get value from other assemblies (cross-boundary access)."""
-        # Implementation pending State system
-        raise NotImplementedError("State management not yet implemented")
+        raise NotImplementedError("Assembly get_related_value is not implemented")
 
     def parent(self) -> "Page":
         """Return parent Page for navigation."""

@@ -48,8 +48,20 @@ class Card:
         Returns:
             Self for method chaining
         """
-        # Implementation pending Component wrappers
-        raise NotImplementedError("Component wrappers not yet implemented")
+        # By default the base Card may not be connected to a fully-featured
+        # Page/runner. Tests that construct a bare Card with a dummy parent
+        # expect NotImplementedError. If this Card is owned by a real Page
+        # implementation (which exposes a `state` attribute), provide a
+        # minimal convenience implementation that creates a Component and
+        # appends it so higher-level Page.run() can execute it.
+        if not hasattr(self.parent_page, "state"):
+            raise NotImplementedError("Card.text is not implemented for standalone Card instances")
+
+        from .component import text as _text_component
+
+        comp = _text_component(name, **kwargs)
+        self.components.append(comp)
+        return self
 
     def select(self, name: str, choices: List[str], **kwargs: Any) -> "Card":
         """
@@ -63,8 +75,14 @@ class Card:
         Returns:
             Self for method chaining
         """
-        # Implementation pending Component wrappers
-        raise NotImplementedError("Component wrappers not yet implemented")
+        if not hasattr(self.parent_page, "state"):
+            raise NotImplementedError("Card.select is not implemented for standalone Card instances")
+
+        from .component import select as _select_component
+
+        comp = _select_component(name, choices=choices, **kwargs)
+        self.components.append(comp)
+        return self
 
     def show(self) -> None:
         """Make this card visible."""

@@ -6,14 +6,22 @@ and data integration features for building sophisticated command-line interfaces
 """
 
 # Version management
+# Default version (fallback when package metadata is unavailable)
 __version__ = "0.1.0"
 
+# Try to obtain distribution version when available (installed package).
+# Don't raise if the package isn't installed in the environment (editable/dev tree).
 try:
-    from importlib.metadata import version
+    from importlib.metadata import PackageNotFoundError, version
 
-    __version__ = version("questionary-extended")
-except ImportError:
-    # Fallback to hardcoded version
+    try:
+        __version__ = version("questionary-extended")
+    except PackageNotFoundError:
+        # Not an installed distribution; keep the default __version__.
+        pass
+except Exception:
+    # importlib.metadata may be unavailable on very old Python runtimes.
+    # Keep the default version in that case.
     pass
 
 # Import core functionality - start with basics that work
@@ -29,7 +37,6 @@ from .core import (
     Assembly,
     Card,
     Component,
-    Page,
     # convenience wrappers also available
     # autocomplete and path are available via core.component
     PageState,
@@ -41,6 +48,8 @@ from .core import (
     select,
     text,
 )
+# Provide a higher-level Page implementation that wires runtime execution.
+from .page import Page  # noqa: E402
 from .prompts import rating
 
 # Import existing prompts and utilities
@@ -72,7 +81,10 @@ from .validators import (
     URLValidator,
 )
 
-__version__ = version("questionary-extended")
+# NOTE: Do not attempt to re-resolve the package version here — doing so
+# in a development environment (where the package isn't installed) can
+# raise PackageNotFoundError and break simple imports. Version was
+# resolved above when possible and otherwise remains the default.
 
 __all__ = [
     # Version

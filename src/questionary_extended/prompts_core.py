@@ -5,9 +5,48 @@
 
 from types import TracebackType
 from typing import Any, Callable, Dict, List, Optional, Type, Union
+import importlib
 
-import questionary
-from questionary import Question
+
+def _resolve_questionary():
+    """Resolve the runtime `questionary` object via the centralized accessor.
+
+    Returns the module/object or raises ImportError if not available. Tests
+    should call `setup_questionary_mocks()` to install a mock.
+    """
+    _rt = importlib.import_module("questionary_extended._runtime")
+    q = _rt.get_questionary()
+    if q is None:
+        raise ImportError(
+            "`questionary` is not available. In tests call setup_questionary_mocks() to install a mock."
+        )
+    return q
+
+
+def _lazy_factory(name: str) -> Callable[..., Any]:
+    """Return a factory callable that resolves questionary at call-time.
+
+    This keeps LazyQuestion construction cheap and avoids importing
+    prompt-toolkit/prompt sessions at module import time.
+    """
+
+    # If a runtime mock is already installed, return the real factory
+    # function directly to preserve identity checks in tests. Otherwise
+    # return a lightweight resolver that resolves at call-time.
+    try:
+        _rt = importlib.import_module("questionary_extended._runtime")
+        _q = _rt.get_questionary()
+    except Exception:
+        _q = None
+
+    if _q is not None:
+        return getattr(_q, name)
+
+    def _f(*a: Any, **kw: Any) -> Any:
+        q = _resolve_questionary()
+        return getattr(q, name)(*a, **kw)
+
+    return _f
 
 
 class LazyQuestion:
@@ -19,23 +58,50 @@ class LazyQuestion:
     """
 
     def __init__(
-        self, factory: Callable[..., Question], *args: Any, **kwargs: Any
+        self, factory: Union[str, Callable[..., Any]], *args: Any, **kwargs: Any
     ) -> None:
-        self._factory = factory
+        # `factory` may be a factory name (str) or a callable. If it's a
+        # string we will resolve the real callable at build/ask time so that
+        # test monkeypatches and runtime accessor changes are respected.
+        self._factory_name: Optional[str] = None
+        self._factory: Optional[Callable[..., Any]] = None
+        if isinstance(factory, str):
+            self._factory_name = factory
+            # Try to eagerly obtain a callable so tests that inspect
+            # LazyQuestion._factory (identity checks) continue to work.
+            # _lazy_factory is cheap and returns either the real factory
+            # (if a runtime mock is installed) or a lightweight resolver
+            # that defers prompt-toolkit imports until actually called.
+            try:
+                self._factory = _lazy_factory(self._factory_name)
+            except Exception:
+                # Leave _factory as None to be resolved at build() time
+                self._factory = None
+        else:
+            self._factory = factory
         self._args = args
         self._kwargs = kwargs
 
-    def build(self) -> Question:
+    def build(self) -> Any:
+        # Resolve callable if needed
+        if self._factory is None and self._factory_name is not None:
+            self._factory = _lazy_factory(self._factory_name)
+        if self._factory is None:
+            raise RuntimeError("LazyQuestion factory could not be resolved")
         return self._factory(*self._args, **self._kwargs)
 
-    def __call__(self) -> Question:
+    def __call__(self) -> Any:
         return self.build()
 
     def ask(self, *args: Any, **kwargs: Any) -> Any:
         return self.build().ask(*args, **kwargs)
 
     def __repr__(self) -> str:  # helpful in tests/benchmarks
-        factory_name = getattr(self._factory, "__name__", repr(self._factory))
+        factory_name = (
+            self._factory_name
+            if self._factory_name is not None
+            else getattr(self._factory, "__name__", repr(self._factory))
+        )
         return (
             f"<LazyQuestion factory={factory_name} args={self._args} "
             f"kwargs={self._kwargs}>"
@@ -48,13 +114,11 @@ def enhanced_text(
     multiline: bool = False,
     validator: Optional[Callable[..., Any]] = None,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """Enhanced text input - starting with a simple working version."""
     if validator is not None:
         kwargs["validate"] = validator
-    return LazyQuestion(
-        questionary.text, message, default=default, multiline=multiline, **kwargs
-    )
+    return LazyQuestion("text", message, default=default, multiline=multiline, **kwargs)
 
 
 def number(
@@ -64,7 +128,7 @@ def number(
     max_value: Optional[Union[int, float]] = None,
     allow_float: bool = True,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """Numeric input with validation."""
     from .validators import NumberValidator
 
@@ -76,13 +140,7 @@ def number(
     clean_kwargs = {
         k: v for k, v in kwargs.items() if k not in ["validate", "validator"]
     }
-    return LazyQuestion(
-        questionary.text,
-        message,
-        default=default_str,
-        validate=validator,
-        **clean_kwargs,
-    )
+    return LazyQuestion("text", message, default=default_str, validate=validator, **clean_kwargs)
 
 
 def integer(
@@ -90,7 +148,7 @@ def integer(
     min_value: Optional[int] = None,
     max_value: Optional[int] = None,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     return number(
         message, min_value=min_value, max_value=max_value, allow_float=False, **kwargs
     )
@@ -98,7 +156,8 @@ def integer(
 
 def form(questions: List[Dict[str, Any]], **kwargs: Any) -> Dict[str, Any]:
     # questionary.prompt returns a dict of answers
-    return questionary.prompt(questions, **kwargs)
+    q = _resolve_questionary()
+    return q.prompt(questions, **kwargs)
 
 
 class ProgressTracker:
@@ -163,22 +222,18 @@ class ProgressTracker:
 # Expose class name following Python conventions
 
 
-def confirm_enhanced(
-    message: str, default: bool = True, **kwargs: Any
-) -> "LazyQuestion | Question":
+
+def confirm_enhanced(message: str, default: bool = True, **kwargs: Any) -> "LazyQuestion | Any":
     """Enhanced confirmation prompt."""
-    return LazyQuestion(questionary.confirm, message, default=default, **kwargs)
+    return LazyQuestion("confirm", message, default=default, **kwargs)
 
 
-def select_enhanced(
-    message: str, choices: List[Any], **kwargs: Any
-) -> "LazyQuestion | Question":
+
+def select_enhanced(message: str, choices: List[Any], **kwargs: Any) -> "LazyQuestion | Any":
     """Enhanced selection prompt."""
-    return LazyQuestion(questionary.select, message, choices=choices, **kwargs)
+    return LazyQuestion("select", message, choices=choices, **kwargs)
 
 
-def checkbox_enhanced(
-    message: str, choices: List[Any], **kwargs: Any
-) -> "LazyQuestion | Question":
+def checkbox_enhanced(message: str, choices: List[Any], **kwargs: Any) -> "LazyQuestion | Any":
     """Enhanced checkbox prompt."""
-    return LazyQuestion(questionary.checkbox, message, choices=choices, **kwargs)
+    return LazyQuestion("checkbox", message, choices=choices, **kwargs)

@@ -1,3 +1,49 @@
+# Per-test logs and CI artifacts
+
+This repository configures a per-test logging fixture used during pytest runs. Logs are written per test to a `test-logs/` directory by default and can be adjusted with environment variables.
+
+## Quick local usage
+
+- Default log directory: `test-logs/` in the repository root.
+- Toggle real-time echoing to the terminal during tests:
+
+  ```powershell
+  $env:TEST_LOG_ECHO = '1'
+  Set-Location 'C:\Development\tui\tui-engine'
+  python -m pytest -q tests/unit/path/to/test_file.py::test_name
+  ```
+
+- Produce JSON-lines logs (useful for CI ingestion):
+
+  ```powershell
+  $env:TEST_LOG_JSON = '1'
+  $env:TEST_LOG_REDACT = '1'  # enable simple regex-based redaction
+  python -m pytest -q tests/unit/...
+  ```
+
+## Env vars
+
+- `TEST_LOG_DIR` — base directory for per-test logs (default: `test-logs/`).
+- `TEST_LOG_LEVEL` — logging level (DEBUG/INFO/WARNING/ERROR). Default: INFO.
+- `TEST_LOG_JSON` — if set to `1` emit JSON-lines per log record.
+- `TEST_LOG_REDACT` — if set to `1` run a simple regex-based redaction pass over log lines before writing.
+- `TEST_LOG_ECHO` — if set to `1` also stream logs to stdout in real-time while tests run.
+- `TEST_LOG_REDACT_PATTERNS` — optional JSON array or semicolon-separated regex list to customize redaction.
+
+## Inspecting logs
+
+Logs are organized by worker id and sanitized nodeid, e.g.: `test-logs/gw0/tests-unit-test_foo.py__test_bar.log`.
+
+## CI integration
+
+There is a GitHub Actions workflow that runs tests and uploads `test-logs/` as an artifact when the test job fails. See `.github/workflows/test-logs-upload.yml`.
+
+If you want different behavior (always upload logs, or change the artifact retention), update the workflow in `.github/workflows/`.
+
+## Contact
+
+If you need changes to the logging format (structured fields, different redaction policy, or alternative storage), open an issue or a PR with proposed changes.
+
 # Questionary Extended
 
 [![CI/CD Pipeline](https://github.com/JustinCBates/tui-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/JustinCBates/tui-engine/actions/workflows/ci.yml)
@@ -176,6 +222,16 @@ This project maintains professional-grade testing standards:
 # Unix/Linux/macOS
 make coverage               # Run tests with A+ coverage validation
 make validate-aplus         # Complete A+ standards validation
+```
+
+### PowerShell helper note
+
+The repository ships `dev.ps1`, a PowerShell-first helper script that exposes session-safe functions (for example `Invoke-ModerateTests` and `Ensure-GhOnPath`). Use `.\dev.ps1 test-moderate` to run a focused subset of tests that exercise the questionary/prompt/component/cli code paths on Windows. The script will attempt to ensure the GitHub CLI (`gh`) is discoverable in the current session by prepending common install folders to `$env:PATH` if needed.
+
+If you prefer to run the focused test subset directly, use the following PowerShell-safe command:
+
+```powershell
+python -m pytest -q tests/unit -k 'questionary or prompts or component or cli'
 ```
 
 **Testing Documentation**: See [docs/TESTING_BEST_PRACTICES.md](docs/TESTING_BEST_PRACTICES.md) for complete testing standards and workflow.

@@ -1,4 +1,13 @@
 repos:
+  - repo: local
+    hooks:
+      - id: no-bash-in-docs
+        name: Detect bash-only constructs in docs and scripts
+        entry: python scripts/check_no_bash.py
+        language: python
+        files: '(^docs/|^scripts/|\.sh$|\.md$)'
+        stages: [commit]
+repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:

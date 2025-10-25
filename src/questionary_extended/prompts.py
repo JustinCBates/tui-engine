@@ -3,8 +3,7 @@ Advanced prompt types that extend questionary's capabilities.
 This is the main prompts module - imports working implementations from prompts_core.
 """
 
-# COVERAGE_EXCLUDE: thin wrapper — do not add original logic here
-# COVERAGE_EXCLUDE_ALLOW_COMPLEX: intentionally contains original logic; exempt from AST triviality checks
+# (Coverage markers removed so prompt tests run in CI)
 
 # Import working core implementations
 import datetime as _datetime
@@ -12,14 +11,105 @@ import datetime as _datetime
 # Import types for advanced features
 from typing import Any, Dict, List, Optional, Union
 
-# Re-export questionary's standard prompts for convenience
-import questionary
-from questionary import (
-    Question,  # Import Question type
-)
+import importlib
+from types import SimpleNamespace
+
+# Use the shared proxy as the module-level `questionary` object. This keeps
+# imports safe and lets tests monkeypatch `questionary` attributes on this
+# module when needed.
+try:
+    from ._questionary_proxy import questionary_proxy as questionary
+except Exception:
+    from types import SimpleNamespace
+
+    def _questionary_placeholder(*a: object, **kw: object) -> object:
+        raise NotImplementedError("questionary is not configured in this environment")
+
+    questionary = SimpleNamespace(
+        text=_questionary_placeholder,
+        select=_questionary_placeholder,
+        confirm=_questionary_placeholder,
+        password=_questionary_placeholder,
+        checkbox=_questionary_placeholder,
+        autocomplete=_questionary_placeholder,
+        path=_questionary_placeholder,
+        prompt=_questionary_placeholder,
+    )
+
+def _resolve_questionary():
+    _rt = importlib.import_module("questionary_extended._runtime")
+    q = _rt.get_questionary()
+    if q is None:
+        raise ImportError(
+            "`questionary` is not available. In tests call setup_questionary_mocks() to install a mock."
+        )
+    return q
+
+
+def _lazy_factory(name: str):
+    def _f(*a, **kw):
+        q = _resolve_questionary()
+        return getattr(q, name)(*a, **kw)
+
+    return _f
 
 from .components import Column, ProgressStep
-from .prompts_core import LazyQuestion
+try:
+    # Prefer direct relative import (normal package import)
+    from .prompts_core import LazyQuestion, _lazy_factory
+except Exception:
+    # Fallback for tests that load modules from a path where relative
+    # imports may fail; import by absolute package name instead.
+    import importlib as _il
+
+    _pc = _il.import_module("questionary_extended.prompts_core")
+    # Use _lazy_factory from the imported module when available; otherwise
+    # fall back to the local _lazy_factory defined above. If the imported
+    # object is a test-provided stub (e.g., types.SimpleNamespace) that
+    # lacks the expected symbols, patch it in-place so subsequent imports
+    # and code paths see a consistent API. This keeps the test harness's
+    # practice of inserting lightweight stubs working without causing
+    # AttributeError during isolated module loads.
+    if hasattr(_pc, "_lazy_factory"):
+        _lazy_factory = _pc._lazy_factory
+    else:
+        # provide local fallback and ensure the stub exposes it
+        _lazy_factory = _lazy_factory
+        try:
+            setattr(_pc, "_lazy_factory", _lazy_factory)
+        except Exception:
+            # best-effort: if we can't patch the imported object, continue
+            pass
+
+    # LazyQuestion: prefer the imported class, otherwise provide a
+    # compatible local implementation (mirrors prompts_core.LazyQuestion).
+    if hasattr(_pc, "LazyQuestion"):
+        LazyQuestion = _pc.LazyQuestion
+    else:
+        class LazyQuestion:
+            def __init__(self, factory, *args, **kwargs):
+                self._factory = factory
+                self._args = args
+                self._kwargs = kwargs
+
+            def build(self):
+                return self._factory(*self._args, **self._kwargs)
+
+            def __call__(self):
+                return self.build()
+
+            def ask(self, *a, **kw):
+                return self.build().ask(*a, **kw)
+
+            def __repr__(self):
+                factory_name = getattr(self._factory, "__name__", repr(self._factory))
+                return f"<LazyQuestion factory={factory_name} args={self._args} kwargs={self._kwargs}>"
+        # ensure the imported stub/module also exposes LazyQuestion to keep
+        # future relative imports stable
+        try:
+            setattr(_pc, "LazyQuestion", LazyQuestion)
+        except Exception:
+            pass
 
 # Re-export core helpers
 from .prompts_core import ProgressTracker as CoreProgressTracker
@@ -37,13 +127,13 @@ def enhanced_text(
     auto_complete: Optional[List[str]] = None,
     history: Optional[List[str]] = None,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """
     Enhanced text input with placeholder, auto-complete, and history support.
 
     Returns a simple questionary.text for now.
     """
-    return LazyQuestion(questionary.text, message, default=default, **kwargs)
+    return LazyQuestion(_lazy_factory("text"), message, default=default, **kwargs)
 
 
 def rich_text(
@@ -52,11 +142,11 @@ def rich_text(
     syntax_highlighting: Optional[str] = None,
     line_numbers: bool = False,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """
     Rich text input with syntax highlighting and formatting (stub).
     """
-    return questionary.text(message, default=default, **kwargs)
+    return LazyQuestion(_lazy_factory("text"), message, default=default, **kwargs)
 
 
 def number(
@@ -68,7 +158,7 @@ def number(
     allow_float: bool = True,
     format_str: Optional[str] = None,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """
     Numeric input with validation and formatting.
     """
@@ -77,7 +167,7 @@ def number(
     )
 
     return LazyQuestion(
-        questionary.text,
+        _lazy_factory("text"),
         message,
         default=str(default) if default is not None else "",
         validate=validator,
@@ -90,7 +180,7 @@ def integer(
     min_value: Optional[int] = None,
     max_value: Optional[int] = None,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """Integer input with validation."""
     return number(
         message, min_value=min_value, max_value=max_value, allow_float=False, **kwargs
@@ -102,14 +192,14 @@ def float_input(
     min_value: Optional[float] = None,
     max_value: Optional[float] = None,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """Float input with validation."""
     return number(
         message, min_value=min_value, max_value=max_value, allow_float=True, **kwargs
     )
 
 
-def percentage(message: str, **kwargs: Any) -> "LazyQuestion | Question":
+def percentage(message: str, **kwargs: Any) -> "LazyQuestion | Any":
     """Percentage input (0-100)."""
     return number(message, min_value=0, max_value=100, format_str="{:.1f}%", **kwargs)
 
@@ -121,7 +211,7 @@ def date(
     max_date: Optional[_datetime.date] = None,
     format_str: str = "%Y-%m-%d",
     **kwargs: Any,
-) -> Question:
+)-> Any:
     """
     Date input with validation and formatting.
 
@@ -142,7 +232,8 @@ def date(
 
     default_str = default.strftime(format_str) if default else ""
 
-    return questionary.text(message, default=default_str, validate=validator, **kwargs)
+    q = _resolve_questionary()
+    return q.text(message, default=default_str, validate=validator, **kwargs)
 
 
 def time(
@@ -150,10 +241,11 @@ def time(
     default: Optional[_datetime.time] = None,
     format_str: str = "%H:%M:%S",
     **kwargs: Any,
-) -> Question:
+) -> Any:
     """Time input with validation and formatting."""
     default_str = default.strftime(format_str) if default else ""
-    return questionary.text(message, default=default_str, **kwargs)
+    q = _resolve_questionary()
+    return q.text(message, default=default_str, **kwargs)
 
 
 def datetime_input(
@@ -161,10 +253,11 @@ def datetime_input(
     default: Optional[_datetime.datetime] = None,
     format_str: str = "%Y-%m-%d %H:%M:%S",
     **kwargs: Any,
-) -> Question:
+) -> Any:
     """Datetime input with validation and formatting."""
     default_str = default.strftime(format_str) if default else ""
-    return questionary.text(message, default=default_str, **kwargs)
+    q = _resolve_questionary()
+    return q.text(message, default=default_str, **kwargs)
 
 
 def color(
@@ -173,7 +266,7 @@ def color(
     preview: bool = True,
     palette: Optional[List[str]] = None,
     **kwargs: Any,
-) -> Question:
+) -> Any:
     """
     Color picker with multiple format support.
 
@@ -191,7 +284,8 @@ def color(
     if formats is None:
         formats = ["hex"]
     # Implementation will be added - for now return basic text
-    return questionary.text(message, **kwargs)
+    q = _resolve_questionary()
+    return q.text(message, **kwargs)
 
 
 def tree_select(
@@ -200,7 +294,7 @@ def tree_select(
     expanded: bool = False,
     show_icons: bool = True,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """
     Tree-based selection with hierarchical navigation.
 
@@ -231,12 +325,12 @@ def tree_select(
         return items
 
     flat_choices = flatten_dict(choices)
-    return LazyQuestion(questionary.select, message, choices=flat_choices, **kwargs)
+    return LazyQuestion(_lazy_factory("select"), message, choices=flat_choices, **kwargs)
 
 
 def multi_level_select(
     message: str, choices: Dict[str, Any], breadcrumbs: bool = True, **kwargs: Any
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """Multi-level menu with breadcrumb navigation."""
     return tree_select(message, choices, **kwargs)
 
@@ -247,7 +341,7 @@ def tag_select(
     max_tags: Optional[int] = None,
     allow_custom: bool = False,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """
     Multi-tag selection with auto-completion.
 
@@ -261,7 +355,7 @@ def tag_select(
     Returns:
         Question instance
     """
-    return LazyQuestion(questionary.checkbox, message, choices=available_tags, **kwargs)
+    return LazyQuestion(_lazy_factory("checkbox"), message, choices=available_tags, **kwargs)
 
 
 def fuzzy_select(
@@ -270,7 +364,7 @@ def fuzzy_select(
     min_score: float = 0.6,
     case_sensitive: bool = False,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """
     Fuzzy search selection with ranking.
 
@@ -284,12 +378,12 @@ def fuzzy_select(
     Returns:
         Question instance
     """
-    return LazyQuestion(questionary.autocomplete, message, choices=choices, **kwargs)
+    return LazyQuestion(_lazy_factory("autocomplete"), message, choices=choices, **kwargs)
 
 
 def grouped_select(
     message: str, groups: Dict[str, List[str]], collapsible: bool = True, **kwargs: Any
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """
     Grouped selection with collapsible categories.
 
@@ -304,7 +398,8 @@ def grouped_select(
     """
     choices: List[Any] = []
     for group_name, group_choices in groups.items():
-        choices.append(questionary.Separator(f"--- {group_name} ---"))
+        q = _resolve_questionary()
+        choices.append(q.Separator(f"--- {group_name} ---"))
         # Ensure each choice is questionary-compatible (str or dict)
         for c in group_choices:
             if isinstance(c, dict):
@@ -312,7 +407,7 @@ def grouped_select(
             else:
                 choices.append(str(c))
 
-    return LazyQuestion(questionary.select, message, choices=choices, **kwargs)
+    return LazyQuestion(_lazy_factory("select"), message, choices=choices, **kwargs)
 
 
 def rating(
@@ -321,7 +416,7 @@ def rating(
     icon: str = "★",
     allow_zero: bool = False,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """
     Star rating input.
 
@@ -342,7 +437,7 @@ def rating(
         # Use questionary-compatible dict for each rating
         choices.append({"name": f"{display} ({i})", "value": i})
 
-    return LazyQuestion(questionary.select, message, choices=choices, **kwargs)
+    return LazyQuestion(_lazy_factory("select"), message, choices=choices, **kwargs)
 
 
 def slider(
@@ -352,7 +447,7 @@ def slider(
     step: Union[int, float] = 1,
     default: Optional[Union[int, float]] = None,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """
     Slider input for numeric ranges.
 
@@ -383,7 +478,7 @@ def table(
     min_rows: int = 0,
     max_rows: Optional[int] = None,
     **kwargs: Any,
-) -> "LazyQuestion | Question":
+) -> "LazyQuestion | Any":
     """
     Table/spreadsheet input for structured data.
 
@@ -400,7 +495,7 @@ def table(
     # For now, return a simple text input
     # Implementation will be added for actual table editing
     return LazyQuestion(
-        questionary.text, f"{message} (Table input - implementation pending)", **kwargs
+        _lazy_factory("text"), f"{message} (Table input - implementation pending)", **kwargs
     )
 
 
@@ -418,7 +513,8 @@ def form(
     Returns:
         Question instance that returns a dictionary of answers
     """
-    return questionary.prompt(questions, **kwargs)
+    q = _resolve_questionary()
+    return q.prompt(questions, **kwargs)
 
 
 def wizard(
@@ -442,7 +538,8 @@ def wizard(
     # Implementation will be added
     # For now, convert to a simple form
     questions = [step.to_question_dict() for step in steps]
-    return questionary.prompt(questions, **kwargs)
+    q = _resolve_questionary()
+    return q.prompt(questions, **kwargs)
 
 
 # Re-export canonical class name

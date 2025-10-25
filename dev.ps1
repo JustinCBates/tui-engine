@@ -1,3 +1,96 @@
+<#
+Developer helper script for Windows PowerShell.
+
+Usage:
+  .\dev.ps1 -Action test
+  .\dev.ps1 -Action coverage
+  .\dev.ps1 -Action run-example
+  .\dev.ps1 -Action setup-hooks
+
+This script centralizes common development commands in a PowerShell-safe
+form so contributors can copy/paste robust commands instead of ad-hoc
+shell snippets that may be platform-specific.
+#>
+
+param(
+    [Parameter(Mandatory=$true)]
+    [ValidateSet('test','coverage','run-example','setup-hooks')]
+    [string]$Action
+)
+
+# Ensure gh (GitHub CLI) is available in this PowerShell session by adding
+# common install locations to the PATH if necessary. This is session-only
+# and non-destructive.
+function Ensure-GhOnPath {
+    if (Get-Command gh -ErrorAction SilentlyContinue) { return }
+
+    $candidates = @(
+        "$env:LOCALAPPDATA\Programs\GitHub CLI",
+        "$env:ProgramFiles\GitHub CLI",
+        "$env:ProgramFiles(x86)\GitHub CLI"
+    )
+
+    foreach ($dir in $candidates) {
+        if ($null -ne $dir -and (Test-Path (Join-Path $dir 'gh.exe'))) {
+            Write-Host "Adding GitHub CLI to PATH from: $dir" -ForegroundColor Green
+            $env:PATH = $dir + ';' + $env:PATH
+            return
+        }
+    }
+
+    Write-Host "GitHub CLI ('gh') not found in common locations; ensure it's installed or on PATH." -ForegroundColor Yellow
+}
+
+# call early so following commands can use gh if needed
+Ensure-GhOnPath
+
+function Run-Tests {
+    Write-Host "Running pytest (unit tests)..." -ForegroundColor Cyan
+    python -m pytest --maxfail=1 --disable-warnings -q
+}
+
+# Run a moderate subset of tests that focus on questionary/prompts/components/cli
+function Run-ModerateTests {
+    Write-Host "Running moderate questionary-related pytest subset..." -ForegroundColor Cyan
+    # Use a pytest -k expression that is PowerShell-safe (single quotes)
+    python -m pytest -q tests/unit -k 'questionary or prompts or component or cli'
+}
+function Run-Coverage {
+    Write-Host "Running pytest with coverage..." -ForegroundColor Cyan
+    python -m pytest --cov=src --cov-report=term-missing --cov-report=html
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Coverage HTML available at ./htmlcov/index.html" -ForegroundColor Green
+    }
+}
+
+function Run-Example {
+    Write-Host "Running basic example (examples/basic_usage.py)" -ForegroundColor Cyan
+    python .\examples\basic_usage.py
+}
+
+function Setup-Hooks {
+    Write-Host "Installing pre-commit hooks (requires Python & pip)" -ForegroundColor Cyan
+    # Try user install first; if it fails, try a system/user-agnostic install.
+    & python -m pip install --user pre-commit
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "User install failed, attempting fallback install..." -ForegroundColor Yellow
+        & python -m pip install pre-commit
+    }
+
+    if (Get-Command pre-commit -ErrorAction SilentlyContinue) {
+        pre-commit install
+        Write-Host "pre-commit installed." -ForegroundColor Green
+    } else {
+        Write-Host "pre-commit not found on PATH; please ensure your Python user scripts dir is on PATH." -ForegroundColor Yellow
+    }
+}
+
+switch ($Action) {
+    'test' { Run-Tests }
+    'coverage' { Run-Coverage }
+    'run-example' { Run-Example }
+    'setup-hooks' { Setup-Hooks }
+}
 # TUI-Engine Development PowerShell Script
 # Provides convenient commands for maintaining A+ testing standards on Windows
 
@@ -61,6 +154,12 @@ function Invoke-Test {
 function Invoke-TestFast {
     Write-Host "⚡ Running tests with fail-fast..." -ForegroundColor Green
     python -m pytest -x
+}
+
+# PowerShell-friendly wrapper for the moderate questionary-focused test subset
+function Invoke-ModerateTests {
+    Write-Host "🧪 Running moderate questionary-related tests..." -ForegroundColor Green
+    python -m pytest -q tests/unit -k 'questionary or prompts or component or cli'
 }
 
 function Invoke-Install {
@@ -160,6 +259,8 @@ switch ($Command.ToLower()) {
     "coverage-html" { Invoke-CoverageHtml }
     "test" { Invoke-Test }
     "test-fast" { Invoke-TestFast }
+    "test-moderate" { Invoke-ModerateTests }
+    "moderate-test" { Invoke-ModerateTests }
     "install" { Invoke-Install }
     "dev-install" { Invoke-DevInstall }
     "lint" { Invoke-Lint }
