@@ -1,49 +1,14 @@
 {
-    "python.defaultInterpreterPath": "/home/vpsuser/projects/tui-engine/.venv/bin/python",
-    "python.terminal.activateEnvironment": true,
-    "python.testing.pytestEnabled": true,
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestArgs": [
-        "tests",
-        "--cov=src",
-        "--cov-report=term-missing",
-        "--cov-report=html",
-        "--cov-report=json",
-        "--cov-fail-under=85",
-        "--tb=short"
-    ],
-    "python.testing.cwd": "${workspaceFolder}",
-    "python.testing.autoTestDiscoverOnSaveEnabled": true,
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": false,
-    "python.linting.flake8Enabled": false,
-    "python.linting.mypyEnabled": true,
-    "python.formatting.provider": "black",
-    "python.sortImports.path": "isort",
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-        "source.organizeImports": "explicit"
-    },
-    "terminal.integrated.env.linux": {
-        "PATH": "/home/vpsuser/.local/bin:${env:PATH}"
-    },
-    "files.exclude": {
-        "**/__pycache__": true,
-        "**/*.pyc": true,
-        ".pytest_cache": true,
-        ".mypy_cache": true,
-        ".coverage": true,
-        "htmlcov": true,
-        "*.egg-info": true,
-        ".git": false
-    },
-    "python.analysis.typeCheckingMode": "basic",
-    "python.analysis.autoImportCompletions": true,
-    "coverage-gutters.coverageFileNames": [
-        "coverage.xml",
-        "coverage.json",
-        "lcov.info"
-    ],
-    "coverage-gutters.showLineCoverage": true,
-    "coverage-gutters.showRulerCoverage": true
+  "python.defaultInterpreterPath": ".venv/Scripts/python.exe",
+  "python.testing.pytestPath": ".venv/Scripts/pytest.exe",
+  "python.testing.pytestArgs": ["tests"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "coverage-gutters.coverageFileNames": [
+    "coverage.xml",
+    "coverage-final.xml",
+    "htmlcov/coverage.xml"
+  ],
+  "coverage-gutters.showGutterCoverage": true,
+  "coverage-gutters.showLineCoverage": true
 }
