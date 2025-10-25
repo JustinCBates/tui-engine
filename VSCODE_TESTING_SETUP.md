@@ -1,4 +1,8 @@
-# VS Code Testing Setup Guide for TUI-Engine
+# VS Code Testing Setup Guide
+
+**Status**: ✅ **TECHNICAL REFERENCE** - VS Code Developer Environment Setup  
+**Date**: October 2025  
+**Referenced From**: [docs/TESTING_ARCHITECTURE.md](docs/TESTING_ARCHITECTURE.md)
 
 This guide explains how to set up your VS Code workspace to run tests exactly like bash commands in your Docker container.
 

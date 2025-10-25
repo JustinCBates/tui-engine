@@ -1,10 +1,26 @@
 # questionary-extended Development Roadmap
 
-## 🎯 Project Overview
+**Status**: ⚠️ **DEPRECATED** - Content consolidated into [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)  
+**Date**: October 2025  
+**Superseded By**: [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)
 
-**Goal**: Extend questionary with sophisticated multi-page TUI capabilities while maintaining 100% backward compatibility  
-**Timeline**: 6-8 weeks for core implementation  
-**Architecture**: [Complete Design](architecture-design.md) | [Implementation Plan](implementation-plan.md)
+## ⚠️ Notice: Document Consolidated
+
+This document has been **consolidated** into the comprehensive [Development Workflow & Implementation Guide](DEVELOPMENT_WORKFLOW.md).
+
+**Please use the new consolidated document for**:
+- ✅ Complete 8-week development timeline
+- ✅ Phased implementation strategy
+- ✅ Detailed milestone tracking
+- ✅ Immediate next steps and priorities
+- ✅ Progress tracking and quality gates
+- ✅ Technical implementation details
+
+**This document is preserved for reference only.**
+
+---
+
+**Redirected to**: [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) - Single source of truth for development workflow
 
 ## 📅 Development Phases
 

@@ -1,33 +1,41 @@
-# questionary-extended Implementation Plan
+# Development Workflow & Implementation Guide
 
-**Status**: ⚠️ **DEPRECATED** - Content consolidated into [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)  
+**Status**: ✅ **CONSOLIDATED DEVELOPMENT GUIDE** - Single Source of Truth  
 **Date**: October 2025  
-**Superseded By**: [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)
+**Version**: 2.0 Consolidated Specification  
+**Referenced From**: [architecture-design.md](architecture-design.md)
 
-## ⚠️ Notice: Document Consolidated
+## Overview
 
-This document has been **consolidated** into the comprehensive [Development Workflow & Implementation Guide](DEVELOPMENT_WORKFLOW.md).
+This document consolidates the complete development workflow for questionary-extended, combining detailed implementation planning with phased development roadmaps. It serves as the single source of truth for development methodology, timeline, and technical implementation strategy.
 
-**Please use the new consolidated document for**:
-- ✅ Complete development methodology
-- ✅ Detailed implementation phases  
-- ✅ Technical implementation details
-- ✅ Progress tracking and quality gates
-- ✅ Testing strategy integration
-- ✅ Risk mitigation planning
+## Table of Contents
 
-**This document is preserved for reference only.**
+1. [Development Strategy](#development-strategy)
+2. [Implementation Phases](#implementation-phases)
+3. [Technical Implementation Details](#technical-implementation-details)
+4. [Progress Tracking & Quality Gates](#progress-tracking--quality-gates)
+5. [Testing Strategy](#testing-strategy)
+6. [Risk Mitigation](#risk-mitigation)
 
 ---
 
-**Redirected to**: [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) - Single source of truth for development workflow
+## Development Strategy
 
-### Development Approach
+### Core Approach
 
 1. **Bottom-Up Construction**: Core components → Integration layer → Enhanced features
 2. **Incremental Validation**: Working prototypes at each milestone
 3. **Backward Compatibility First**: Ensure questionary remains unaffected
 4. **Test-Driven Development**: Comprehensive test coverage from start
+
+### Target Timeline
+
+**6-8 weeks for core implementation** with the following milestones:
+- **Weeks 1-2**: Foundation & questionary compatibility
+- **Weeks 3-4**: Events & interaction system
+- **Weeks 5-6**: Enhanced features & optimization
+- **Weeks 7-8**: Polish, documentation & release
 
 ### Repository Structure
 
@@ -59,38 +67,49 @@ src/questionary_extended/
     └── debugging.py        # Debug and error tools
 ```
 
-## Phase 1: Foundation (Weeks 1-2)
+---
 
-### Milestone 1.1: Core Infrastructure
+## Implementation Phases
 
-**Deliverable**: Basic Page/Card/Assembly/Component classes with method chaining
+### 🏗️ Phase 1: Foundation (Weeks 1-2)
 
-#### Tasks:
+**Focus**: Core infrastructure and questionary compatibility
 
-1. **Project Setup**
+#### Week 1: Project Setup & Core Classes
 
-   - [ ] Create package structure in `src/questionary_extended/`
-   - [ ] Configure `pyproject.toml` dependencies (questionary, prompt-toolkit)
-   - [ ] Set up basic `__init__.py` with public API exports
-   - [ ] Create test structure mirroring source layout
+**Status**: ✅ Architecture Design Complete
 
-2. **Core Classes - Basic Structure**
+**Immediate Tasks**:
 
+1. **Project Structure Setup**
+   ```bash
+   # Create the package structure
+   mkdir -p src/questionary_extended/{core,integration,events,styling,utils}
+   
+   # Set up basic module files
+   touch src/questionary_extended/__init__.py
+   touch src/questionary_extended/core/{__init__.py,page.py,card.py,assembly.py,component.py,state.py}
+   ```
+
+2. **Dependencies Configuration**
+   ```toml
+   # Add to pyproject.toml
+   dependencies = [
+       "questionary>=2.0.0",
+       "prompt-toolkit>=3.0.0"
+   ]
+   ```
+
+3. **Core Classes - Basic Structure**
    - [ ] `Page` class with basic container functionality
    - [ ] `Card` class with component grouping
    - [ ] `Assembly` class with event hook placeholders
    - [ ] `Component` class wrapping questionary elements
    - [ ] Basic method chaining (return self/parent patterns)
 
-3. **State Management Foundation**
-   - [ ] `PageState` class for scoped state storage
-   - [ ] Assembly namespacing (`assembly.field` key format)
-   - [ ] Basic get/set operations with namespace support
-
-#### Success Criteria:
-
+**Milestone 1.1 Success Criteria**:
 ```python
-# This should work at end of Milestone 1.1
+# This should work at end of Week 1
 import questionary_extended as qe
 
 page = qe.Page("Test")
@@ -105,21 +124,19 @@ page = qe.Page("Test")
 # {"name": "value", "type": "option1", "config.setting1": "value", "config.setting2": "value"}
 ```
 
-### Milestone 1.2: questionary Integration
+#### Week 2: questionary Integration
 
-**Deliverable**: Seamless questionary compatibility with enhanced wrappers
+**Focus**: Seamless questionary compatibility
 
-#### Tasks:
+**Tasks**:
 
 1. **Component Wrappers**
-
    - [ ] Wrap all questionary components (text, select, confirm, etc.)
    - [ ] Maintain identical API surface and behavior
    - [ ] Add enhancement hooks (validation, conditional display)
    - [ ] Ensure result format matches questionary exactly
 
 2. **Compatibility Testing**
-
    - [ ] Import isolation tests (`import questionary` unchanged)
    - [ ] Behavior equivalence tests (questionary vs qe components)
    - [ ] Result format compatibility tests
@@ -129,8 +146,7 @@ page = qe.Page("Test")
    - [ ] Conversion utilities between questionary and qe formats
    - [ ] State synchronization mechanisms
 
-#### Success Criteria:
-
+**Milestone 1.2 Success Criteria**:
 ```python
 # questionary code continues working unchanged
 import questionary
@@ -143,23 +159,21 @@ result2 = qe.text("Name").run()
 # assert result1 == result2 for all component types
 ```
 
-## Phase 2: Events & Interactions (Weeks 3-4)
+### ⚡ Phase 2: Events & Interactions (Weeks 3-4)
 
-### Milestone 2.1: Event System
+#### Week 3: Event System
 
-**Deliverable**: Functional event-driven interactions with hooks
+**Focus**: Event infrastructure and real-time interactions
 
-#### Tasks:
+**Tasks**:
 
 1. **Event Manager Core**
-
    - [ ] `EventManager` class for event registration and dispatch
    - [ ] Event types: `change`, `validate`, `complete`, `show`, `hide`
    - [ ] Handler registration with component/assembly scoping
    - [ ] Asynchronous event processing for real-time updates
 
 2. **Assembly Event Hooks**
-
    - [ ] `.on_change(field, handler)` implementation
    - [ ] `.on_validate(handler)` for cross-field validation
    - [ ] `.on_complete(field, handler)` for batch updates
@@ -171,8 +185,7 @@ result2 = qe.text("Name").run()
    - [ ] Dynamic option updates for dependent dropdowns
    - [ ] State-driven component visibility
 
-#### Success Criteria:
-
+**Success Criteria**:
 ```python
 # Event-driven conditional logic works
 assembly = qe.Assembly("app_config")
@@ -184,21 +197,19 @@ assembly = qe.Assembly("app_config")
   .text("port", when="app_type == 'web'", default="8000")
 ```
 
-### Milestone 2.2: Validation System
+#### Week 4: Validation System
 
-**Deliverable**: Multi-layer validation with error handling
+**Focus**: Multi-layer validation with comprehensive error handling
 
-#### Tasks:
+**Tasks**:
 
 1. **Validation Layers**
-
    - [ ] Component-level immediate validators (questionary-compatible)
    - [ ] Assembly-level cross-field validation
    - [ ] Page-level comprehensive validation
    - [ ] Error collection and reporting system
 
 2. **Error Handling**
-
    - [ ] Graceful degradation for missing field references
    - [ ] Rich error messages with debugging context
    - [ ] Fail-fast vs collect-all error modes
@@ -209,8 +220,7 @@ assembly = qe.Assembly("app_config")
    - [ ] Conditional validators based on other field values
    - [ ] Async validators for external validation (optional)
 
-#### Success Criteria:
-
+**Success Criteria**:
 ```python
 # Multi-layer validation works
 page = qe.Page("User Registration")
@@ -224,22 +234,20 @@ page = qe.Page("User Registration")
     )
 ```
 
-## Phase 3: Enhanced Features (Weeks 5-6)
+### 🎨 Phase 3: Enhanced Features (Weeks 5-6)
 
-### Milestone 3.1: Advanced Layout & Styling
+#### Week 5: Layout & Styling
 
-**Deliverable**: Visual enhancements and responsive layouts
+**Focus**: Visual enhancements and responsive design
 
-#### Tasks:
+**Tasks**:
 
 1. **Card Styling System**
-
    - [ ] Multiple visual styles: `minimal`, `bordered`, `highlighted`, `collapsible`
    - [ ] Dynamic show/hide with smooth transitions
    - [ ] Card-level overflow handling and scrolling
 
 2. **Responsive Layouts**
-
    - [ ] Horizontal component grouping with terminal width detection
    - [ ] Automatic fallback to vertical layout on narrow terminals
    - [ ] Smart component sizing and overflow handling
@@ -249,8 +257,7 @@ page = qe.Page("User Registration")
    - [ ] Smart pagination at card boundaries
    - [ ] Dynamic content adjustment for show/hide operations
 
-#### Success Criteria:
-
+**Success Criteria**:
 ```python
 # Advanced layout features work
 page = qe.Page("Configuration")
@@ -269,20 +276,18 @@ page = qe.Page("Configuration")
     .text("ssl_cert_path", when="enable_ssl == True")
 ```
 
-### Milestone 3.2: Assembly Templates & Reusability
+#### Week 6: Assembly Templates & Reusability
 
-**Deliverable**: Reusable assembly patterns and complex interactions
+**Focus**: Reusable patterns and advanced interactions
 
-#### Tasks:
+**Tasks**:
 
 1. **Assembly Templates**
-
    - [ ] Template function patterns for common assemblies
    - [ ] Parameter-driven assembly customization
    - [ ] Assembly composition and nesting support
 
 2. **Complex Interaction Patterns**
-
    - [ ] Decision tree assemblies with branching logic
    - [ ] Dependent dropdown chains with dynamic options
    - [ ] Cross-field validation assemblies
@@ -293,8 +298,7 @@ page = qe.Page("Configuration")
    - [ ] State persistence and restoration
    - [ ] Undo/redo functionality for complex forms
 
-#### Success Criteria:
-
+**Success Criteria**:
 ```python
 # Reusable assembly templates work
 def database_config_assembly(required=True):
@@ -313,23 +317,21 @@ setup_page.add_assembly(database_config_assembly(required=True))
 review_page.add_assembly(database_config_assembly(required=False).readonly())
 ```
 
-## Phase 4: Polish & Documentation (Weeks 7-8)
+### 🚀 Phase 4: Polish & Release (Weeks 7-8)
 
-### Milestone 4.1: Performance & Optimization
+#### Week 7: Performance & Quality
 
-**Deliverable**: Production-ready performance and reliability
+**Focus**: Production-ready optimization and reliability
 
-#### Tasks:
+**Tasks**:
 
 1. **Performance Optimization**
-
    - [ ] Lazy component loading and initialization
    - [ ] Event debouncing for real-time updates
    - [ ] Memory management and cleanup
    - [ ] Large form handling optimization
 
 2. **Error Resilience**
-
    - [ ] Robust error handling for edge cases
    - [ ] Recovery mechanisms for invalid states
    - [ ] Comprehensive logging and debugging tools
@@ -340,20 +342,18 @@ review_page.add_assembly(database_config_assembly(required=False).readonly())
    - [ ] Performance benchmarks and regression tests
    - [ ] Compatibility tests across Python versions
 
-### Milestone 4.2: Documentation & Examples
+#### Week 8: Documentation & Launch
 
-**Deliverable**: Comprehensive documentation and migration guides
+**Focus**: Comprehensive documentation and release preparation
 
-#### Tasks:
+**Tasks**:
 
 1. **API Documentation**
-
    - [ ] Complete docstrings for all public APIs
    - [ ] Type hints and static analysis support
    - [ ] Auto-generated API reference documentation
 
 2. **Usage Examples**
-
    - [ ] Basic usage examples and tutorials
    - [ ] Complex multi-page wizard examples
    - [ ] Migration examples from questionary to questionary-extended
@@ -363,6 +363,101 @@ review_page.add_assembly(database_config_assembly(required=False).readonly())
    - [ ] Migration guide for existing questionary users
    - [ ] Integration with popular CLI frameworks
    - [ ] Deployment and packaging guidelines
+
+---
+
+## Technical Implementation Details
+
+### State Management Implementation
+
+```python
+# src/questionary_extended/core/state.py
+class PageState:
+    def __init__(self):
+        self._data = {}
+
+    def set(self, key: str, value: any):
+        # Handle assembly.field namespacing
+        self._data[key] = value
+
+    def get(self, key: str, default=None):
+        # Retrieve with namespace support
+        return self._data.get(key, default)
+
+    def get_namespaced(self, assembly_name: str) -> dict:
+        # Return all values for specific assembly
+        prefix = f"{assembly_name}."
+        return {k[len(prefix):]: v for k, v in self._data.items() 
+                if k.startswith(prefix)}
+```
+
+### Component Wrapper Pattern
+
+```python
+# src/questionary_extended/core/component.py
+class Component:
+    def __init__(self, name: str, component_type: str, **kwargs):
+        self.name = name
+        self.component_type = component_type
+        self.config = kwargs
+        self._questionary_component = None
+
+    def create_questionary_component(self):
+        # Lazy creation of underlying questionary component
+        if self._questionary_component is None:
+            factory = getattr(questionary, self.component_type)
+            self._questionary_component = factory(**self.config)
+        return self._questionary_component
+
+    def ask(self):
+        # Delegate to questionary while maintaining compatibility
+        return self.create_questionary_component().ask()
+```
+
+### Event System Architecture
+
+```python
+# src/questionary_extended/events/manager.py
+class EventManager:
+    def __init__(self):
+        self._handlers = defaultdict(list)
+
+    def register(self, event_type: str, handler: callable, scope: str = None):
+        self._handlers[event_type].append((handler, scope))
+
+    def emit(self, event_type: str, data: dict, scope: str = None):
+        for handler, handler_scope in self._handlers[event_type]:
+            if scope is None or handler_scope == scope:
+                handler(data)
+```
+
+---
+
+## Progress Tracking & Quality Gates
+
+### Development Metrics
+
+- **Test Coverage**: Target 90%+ overall
+- **Performance**: Match questionary baseline for simple forms
+- **Compatibility**: 100% questionary behavior preservation
+- **Documentation**: Complete API coverage with examples
+
+### Quality Gates by Phase
+
+1. **Phase 1**: All questionary tests pass unchanged
+2. **Phase 2**: Complex conditional logic working reliably
+3. **Phase 3**: Responsive layouts adapt correctly across terminal sizes
+4. **Phase 4**: Production deployment ready with full documentation
+
+### Milestone Validation
+
+Each milestone must demonstrate:
+- **Functional Requirements**: All specified features working
+- **Backward Compatibility**: No regression in questionary behavior
+- **Performance**: No significant performance degradation
+- **Test Coverage**: Appropriate test coverage for new features
+
+---
 
 ## Testing Strategy
 
@@ -383,12 +478,31 @@ review_page.add_assembly(database_config_assembly(required=False).readonly())
 - **Integration Layer**: 100% coverage (critical for compatibility)
 - **Overall Project**: 90%+ coverage
 
-### Continuous Integration
+### Testing Implementation
 
-1. **Pre-commit Hooks**: Code formatting, linting, basic tests
-2. **Pull Request Checks**: Full test suite, coverage reports
-3. **Release Testing**: Compatibility across Python versions and platforms
-4. **Performance Monitoring**: Benchmark tracking and regression detection
+**For comprehensive testing standards, see [TESTING_ARCHITECTURE.md](TESTING_ARCHITECTURE.md)**
+
+**Key Testing Patterns**:
+
+```python
+# Compatibility testing pattern
+def test_questionary_compatibility():
+    # Test that questionary behavior is unchanged
+    questionary_result = questionary.text("Name").ask()
+    qe_result = qe.text("Name").run()
+    assert questionary_result == qe_result
+
+# Integration testing pattern  
+def test_event_driven_assembly():
+    assembly = qe.Assembly("test")
+      .select("type", ["A", "B"])
+      .on_change("type", lambda v, a: a.show_components(["detail"]) if v == "A" else None)
+      .text("detail", when="type == 'A'")
+    
+    # Test event triggering and component visibility
+```
+
+---
 
 ## Risk Mitigation
 
@@ -405,6 +519,21 @@ review_page.add_assembly(database_config_assembly(required=False).readonly())
 2. **Extensive Testing**: Comprehensive test coverage from day one
 3. **User Feedback**: Early alpha/beta releases for feedback
 4. **Rollback Planning**: Clear revert strategies for breaking changes
+
+### Risk Monitoring
+
+- **High Risk**: questionary compatibility breaks
+- **Medium Risk**: Event system performance issues
+- **Low Risk**: Documentation completeness delays
+
+### Continuous Integration
+
+1. **Pre-commit Hooks**: Code formatting, linting, basic tests
+2. **Pull Request Checks**: Full test suite, coverage reports
+3. **Release Testing**: Compatibility across Python versions and platforms
+4. **Performance Monitoring**: Benchmark tracking and regression detection
+
+---
 
 ## Success Metrics
 
@@ -431,11 +560,25 @@ review_page.add_assembly(database_config_assembly(required=False).readonly())
 
 ---
 
-**Ready to Begin**: Implementation plan provides clear milestones, success criteria, and risk mitigation strategies for successful delivery of questionary-extended.
+## Technical References
+
+- **[architecture-design.md](architecture-design.md)** - Complete system architecture and design decisions
+- **[TESTING_ARCHITECTURE.md](TESTING_ARCHITECTURE.md)** - Comprehensive testing standards and workflows
+
+---
+
+## Document History
+
+- **October 2025**: Consolidated from implementation-plan.md and development-roadmap.md
+- **Status**: Single source of truth for development workflow
+- **Next Review**: Weekly milestone assessment
+
+---
+
+**Ready to Begin**: This consolidated guide provides clear development methodology, detailed implementation phases, and comprehensive quality standards for successful delivery of questionary-extended.
 
 **Next Steps**:
-
-1. Review and approve implementation plan
+1. Review and approve development workflow
 2. Set up development environment and project structure
 3. Begin Phase 1: Foundation development
 4. Establish CI/CD pipeline and testing framework
