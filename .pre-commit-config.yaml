@@ -1,4 +1,13 @@
 repos:
+  - repo: local
+    hooks:
+      - id: no-bash-in-docs
+        name: Detect bash-only constructs in docs and scripts
+        entry: python scripts/check_no_bash.py
+        language: python
+        files: '(^docs/|^scripts/|\.sh$|\.md$)'
+        stages: [commit]
+repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -39,6 +48,15 @@ repos:
 
   - repo: local
     hooks:
+      - id: coverage-check
+        name: Coverage Quality Gate (A+ Standard)
+        entry: python -m pytest --cov=src --cov-fail-under=85 --cov-report=term-missing -x
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]
+        verbose: true
+
       - id: pytest-check
         name: pytest-check
         entry: pytest
@@ -46,3 +64,9 @@ repos:
         pass_filenames: false
         always_run: true
         args: [--tb=short]
+      - id: check-excluded
+        name: Check excluded wrapper files
+        entry: python tools/pre_commit/check_excluded.py
+        language: python
+        pass_filenames: false
+        stages: [commit, push]

@@ -53,13 +53,13 @@ jobs:
                   validator = qe.NumberValidator(min_value=0, max_value=100)
                   validator.validate("50")
           
-          @profile  
-          def test_progress_tracker():
-              """Test memory usage of progress tracker"""
-              for _ in range(100):
-                  tracker = qe.progress_tracker("Test", total=10)
-                  for i in range(10):
-                      tracker.update(i+1, f"Step {i+1}")
+      @profile  
+      def test_progress_tracker():
+        """Test memory usage of progress tracker"""
+        for _ in range(100):
+          tracker = qe.ProgressTracker("Test", total_steps=10)
+          for i in range(10):
+            tracker.update(i+1, f"Step {i+1}")
           
           if __name__ == "__main__":
               print("=== Memory Profiling Results ===")
@@ -85,7 +85,7 @@ jobs:
           
           # Test specific imports
           start = time.perf_counter()
-          from questionary_extended import enhanced_text, number, rating, progress_tracker
+          from questionary_extended import enhanced_text, number, rating
           end = time.perf_counter()
           
           print(f"Specific imports time: {(end - start) * 1000:.2f}ms")

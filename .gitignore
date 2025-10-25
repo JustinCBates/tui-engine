@@ -160,8 +160,7 @@ cython_debug/
 .idea/
 
 # VS Code
-.vscode/
-*.code-workspace
+# Workspace editor settings are tracked in the repository (see .gitignore.build for build-only ignores)
 
 # Local configuration files
 .env.local
@@ -218,98 +217,12 @@ logs/
 
 # =============================================================================
 # BUILD BRANCH EXCLUSIONS
-# Files that should NOT be included in the production build branch
+# This project's build-branch exclusions were moved to `.gitignore.build`
+# so the main development branch can track docs, tests, and local dev tooling.
+# If you need the build-branch exclusions for CI or production-only branches,
+# apply `.gitignore.build` in that branch or include it in build workflows.
 # =============================================================================
 
-# Test files and directories
-tests/
-test_*.py
-*_test.py
-benchmarks/
-test_fundamental_core.py
-demo_fundamental_features.py
-
-# Development and design documentation
-*.md
-!README.md                    # Keep main README for production
-!CHANGELOG.md                 # Keep changelog for production
-!LICENSE.md                   # Keep license for production
-DESIGN_*.md
-STATUS_REPORT.md
-GITHUB_ACTIONS_COMPLETE.md
-docs/design/
-docs/development/
-docs/internal/
-
-# Development scripts and tools
-scripts/
-dev_tools/
-tools/
-check_structure.py
-scripts/test_ci_local.py
-
-# GitHub Actions (for build branch - may want separate minimal CI)
-.github/workflows/ci.yml
-.github/workflows/security.yml  
-.github/workflows/performance.yml
-.github/ACTIONS_DOCUMENTATION.md
-
-# Development configuration files
-.pre-commit-config.yaml
-.editorconfig
-tox.ini
-noxfile.py
-
-# Local development files
-*.local
-local_*
-scratch/
-playground/
-experiments/
-
-# Security and audit reports
-*-report.json
-bandit-report.json
-safety-report.json
-pip-audit-report.json
-security-audit-reports/
-
-# Performance and profiling outputs
-benchmark-results.json
-memory-profile.txt
-import-speed.txt
-*.prof
-*.pstats
-
-# Development examples and demos
-examples/development/
-examples/internal/
-demo_*.py
-example_*.py
-
-# Optional dependencies for development only
-requirements-dev.txt
-requirements-test.txt
-dev-requirements.txt
-
-# IDE and editor specific files (expanded)
-.vscode/settings.json
-.vscode/launch.json
-.vscode/tasks.json
-*.sublime-project
-*.sublime-workspace
-
-# OS specific files (expanded)
-.DS_Store?
-.Spotlight-V100
-.Trashes
-Icon?
-._*
-Thumbs.db.bak
-[Dd]esktop.ini
-$RECYCLE.BIN/
-
-# Build artifacts to exclude from source but include in build
-*.whl
-*.tar.gz
+# See `.gitignore.build` for build-specific excludes.
 dist-info/
+# VS Code\n.vscode/\n*.code-workspace\n

@@ -42,15 +42,19 @@ def test_workflow():
     """Run the test workflow locally."""
     print("\n🧪 === TEST WORKFLOW ===")
     
-    # Install dependencies
-    run_command(
-        "pip install -e \".[dev]\"",
-        "Installing development dependencies"
-    )
+    # Install dependencies (prefer requirements-dev.txt for simple installs)
+    req_file = Path(__file__).parent.parent / "requirements-dev.txt"
+    if req_file.exists():
+        run_command(f"pip install -r {req_file}", "Installing development dependencies from requirements-dev.txt")
+    else:
+        run_command(
+            "pip install -e \".[dev]\"",
+            "Installing development dependencies via project metadata"
+        )
     
     # Run tests
     run_command(
-        "pytest --cov=questionary_extended --cov-report=xml --cov-report=term-missing --cov-report=html",
+        f'"{sys.executable}" -m pytest --cov=questionary_extended --cov-report=xml --cov-report=term-missing --cov-report=html',
         "Running tests with coverage"
     )
 

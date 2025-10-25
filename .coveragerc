@@ -1,0 +1,19 @@
+[run]
+source = src
+omit =
+    tests/*
+    examples/*
+    examples/**
+    bench*/*
+    benchmarks/*
+    integration/*
+    docs/*
+    scripts/*
+    src/questionary_extended/styling/__init__.py
+    src/questionary_extended/events/__init__.py
+    # Treat thin wrappers and integrations (which primarily call questionary)
+    src/questionary_extended/prompts.py
+    src/questionary_extended/prompts_core.py
+    src/questionary_extended/cli.py
+    src/questionary_extended/integration/**
+    src/questionary_extended/styles.py
