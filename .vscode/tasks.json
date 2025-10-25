@@ -1,0 +1,67 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "pytest: run all tests (venv pytest.exe)",
+      "type": "shell",
+      "command": "C:\\Development\\tui\\.venv\\Scripts\\pytest.exe",
+      "args": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "pytest: run (python -m pytest)",
+      "type": "shell",
+      "command": "C:\\Development\\tui\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "pytest"],
+      "presentation": { "echo": true, "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "pytest: coverage html",
+      "type": "shell",
+      "command": "C:\\Development\\tui\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "pytest", "--cov=src", "--cov-report=html"],
+      "presentation": { "echo": true, "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Open coverage HTML report",
+      "type": "shell",
+      "command": "cmd.exe",
+      "args": ["/c", "start", "", "htmlcov\\index.html"],
+      "presentation": { "echo": true, "reveal": "always", "panel": "shared" }
+    }
+  ]
+}
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Lint: ruff",
+      "type": "shell",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe -m ruff check ${workspaceFolder}\\src ${workspaceFolder}\\tests",
+      "problemMatcher": []
+    },
+    {
+      "label": "Format check: black",
+      "type": "shell",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe -m black --check ${workspaceFolder}\\src ${workspaceFolder}\\tests",
+      "problemMatcher": []
+    },
+    {
+      "label": "Typecheck: mypy",
+      "type": "shell",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe -m mypy ${workspaceFolder}\\src --ignore-missing-imports",
+      "problemMatcher": []
+    },
+    {
+      "label": "Diagnostics: test-run-env",
+      "type": "shell",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe -c \"import sys,os,shutil; print('python:', sys.executable); print('cwd:', os.getcwd()); print('workspaceFolder:', '${workspaceFolder}'); print('which black:', shutil.which('black')); print('PATH:', os.environ.get('PATH')[:200]);\"",
+      "problemMatcher": []
+    }
+  ]
+}
