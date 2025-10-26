@@ -50,10 +50,10 @@ from .core import (
 )
 
 # Provide a higher-level Page implementation that wires runtime execution.
-from .page import Page  # noqa: E402
+from .page_runtime import Page  # noqa: E402
 
 # Provide a higher-level Assembly implementation that wires runtime execution.
-from .assembly import Assembly  # noqa: E402
+from .assembly_runtime import Assembly  # noqa: E402
 
 from .prompts import rating
 

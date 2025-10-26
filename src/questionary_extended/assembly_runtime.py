@@ -7,7 +7,7 @@ event execution, and component rendering through QuestionaryBridge.
 
 from typing import Any, Dict, List
 
-from .core.assembly import AssemblyBase
+from .core.assembly_base import AssemblyBase
 from .integration.questionary_bridge import QuestionaryBridge
 
 

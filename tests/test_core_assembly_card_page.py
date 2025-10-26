@@ -1,5 +1,5 @@
 def test_card_show_hide_and_parent():
-    from questionary_extended.core.page import PageBase
+    from questionary_extended.core.page_base import PageBase
 
     p = PageBase(title="Main")
     c = p.card("Card 1")
@@ -14,7 +14,7 @@ def test_card_show_hide_and_parent():
 
 
 def test_assembly_event_handlers_and_parent():
-    from questionary_extended.core.page import PageBase
+    from questionary_extended.core.page_base import PageBase
 
     p = PageBase(title="Main")
     a = p.assembly("asm1")

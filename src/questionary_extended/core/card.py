@@ -8,7 +8,7 @@ dynamic show/hide capabilities, and responsive layout management.
 from typing import TYPE_CHECKING, Any, List
 
 if TYPE_CHECKING:
-    from .page import PageBase
+    from .page_base import PageBase
 
 
 class Card:

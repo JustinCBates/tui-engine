@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, List
 from .state import PageState
 
 if TYPE_CHECKING:
-    from .assembly import AssemblyBase
+    from .assembly_base import AssemblyBase
     from .card import Card
 
 
@@ -60,7 +60,7 @@ class PageBase:
         Returns:
             Assembly instance for method chaining
         """
-        from .assembly import AssemblyBase
+        from .assembly_base import AssemblyBase
 
         assembly = AssemblyBase(name, self)
         self.components.append(assembly)

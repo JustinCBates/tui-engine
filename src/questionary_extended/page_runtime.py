@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from .core.page import PageBase
+from .core.page_base import PageBase
 from .integration.questionary_bridge import QuestionaryBridge
 
 

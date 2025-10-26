@@ -8,7 +8,7 @@ conditional behavior, cross-field validation, and state management.
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Union
 
 if TYPE_CHECKING:
-    from .page import PageBase
+    from .page_base import PageBase
 
 
 class AssemblyBase:
