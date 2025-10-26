@@ -35,11 +35,15 @@ def test_create_table_row_and_truncate():
     row = utils.create_table_row(["hello", "world"], [10, 10])
     assert "|" in row
 
-    assert utils.truncate_text("abcdef", 4) == "a..." or isinstance(utils.truncate_text("abcd", 4), str)
+    assert utils.truncate_text("abcdef", 4) == "a..." or isinstance(
+        utils.truncate_text("abcd", 4), str
+    )
 
 
 def test_create_tree_line_variants():
-    t1 = utils.create_tree_line("root", 0, is_last=False, has_children=True, expanded=False)
+    t1 = utils.create_tree_line(
+        "root", 0, is_last=False, has_children=True, expanded=False
+    )
     assert "root" in t1
 
     t2 = utils.create_tree_line("leaf", 2, is_last=True, has_children=False)

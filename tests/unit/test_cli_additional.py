@@ -1,7 +1,4 @@
 import types
-import builtins
-
-import pytest
 
 
 def make_seq_factory(values):

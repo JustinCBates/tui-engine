@@ -1,9 +1,11 @@
-from pathlib import Path
 from datetime import date
+from pathlib import Path
+
 from tests.helpers.test_helpers import load_module_from_path
 
 u = load_module_from_path(
-    "questionary_extended.utils", Path("src/questionary_extended/utils/__init__.py").resolve()
+    "questionary_extended.utils",
+    Path("src/questionary_extended/utils/__init__.py").resolve(),
 )
 
 

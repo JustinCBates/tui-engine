@@ -6,6 +6,7 @@ This script checks the repo's .coveragerc omit list and enforces:
 
 Exit codes: non-zero indicates a failing hook.
 """
+
 import ast
 import configparser
 import sys
@@ -42,14 +43,18 @@ def _is_trivial_ast(path: Path):
     complex_nodes = (ast.For, ast.While, ast.If, ast.Try, ast.With)
     for node in ast.walk(tree):
         if isinstance(node, complex_nodes):
-            problems.append(f"complex statement {node.__class__.__name__} found at line {getattr(node, 'lineno', '?')}")
+            problems.append(
+                f"complex statement {node.__class__.__name__} found at line {getattr(node, 'lineno', '?')}"
+            )
 
     # Inspect each function body for complexity
     for fn in [n for n in tree.body if isinstance(n, ast.FunctionDef)]:
         # disallow loops/ifs/try/with inside functions
         for node in ast.walk(fn):
             if isinstance(node, complex_nodes):
-                problems.append(f"function {fn.name} contains {node.__class__.__name__} at line {getattr(node,'lineno', '?')}")
+                problems.append(
+                    f"function {fn.name} contains {node.__class__.__name__} at line {getattr(node,'lineno', '?')}"
+                )
 
     return problems
 
@@ -105,7 +110,9 @@ def main():
                 for p in probs:
                     print("     ", p)
             print()
-        print("Please either add the header or move complex logic into non-excluded modules.")
+        print(
+            "Please either add the header or move complex logic into non-excluded modules."
+        )
         return 1
 
     print("OK: excluded files contain header and passed AST sanity checks")

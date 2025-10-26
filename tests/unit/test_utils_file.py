@@ -1,5 +1,6 @@
-from pathlib import Path
 from datetime import date
+from pathlib import Path
+
 from tests.helpers.test_helpers import load_module_from_path
 
 # load utils via centralized helper
@@ -56,7 +57,9 @@ def test_truncate_wrap_center_and_progress():
 def test_create_table_row_and_tree_line_and_sanitize():
     row = utils.create_table_row(["a", "b"], [5, 5])
     assert "|" in row
-    line = utils.create_tree_line("node", level=1, is_last=True, has_children=True, expanded=False)
+    line = utils.create_tree_line(
+        "node", level=1, is_last=True, has_children=True, expanded=False
+    )
     assert "node" in line
     sanitized = utils.sanitize_input("x\x00y")
     assert "\x00" not in sanitized
@@ -84,7 +87,7 @@ def test_parse_color_no_hash_and_invalid():
     # invalid color should raise
     try:
         utils.parse_color("notacolor!!")
-        assert False
+        raise AssertionError()
     except ValueError:
         pass
 

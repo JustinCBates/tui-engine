@@ -24,7 +24,9 @@ class Separator:
         return f"--- {self.title} ---"
 
 
-def _make_prompt_factory(responses: Optional[Dict[str, Any]], kind: str, default: Any = None) -> Callable:
+def _make_prompt_factory(
+    responses: Optional[Dict[str, Any]], kind: str, default: Any = None
+) -> Callable:
     responses = responses or {}
 
     def factory(message: str = "", **kwargs) -> types.SimpleNamespace:
@@ -60,8 +62,12 @@ def _make_prompt_factory(responses: Optional[Dict[str, Any]], kind: str, default
     return factory
 
 
-def setup_questionary_mocks(monkeypatch: Optional[object], responses: Optional[Dict[str, Any]] = None, *,
-                            default_text: Any = "default_text") -> types.ModuleType:
+def setup_questionary_mocks(
+    monkeypatch: Optional[object],
+    responses: Optional[Dict[str, Any]] = None,
+    *,
+    default_text: Any = "default_text",
+) -> types.ModuleType:
     """Install a lightweight questionary mock into sys.modules and the runtime accessor.
 
     - monkeypatch: pytest monkeypatch fixture (may be None in ad-hoc debug runs)
@@ -75,17 +81,19 @@ def setup_questionary_mocks(monkeypatch: Optional[object], responses: Optional[D
     mock_q = types.ModuleType("questionary")
 
     # factories for common prompt kinds
-    setattr(mock_q, "text", _make_prompt_factory(responses, "text", default_text))
-    setattr(mock_q, "select", _make_prompt_factory(responses, "select", "default_option"))
-    setattr(mock_q, "confirm", _make_prompt_factory(responses, "confirm", True))
-    setattr(mock_q, "password", _make_prompt_factory(responses, "password", "default_password"))
-    setattr(mock_q, "checkbox", _make_prompt_factory(responses, "checkbox", ["default_checkbox"]))
-    setattr(mock_q, "autocomplete", _make_prompt_factory(responses, "autocomplete", "default_autocomplete"))
-    setattr(mock_q, "path", _make_prompt_factory(responses, "path", "/default/path"))
+    mock_q.text = _make_prompt_factory(responses, "text", default_text)
+    mock_q.select = _make_prompt_factory(responses, "select", "default_option")
+    mock_q.confirm = _make_prompt_factory(responses, "confirm", True)
+    mock_q.password = _make_prompt_factory(responses, "password", "default_password")
+    mock_q.checkbox = _make_prompt_factory(responses, "checkbox", ["default_checkbox"])
+    mock_q.autocomplete = _make_prompt_factory(
+        responses, "autocomplete", "default_autocomplete"
+    )
+    mock_q.path = _make_prompt_factory(responses, "path", "/default/path")
 
     # compatibility attributes expected by validators and prompt helpers
-    setattr(mock_q, "ValidationError", ValidationError)
-    setattr(mock_q, "Separator", Separator)
+    mock_q.ValidationError = ValidationError
+    mock_q.Separator = Separator
 
     # Install into sys.modules so "from questionary import X" works
     if monkeypatch is None:
@@ -118,6 +126,8 @@ def setup_questionary_mocks(monkeypatch: Optional[object], responses: Optional[D
         pass
 
     return mock_q
+
+
 """Test helpers for mocking questionary in headless environments.
 
 This module exposes `setup_questionary_mocks(monkeypatch, responses)` which
@@ -128,9 +138,7 @@ value) or a callable factory with signature
 `factory(kind=<str>, name=<opt>, message=<opt>, choices=<opt>, kwargs=<dict>)`.
 """
 
-import sys
 import typing
-from types import SimpleNamespace
 
 # Singleton factories per-kind so identity checks (``is``) and
 # monkeypatch.setattr("questionary.X", ...) are reliable across
@@ -266,7 +274,6 @@ def setup_questionary_mocks(monkeypatch, responses=None):
 
         return PromptObj(name, kwargs, value)
 
-
     def make_factory(kind):
         # Return a singleton callable per kind. The callable consults the
         # module-level _current_responder to compute its return value so
@@ -279,11 +286,23 @@ def setup_questionary_mocks(monkeypatch, responses=None):
             # use the live responder (may be updated by subsequent setups)
             val = None
             try:
-                val = _current_responder(kind=kind, name=kwargs.get("name"), message=kwargs.get("message"), choices=kwargs.get("choices"), kwargs=kwargs)
+                val = _current_responder(
+                    kind=kind,
+                    name=kwargs.get("name"),
+                    message=kwargs.get("message"),
+                    choices=kwargs.get("choices"),
+                    kwargs=kwargs,
+                )
             except Exception:
                 # Fallback to local responder captured at setup time
                 try:
-                    val = responder(kind=kind, name=kwargs.get("name"), message=kwargs.get("message"), choices=kwargs.get("choices"), kwargs=kwargs)
+                    val = responder(
+                        kind=kind,
+                        name=kwargs.get("name"),
+                        message=kwargs.get("message"),
+                        choices=kwargs.get("choices"),
+                        kwargs=kwargs,
+                    )
                 except Exception:
                     val = None
             # If the caller passed a `name` or positional name, expose it
@@ -412,7 +431,17 @@ def setup_questionary_mocks(monkeypatch, responses=None):
         _qp = _il.import_module("questionary_extended._questionary_proxy")
         qp = getattr(_qp, "questionary_proxy", None)
         if qp is not None:
-            for _n in ("text", "select", "confirm", "password", "checkbox", "autocomplete", "path", "prompt", "Separator"):
+            for _n in (
+                "text",
+                "select",
+                "confirm",
+                "password",
+                "checkbox",
+                "autocomplete",
+                "path",
+                "prompt",
+                "Separator",
+            ):
                 try:
                     if hasattr(mock_q, _n):
                         setattr(qp, _n, getattr(mock_q, _n))
@@ -449,7 +478,8 @@ def setup_questionary_mocks(monkeypatch, responses=None):
             try:
                 m = _il.import_module(modname)
                 try:
-                    setattr(m, "questionary", mock_q)
+                    m.questionary = mock_q
+
                     # For common symbol names, install thin proxy callables on
                     # the module that forward to the live `sys.modules['questionary']`
                     # entry. This ensures tests that monkeypatch `questionary.<name>`
@@ -467,7 +497,17 @@ def setup_questionary_mocks(monkeypatch, responses=None):
                         _proxy.__name__ = f"proxy_questionary_{attr_name}"
                         return _proxy
 
-                    for _n in ("text", "select", "confirm", "password", "checkbox", "autocomplete", "path", "prompt", "Separator"):
+                    for _n in (
+                        "text",
+                        "select",
+                        "confirm",
+                        "password",
+                        "checkbox",
+                        "autocomplete",
+                        "path",
+                        "prompt",
+                        "Separator",
+                    ):
                         try:
                             if hasattr(m, _n):
                                 existing = getattr(m, _n)
@@ -475,7 +515,10 @@ def setup_questionary_mocks(monkeypatch, responses=None):
                                 # a reference to the external `questionary` module
                                 # (e.g., imported via `from questionary import select`).
                                 mod_of_existing = getattr(existing, "__module__", "")
-                                if mod_of_existing.startswith("questionary") or mod_of_existing == "questionary":
+                                if (
+                                    mod_of_existing.startswith("questionary")
+                                    or mod_of_existing == "questionary"
+                                ):
                                     setattr(m, _n, _make_proxy(_n))
                                 else:
                                     # Skip replacing module-defined functions to avoid

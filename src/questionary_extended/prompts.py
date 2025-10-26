@@ -9,12 +9,11 @@ This is the main prompts module - imports working implementations from prompts_c
 
 # Import working core implementations
 import datetime as _datetime
+import importlib
+from types import SimpleNamespace
 
 # Import types for advanced features
 from typing import Any, Dict, List, Optional, Union
-
-import importlib
-from types import SimpleNamespace
 
 # Use the shared proxy as the module-level `questionary` object. This keeps
 # imports safe and lets tests monkeypatch `questionary` attributes on this
@@ -27,7 +26,7 @@ except Exception:
     def _questionary_placeholder(*a: object, **kw: object) -> object:
         raise NotImplementedError("questionary is not configured in this environment")
 
-    questionary = SimpleNamespace(
+    questionary: Any = SimpleNamespace(  # type: ignore
         text=_questionary_placeholder,
         select=_questionary_placeholder,
         confirm=_questionary_placeholder,
@@ -37,6 +36,7 @@ except Exception:
         path=_questionary_placeholder,
         prompt=_questionary_placeholder,
     )
+
 
 def _resolve_questionary():
     _rt = importlib.import_module("questionary_extended._runtime")
@@ -55,7 +55,9 @@ def _lazy_factory(name: str):
 
     return _f
 
+
 from .components import Column, ProgressStep
+
 try:
     # Prefer direct relative import (normal package import)
     from .prompts_core import LazyQuestion, _lazy_factory
@@ -73,12 +75,12 @@ except Exception:
     # practice of inserting lightweight stubs working without causing
     # AttributeError during isolated module loads.
     if hasattr(_pc, "_lazy_factory"):
-        _lazy_factory = _pc._lazy_factory
+        _lazy_factory = _pc._lazy_factory  # type: ignore
     else:
         # provide local fallback and ensure the stub exposes it
-        _lazy_factory = _lazy_factory
+        _lazy_factory = _lazy_factory  # type: ignore
         try:
-            setattr(_pc, "_lazy_factory", _lazy_factory)
+            _pc._lazy_factory = _lazy_factory  # type: ignore
         except Exception:
             # best-effort: if we can't patch the imported object, continue
             pass
@@ -86,9 +88,10 @@ except Exception:
     # LazyQuestion: prefer the imported class, otherwise provide a
     # compatible local implementation (mirrors prompts_core.LazyQuestion).
     if hasattr(_pc, "LazyQuestion"):
-        LazyQuestion = _pc.LazyQuestion
+        LazyQuestion = _pc.LazyQuestion  # type: ignore[misc]
     else:
-        class LazyQuestion:
+
+        class LazyQuestion:  # type: ignore[no-redef]
             def __init__(self, factory, *args, **kwargs):
                 self._factory = factory
                 self._args = args
@@ -106,10 +109,11 @@ except Exception:
             def __repr__(self):
                 factory_name = getattr(self._factory, "__name__", repr(self._factory))
                 return f"<LazyQuestion factory={factory_name} args={self._args} kwargs={self._kwargs}>"
+
         # ensure the imported stub/module also exposes LazyQuestion to keep
         # future relative imports stable
         try:
-            setattr(_pc, "LazyQuestion", LazyQuestion)
+            _pc.LazyQuestion = LazyQuestion  # type: ignore[attr-defined]
         except Exception:
             pass
 
@@ -213,7 +217,7 @@ def date(
     max_date: Optional[_datetime.date] = None,
     format_str: str = "%Y-%m-%d",
     **kwargs: Any,
-)-> Any:
+) -> Any:
     """
     Date input with validation and formatting.
 
@@ -327,7 +331,9 @@ def tree_select(
         return items
 
     flat_choices = flatten_dict(choices)
-    return LazyQuestion(_lazy_factory("select"), message, choices=flat_choices, **kwargs)
+    return LazyQuestion(
+        _lazy_factory("select"), message, choices=flat_choices, **kwargs
+    )
 
 
 def multi_level_select(
@@ -357,7 +363,9 @@ def tag_select(
     Returns:
         Question instance
     """
-    return LazyQuestion(_lazy_factory("checkbox"), message, choices=available_tags, **kwargs)
+    return LazyQuestion(
+        _lazy_factory("checkbox"), message, choices=available_tags, **kwargs
+    )
 
 
 def fuzzy_select(
@@ -380,7 +388,9 @@ def fuzzy_select(
     Returns:
         Question instance
     """
-    return LazyQuestion(_lazy_factory("autocomplete"), message, choices=choices, **kwargs)
+    return LazyQuestion(
+        _lazy_factory("autocomplete"), message, choices=choices, **kwargs
+    )
 
 
 def grouped_select(
@@ -497,7 +507,9 @@ def table(
     # For now, return a simple text input
     # Implementation will be added for actual table editing
     return LazyQuestion(
-        _lazy_factory("text"), f"{message} (Table input - implementation pending)", **kwargs
+        _lazy_factory("text"),
+        f"{message} (Table input - implementation pending)",
+        **kwargs,
     )
 
 

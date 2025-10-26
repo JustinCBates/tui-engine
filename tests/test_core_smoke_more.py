@@ -1,4 +1,4 @@
-from questionary_extended.core import Assembly, Card, Component, Page, PageState
+from questionary_extended.core import Assembly, Card, Component, Page
 
 
 def test_core_constructors_and_defaults():

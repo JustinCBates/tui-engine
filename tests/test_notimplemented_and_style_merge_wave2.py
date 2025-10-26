@@ -8,30 +8,30 @@ def test_assembly_card_page_not_implemented():
         pass
 
     # Assembly methods that should raise NotImplementedError
-    a = Assembly('name', parent=P())
-    
+    a = Assembly("name", parent=P())
+
     # text() and select() are now implemented, so they should NOT raise
     # Instead, test the methods that DO raise NotImplementedError
     try:
-        a.show_components(['f'])
+        a.show_components(["f"])
         raised_show = False
     except NotImplementedError:
         raised_show = True
 
     try:
-        a.hide_components(['f'])
+        a.hide_components(["f"])
         raised_hide = False
     except NotImplementedError:
         raised_hide = True
 
     try:
-        a.get_value('f')
+        a.get_value("f")
         raised_get = False
     except NotImplementedError:
         raised_get = True
 
     try:
-        a.get_related_value('f')
+        a.get_related_value("f")
         raised_related = False
     except NotImplementedError:
         raised_related = True
@@ -40,12 +40,12 @@ def test_assembly_card_page_not_implemented():
 
     # Card - check if it has similar NotImplementedError methods
     # For now, just verify Card can be instantiated
-    c = Card('t', parent=P())
+    Card("t", parent=P())
     # text() and select() should work if Card has them implemented
     # If they're not implemented, they would raise AttributeError, not NotImplementedError
 
     # Page.run should raise NotImplementedError
-    p = Page('p')
+    p = Page("p")
     try:
         p.run()
         pr = False
@@ -56,14 +56,15 @@ def test_assembly_card_page_not_implemented():
 
 
 def test_apply_theme_to_style_various_rules():
-    from questionary_extended.styles import Theme, ColorPalette, apply_theme_to_style
     from prompt_toolkit.styles.style import Style
 
-    th = Theme('t', palette=ColorPalette())
+    from questionary_extended.styles import ColorPalette, Theme, apply_theme_to_style
+
+    th = Theme("t", palette=ColorPalette())
 
     # Create fake base_style with _style_rules as list of tuples
     class FakeBase:
-        _style_rules = [('a', 'fg:#123456'), ('b', 'fg:#abcdef')]
+        _style_rules = [("a", "fg:#123456"), ("b", "fg:#abcdef")]
 
     merged = apply_theme_to_style(th, base_style=FakeBase())
     assert isinstance(merged, Style)
@@ -75,7 +76,7 @@ def test_apply_theme_to_style_various_rules():
             self.style = style
 
     class FakeBase2:
-        _style_rules = [RuleObj('x', 'fg:#112233'), RuleObj('y', 'fg:#334455')]
+        _style_rules = [RuleObj("x", "fg:#112233"), RuleObj("y", "fg:#334455")]
 
     merged2 = apply_theme_to_style(th, base_style=FakeBase2())
     assert isinstance(merged2, Style)

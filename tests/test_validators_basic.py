@@ -1,7 +1,11 @@
 import pytest
-
-from questionary_extended.validators import EmailValidator, URLValidator, NumberValidator
 from questionary import ValidationError
+
+from questionary_extended.validators import (
+    EmailValidator,
+    NumberValidator,
+    URLValidator,
+)
 
 
 def test_email_validator():

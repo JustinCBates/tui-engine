@@ -14,6 +14,7 @@ Usage:
 
 Note: This script assumes `coverage` is installed in the active virtualenv.
 """
+
 import os
 import subprocess
 import sys
@@ -36,9 +37,11 @@ print("Running CLI in subprocess under coverage...")
 run_cmd = cov_cmd + ["run", "--parallel-mode", "-m", "questionary_extended.cli"]
 print(" ", " ".join(run_cmd))
 try:
-  subprocess.check_call(run_cmd, cwd=REPO_ROOT)
+    subprocess.check_call(run_cmd, cwd=REPO_ROOT)
 except subprocess.CalledProcessError as e:
-  print(f"Subprocess exited with code {e.returncode}; continuing to combine coverage data")
+    print(
+        f"Subprocess exited with code {e.returncode}; continuing to combine coverage data"
+    )
 
 print("Combining coverage data and generating HTML...")
 subprocess.check_call(cov_cmd + ["combine"], cwd=REPO_ROOT)

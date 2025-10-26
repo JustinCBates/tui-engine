@@ -1,19 +1,26 @@
 """Integration testing for utilities - complex scenarios, edge cases, error handling."""
 
-import pytest
-import importlib.util
 import os
-import sys
-from tests.helpers.test_helpers import load_module_from_path, _find_repo_root
 from datetime import date
+
+import pytest
+
 from questionary_extended.utils import (
-    format_date, parse_date,
-    format_number, parse_number,
+    center_text,
+    create_progress_bar,
+    format_date,
+    format_number,
+    fuzzy_match,
     parse_color,
-    render_markdown, truncate_text, wrap_text, center_text,
-    create_progress_bar, fuzzy_match,
-    validate_email, validate_url,
+    parse_date,
+    parse_number,
+    render_markdown,
+    truncate_text,
+    validate_email,
+    validate_url,
+    wrap_text,
 )
+from tests.helpers.test_helpers import load_module_from_path
 
 
 class TestIntegrationScenarios:
@@ -52,9 +59,9 @@ class TestIntegrationScenarios:
         """Test fuzzy matching with email validation."""
         emails = ["user@example.com", "admin@test.org", "support@help.net"]
         matches = fuzzy_match("user", emails, threshold=0.3)
-        
+
         # Validate that matched emails are actually valid
-        for match, score in matches:
+        for match, _score in matches:
             if validate_email(match):
                 assert "@" in match
 
@@ -73,7 +80,7 @@ class TestEdgeCases:
         # Very large number
         large_num = format_number(999999999999, thousands_sep=True)
         assert "," in large_num
-        
+
         # Very small progress
         tiny_progress = create_progress_bar(1, 1000000, width=20)
         assert isinstance(tiny_progress, str)
@@ -82,10 +89,10 @@ class TestEdgeCases:
         """Test error handling for malformed inputs."""
         with pytest.raises((ValueError, TypeError)):
             parse_number("not_a_number")
-        
+
         with pytest.raises((ValueError, TypeError)):
             parse_date("not_a_date")
-        
+
         # Color parsing returns default instead of raising
         result = parse_color("not_a_color")
         assert result.hex == "#000000"  # Default fallback
@@ -96,7 +103,7 @@ class TestEdgeCases:
         truncated = truncate_text(unicode_text, 8)
         wrapped = wrap_text(unicode_text, width=10)
         centered = center_text("🔥", width=5)
-        
+
         assert isinstance(truncated, str)
         assert isinstance(wrapped, list)  # wrap_text returns list
         assert isinstance(centered, str)
@@ -105,12 +112,12 @@ class TestEdgeCases:
         """Test boundary conditions."""
         # Zero width
         assert truncate_text("hello", 0) == "..."
-        
+
         # Exact width match
         result = truncate_text("hello", 5)
         assert result == "hello"
-        
-        # Progress at boundaries  
+
+        # Progress at boundaries
         zero_progress = create_progress_bar(0, 100, width=10)
         full_progress = create_progress_bar(100, 100, width=10)
         assert isinstance(zero_progress, str)
@@ -123,22 +130,36 @@ class TestModuleIntegration:
     def test_all_functions_importable(self):
         """Test that all expected functions are available."""
         from questionary_extended.utils import (
-            format_date, parse_date,
-            format_number, parse_number,
+            center_text,
+            create_progress_bar,
+            format_date,
+            format_number,
+            fuzzy_match,
             parse_color,
-            render_markdown, truncate_text, wrap_text, center_text,
-            create_progress_bar, fuzzy_match,
-            validate_email, validate_url,
+            parse_date,
+            parse_number,
+            truncate_text,
+            validate_email,
+            wrap_text,
         )
-        
+
         # Ensure all functions are callable
         functions = [
-            format_date, parse_date, format_number, parse_number,
-            parse_color, render_markdown, truncate_text, wrap_text,
-            center_text, create_progress_bar, fuzzy_match,
-            validate_email, validate_url
+            format_date,
+            parse_date,
+            format_number,
+            parse_number,
+            parse_color,
+            render_markdown,
+            truncate_text,
+            wrap_text,
+            center_text,
+            create_progress_bar,
+            fuzzy_match,
+            validate_email,
+            validate_url,
         ]
-        
+
         for func in functions:
             assert callable(func)
 
@@ -148,12 +169,14 @@ class TestModuleIntegration:
         here = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         src = os.path.join(here, "src", "questionary_extended")
         utils_path = os.path.join(src, "utils.py")
-        
+
         if os.path.exists(utils_path):
             # Use centralized helper to load the file as a standalone module
-            utils_module = load_module_from_path("questionary_extended._file_utils", utils_path)
+            utils_module = load_module_from_path(
+                "questionary_extended._file_utils", utils_path
+            )
 
             # Test a few key functions exist
-            assert hasattr(utils_module, 'format_number')
-            assert hasattr(utils_module, 'parse_color')
-            assert hasattr(utils_module, 'fuzzy_match')
+            assert hasattr(utils_module, "format_number")
+            assert hasattr(utils_module, "parse_color")
+            assert hasattr(utils_module, "fuzzy_match")

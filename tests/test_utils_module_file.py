@@ -10,7 +10,9 @@ def load_utils_module():
     repo_root = Path(__file__).resolve().parents[1]
     module_path = repo_root / "src" / "questionary_extended" / "utils.py"
     # Load as a submodule of the package so relative imports (from .components) work
-    spec = importlib.util.spec_from_file_location("questionary_extended._utils_file", str(module_path))
+    spec = importlib.util.spec_from_file_location(
+        "questionary_extended._utils_file", str(module_path)
+    )
     module = importlib.util.module_from_spec(spec)
     # Ensure package is present
     if "questionary_extended" not in sys.modules:

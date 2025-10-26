@@ -7,16 +7,18 @@ This is a lightweight, idempotent helper intended for manual use. It is not
 used by the test-suite and exists to simplify release workflows.
 """
 
-from pathlib import Path
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 
 def run_command(cmd, check=True, capture_output=False):
     """Run a shell command and return CompletedProcess."""
     print(f"Running: {cmd}")
-    return subprocess.run(cmd, shell=True, check=check, capture_output=capture_output, text=True)
+    return subprocess.run(
+        cmd, shell=True, check=check, capture_output=capture_output, text=True
+    )
 
 
 def get_git_branch():
@@ -54,7 +56,9 @@ def update_pyproject_for_build():
             skip_section = False
             new_lines.append(line)
             continue
-        if skip_section and any(k in line for k in ("dev =", "test =", "quality =", "security =")):
+        if skip_section and any(
+            k in line for k in ("dev =", "test =", "quality =", "security =")
+        ):
             # skip these groups
             continue
         new_lines.append(line)

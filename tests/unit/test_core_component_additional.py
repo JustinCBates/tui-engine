@@ -1,17 +1,16 @@
 from types import SimpleNamespace
-import pytest
 
-from questionary import ValidationError
+import pytest
 
 from questionary_extended.core.component import (
     Component,
-    text,
-    select,
+    autocomplete,
+    checkbox,
     confirm,
     password,
-    checkbox,
-    autocomplete,
     path,
+    select,
+    text,
 )
 
 

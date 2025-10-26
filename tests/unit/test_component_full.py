@@ -14,16 +14,32 @@ def _mk_factory(captured, name=None):
 def test_questionary_config_filters_keys_and_mapping(monkeypatch):
     # Prepare captures for each factory
     caps = {}
-    for key in ("text", "select", "confirm", "password", "checkbox", "autocomplete", "path"):
+    for key in (
+        "text",
+        "select",
+        "confirm",
+        "password",
+        "checkbox",
+        "autocomplete",
+        "path",
+    ):
         caps[key] = {}
         monkeypatch.setattr(questionary, key, _mk_factory(caps[key], key))
 
     # Create component with keys that should be filtered out
     kwargs = {"message": "m", "when": "cond", "enhanced_validation": True, "extra": 5}
     # For each supported type, ensure create_questionary_component calls the right factory
-    for t in ("text", "select", "confirm", "password", "checkbox", "autocomplete", "path"):
+    for t in (
+        "text",
+        "select",
+        "confirm",
+        "password",
+        "checkbox",
+        "autocomplete",
+        "path",
+    ):
         c = comp_mod.Component("n", t, **kwargs)
-        q = c.create_questionary_component()
+        c.create_questionary_component()
         # Ensure the returned object has kwargs and 'extra' passed through, but 'when' and 'enhanced_validation' removed
         received = caps[t].get("kwargs")
         assert received is not None
@@ -36,7 +52,7 @@ def test_unsupported_type_raises():
     c = comp_mod.Component("x", "nope")
     try:
         c.create_questionary_component()
-        assert False, "Expected ValueError"
+        raise AssertionError("Expected ValueError")
     except ValueError as e:
         assert "Unsupported component type" in str(e)
 
@@ -63,4 +79,3 @@ def test_add_validator_and_is_visible_branches():
     assert c2.when_condition == "some>0"
     # is_visible currently returns True for both branches
     assert c2.is_visible({}) is True
-

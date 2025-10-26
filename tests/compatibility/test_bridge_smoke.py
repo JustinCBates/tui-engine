@@ -1,19 +1,16 @@
 from tests.helpers.test_helpers import skip_if_coverage_excluded
-from pathlib import Path
-
 
 skip_if_coverage_excluded("src/questionary_extended/integration/questionary_bridge.py")
 
 
 def test_questionary_bridge_runs_smoke():
     """Smoke test: create a minimal Page with a Component and run the bridge."""
-    import questionary
     import questionary_extended as qe
     from questionary_extended.integration import QuestionaryBridge
 
     # Create a state and a component
     state = qe.PageState()
-    c = qe.text('sample', message='Sample:')
+    c = qe.text("sample", message="Sample:")
 
     # Run bridge but avoid interactive prompt if questionary.ask is not available
     bridge = QuestionaryBridge(state)

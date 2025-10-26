@@ -1,7 +1,6 @@
-import pytest
 from questionary_extended import prompts, utils
-from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 from questionary_extended.core.state import PageState
+from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 
 
 def test_grouped_select_flattening():

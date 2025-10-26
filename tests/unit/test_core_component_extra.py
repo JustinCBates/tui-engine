@@ -1,6 +1,7 @@
-from pathlib import Path
-from tests.helpers.test_helpers import load_module_from_path
 import importlib
+from pathlib import Path
+
+from tests.helpers.test_helpers import load_module_from_path
 
 # Load core component module with centralized helper to ensure __package__ is set
 comp_mod = load_module_from_path(
@@ -30,14 +31,14 @@ def test_create_questionary_component_calls_mapped_factory(monkeypatch):
     # The conftest mock intercepts questionary calls, so we can't easily
     # monkeypatch the factories. Instead, just verify that the Component
     # correctly passes configuration to create_questionary_component.
-    
+
     c = comp_mod.Component("n", "text", message="m")
     res = c.create_questionary_component()
-    
+
     # The conftest wraps return values in PromptObj
     # Check that it has the expected structure and the message was passed through
-    assert hasattr(res, 'ask'), "Expected PromptObj with ask() method"
-    assert hasattr(res, 'kwargs'), "Expected PromptObj with kwargs attribute"
+    assert hasattr(res, "ask"), "Expected PromptObj with ask() method"
+    assert hasattr(res, "kwargs"), "Expected PromptObj with kwargs attribute"
     assert res.kwargs.get("message") == "m", "Message should be passed through"
 
 
@@ -45,7 +46,7 @@ def test_create_questionary_component_unsupported():
     c = comp_mod.Component("n", "unsupported")
     try:
         c.create_questionary_component()
-        assert False, "Expected ValueError for unsupported type"
+        raise AssertionError("Expected ValueError for unsupported type")
     except ValueError as e:
         assert "Unsupported component type" in str(e)
 
@@ -56,7 +57,10 @@ def test_wrapper_default_messages():
     importlib.reload(comp_mod)
     t = comp_mod.text("my_field")
     assert isinstance(t, comp_mod.Component)
-    assert "My Field" in t.questionary_config.get("message") or "my field" in t.questionary_config.get("message").lower()
+    assert (
+        "My Field" in t.questionary_config.get("message")
+        or "my field" in t.questionary_config.get("message").lower()
+    )
 
     s = comp_mod.select("opt")
     assert s.questionary_config.get("choices") == []

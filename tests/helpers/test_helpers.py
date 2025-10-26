@@ -1,10 +1,11 @@
 """Test helpers and utilities for the test suite."""
 
-import pytest
+import importlib.util
 import os
 import sys
-import importlib.util
 from pathlib import Path
+
+import pytest
 
 
 def _find_repo_root():
@@ -22,7 +23,7 @@ def load_module_from_path(module_name, file_path):
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     if spec is None or spec.loader is None:
         raise ImportError(f"Could not load module {module_name} from {file_path}")
-    
+
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
     spec.loader.exec_module(module)
@@ -33,7 +34,7 @@ def skip_if_coverage_excluded(func):
     """Skip test if coverage is excluded or module is not available."""
     try:
         # Check if we're running in a coverage context
-        if os.environ.get('COVERAGE_PROCESS_START'):
+        if os.environ.get("COVERAGE_PROCESS_START"):
             return pytest.mark.skip("Skipping test when coverage is active")(func)
         return func
     except Exception:
@@ -56,4 +57,6 @@ def assert_no_errors_in_output(output: str):
     """Assert that output doesn't contain error indicators."""
     error_indicators = ["Error", "Exception", "Traceback", "ERROR"]
     for indicator in error_indicators:
-        assert indicator not in output, f"Found error indicator '{indicator}' in output: {output}"
+        assert (
+            indicator not in output
+        ), f"Found error indicator '{indicator}' in output: {output}"

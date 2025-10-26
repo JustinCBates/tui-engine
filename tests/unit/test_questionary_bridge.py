@@ -1,5 +1,3 @@
-import types
-import importlib.util
 import pathlib
 from types import SimpleNamespace
 
@@ -30,7 +28,14 @@ class PageStateStub:
 
 
 class ComponentStub:
-    def __init__(self, name, prompt_result=None, create_raises=None, ask_raises=False, visible=True):
+    def __init__(
+        self,
+        name,
+        prompt_result=None,
+        create_raises=None,
+        ask_raises=False,
+        visible=True,
+    ):
         self.name = name
         self._prompt = prompt_result
         self._create_raises = create_raises
@@ -47,11 +52,18 @@ class ComponentStub:
 
 
 def load_bridge_module():
-    root = pathlib.Path(__file__).resolve().parents[2] / "src" / "questionary_extended" / "integration"
+    root = (
+        pathlib.Path(__file__).resolve().parents[2]
+        / "src"
+        / "questionary_extended"
+        / "integration"
+    )
     path = str(root / "questionary_bridge.py")
     from tests.helpers.test_helpers import load_module_from_path
 
-    module = load_module_from_path("questionary_extended.integration.questionary_bridge", path)
+    module = load_module_from_path(
+        "questionary_extended.integration.questionary_bridge", path
+    )
     return module
 
 
@@ -74,9 +86,13 @@ def test_ask_component_create_error():
 
     try:
         bridge.ask_component(comp)
-        assert False, "should have raised RuntimeError"
+        raise AssertionError("should have raised RuntimeError")
     except RuntimeError as e:
-        assert "prompt creation failed" in str(e) or "questionary not usable" in str(e) or "prompt creation" in str(e)
+        assert (
+            "prompt creation failed" in str(e)
+            or "questionary not usable" in str(e)
+            or "prompt creation" in str(e)
+        )
 
 
 def test_ask_component_ask_error():
@@ -87,7 +103,7 @@ def test_ask_component_ask_error():
 
     try:
         bridge.ask_component(comp)
-        assert False, "should have raised RuntimeError"
+        raise AssertionError("should have raised RuntimeError")
     except RuntimeError as e:
         assert "prompt failed" in str(e)
 
@@ -96,7 +112,7 @@ def test_run_walk_components_and_visibility(monkeypatch):
     mod = load_bridge_module()
     # Make the module's type checks accept our stubs
     mod.Component = ComponentStub
-    from types import SimpleNamespace
+
     mod.Card = SimpleNamespace
     mod.Assembly = SimpleNamespace
     state = PageStateStub()
@@ -121,12 +137,12 @@ def test_run_walk_components_and_visibility(monkeypatch):
     # only c1 should be asked (c2 is not visible)
     assert "one" in asked
     assert "two" not in asked
-import types
+
 
 import pytest
 
-from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 from questionary_extended.core.component import Component
+from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 
 
 class DummyState:

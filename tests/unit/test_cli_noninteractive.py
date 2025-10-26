@@ -1,7 +1,7 @@
-from datetime import date
 import importlib
 import sys
 import types
+from datetime import date
 
 
 def _import_cli_with_stubs(monkeypatch):
@@ -23,6 +23,7 @@ def _import_cli_with_stubs(monkeypatch):
 
     # minimal rich stubs
     rc = types.ModuleType("rich.console")
+
     class FakeConsole:
         def print(self, *a, **k):
             return None
@@ -31,6 +32,7 @@ def _import_cli_with_stubs(monkeypatch):
     monkeypatch.setitem(sys.modules, "rich.console", rc)
 
     rt = types.ModuleType("rich.table")
+
     class FakeTable:
         def __init__(self, *a, **k):
             self.rows = []
@@ -45,6 +47,7 @@ def _import_cli_with_stubs(monkeypatch):
     monkeypatch.setitem(sys.modules, "rich.table", rt)
 
     rp = types.ModuleType("rich.panel")
+
     class FakePanel:
         @staticmethod
         def fit(*a, **k):
@@ -63,9 +66,10 @@ def _load_cli_with_package_stubs(monkeypatch):
     """Create a fake 'questionary_extended' package with lightweight submodules
     and load cli.py by filename so imports are deterministic and lightweight.
     """
+    import pathlib
     import sys
     import types
-    import pathlib
+
     from tests.helpers.test_helpers import load_module_from_path
 
     root = pathlib.Path(__file__).resolve().parents[2] / "src" / "questionary_extended"
@@ -109,6 +113,7 @@ def _load_cli_with_package_stubs(monkeypatch):
     class ThemeStub:
         def __init__(self, name):
             self.name = name
+
             class Palette:
                 primary = "#000000"
 
@@ -153,7 +158,7 @@ def test_themes_lists_and_print(monkeypatch):
         printed.append(a)
 
     monkeypatch.setattr(cli.console, "print", fake_print)
-    
+
     # Avoid rich.Table rendering (emoji handling) in tests by providing a lightweight stand-in
     class DummyTable:
         def __init__(self, *a, **k):
@@ -179,8 +184,12 @@ def test_quick_various_prompt_types(monkeypatch):
     # Prepare dummy factories for each prompt type
     monkeypatch.setattr(cli, "enhanced_text", lambda *a, **k: DummyPrompt("hello"))
     monkeypatch.setattr(cli, "number", lambda *a, **k: DummyPrompt("42"))
-    monkeypatch.setattr(cli, "date_prompt", lambda *a, **k: DummyPrompt(date(2020, 1, 1)))
-    monkeypatch.setattr(cli.questionary, "select", lambda *a, **k: DummyPrompt("Option 1"))
+    monkeypatch.setattr(
+        cli, "date_prompt", lambda *a, **k: DummyPrompt(date(2020, 1, 1))
+    )
+    monkeypatch.setattr(
+        cli.questionary, "select", lambda *a, **k: DummyPrompt("Option 1")
+    )
     monkeypatch.setattr(cli, "rating", lambda *a, **k: DummyPrompt(5))
     monkeypatch.setattr(cli, "color", lambda *a, **k: DummyPrompt("#ff0000"))
 
@@ -196,7 +205,7 @@ def test_quick_various_prompt_types(monkeypatch):
         ("color", "#ff0000"),
     ]
 
-    for t, expected in types_and_expect:
+    for t, _expected in types_and_expect:
         output.clear()
         # call the callback function to avoid Click parsing
         cli.quick.callback(t)
@@ -223,4 +232,8 @@ def test_main_error_handling(monkeypatch):
         # main should exit with code 1 on unhandled exceptions
         assert se.code == 1
 
-    assert any("Error" in str(x) or "Operation cancelled" in str(x) for tup in printed for x in tup)
+    assert any(
+        "Error" in str(x) or "Operation cancelled" in str(x)
+        for tup in printed
+        for x in tup
+    )

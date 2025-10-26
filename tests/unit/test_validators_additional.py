@@ -1,18 +1,18 @@
-from types import SimpleNamespace
 from datetime import date
+from types import SimpleNamespace
 
 import pytest
 from questionary import ValidationError
 
 # Use existing project imports
 from questionary_extended.validators import (
-    NumberValidator,
-    DateValidator,
-    RegexValidator,
-    LengthValidator,
     ChoiceValidator,
-    RangeValidator,
     CompositeValidator,
+    DateValidator,
+    LengthValidator,
+    NumberValidator,
+    RangeValidator,
+    RegexValidator,
 )
 
 
@@ -23,7 +23,7 @@ def _doc(text):
 def test_number_validator_empty_and_invalid():
     v = NumberValidator()
     with pytest.raises(ValidationError):
-        v.validate(_doc("") )
+        v.validate(_doc(""))
 
     v2 = NumberValidator(allow_float=False)
     with pytest.raises(ValidationError):

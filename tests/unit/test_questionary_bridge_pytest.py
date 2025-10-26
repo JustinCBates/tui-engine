@@ -1,8 +1,9 @@
 import types
+
 import pytest
 
-from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 from questionary_extended.core.state import PageState
+from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 
 
 class StubPrompt:

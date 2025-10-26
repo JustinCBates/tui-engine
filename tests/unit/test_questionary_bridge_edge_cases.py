@@ -1,11 +1,10 @@
-import importlib
-import types
 import sys
+import types
 
 import pytest
 
-from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 from questionary_extended.core.state import PageState
+from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 
 
 class StubPrompt:
@@ -23,11 +22,9 @@ def test_ask_component_no_questionary_module(monkeypatch):
     state = PageState()
     bridge = QuestionaryBridge(state)
 
-    # ensure questionary is not present by monkeypatching the module-level
-    # variable used inside the bridge implementation
-    import questionary_extended.integration.questionary_bridge as qb
-
-    monkeypatch.setattr(qb, "questionary", None, raising=False)
+    # Mock _resolve_questionary to return None to simulate questionary not available
+    # This approach works even with the autouse fixture that installs questionary mocks
+    monkeypatch.setattr(bridge, "_resolve_questionary", lambda: None)
 
     class C:
         name = "c"

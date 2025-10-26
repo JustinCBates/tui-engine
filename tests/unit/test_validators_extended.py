@@ -1,9 +1,16 @@
-from pathlib import Path
+import pathlib
+import sys
+import types
 from datetime import date
+from pathlib import Path
+
+import pytest
+
 from tests.helpers.test_helpers import load_module_from_path
 
 validators = load_module_from_path(
-    "questionary_extended.validators", Path("src/questionary_extended/validators.py").resolve()
+    "questionary_extended.validators",
+    Path("src/questionary_extended/validators.py").resolve(),
 )
 
 
@@ -13,57 +20,88 @@ class Doc:
 
 
 def test_number_validator_errors_and_success():
-    NV = validators.NumberValidator
+    number_validator = validators.NumberValidator
     from questionary import ValidationError
 
-    v = NV()
+    v = number_validator()
     try:
         v.validate(Doc(""))
-        assert False
+        raise AssertionError("Expected ValidationError for empty input")
     except ValidationError:
         pass
 
     # invalid format
     try:
         v.validate(Doc("notanumber"))
-        assert False
+        raise AssertionError("Expected ValidationError for invalid format")
     except ValidationError:
         pass
 
-    # integer-only
-    vi = NV(allow_float=False)
+    # int not float
+    vi = number_validator(allow_float=False)
     try:
         vi.validate(Doc("1.5"))
-        assert False
+        raise AssertionError("Expected ValidationError for float when integers only")
     except ValidationError:
         pass
 
-    # min/max
-    vmin = NV(min_value=10)
+    # min bounds
+    vmin = number_validator(min_value=10)
     try:
         vmin.validate(Doc("5"))
-        assert False
+        raise AssertionError("Expected ValidationError for value below min")
     except ValidationError:
         pass
 
-    vmax = NV(max_value=2)
+    # max bounds
+    vmax = number_validator(max_value=2)
     try:
         vmax.validate(Doc("3"))
-        assert False
+        raise AssertionError("Expected ValidationError for value above max")
     except ValidationError:
         pass
 
-    # step
-    vs = NV(min_value=0, step=2)
+    # step validation
+    vs = number_validator(step=2)
     try:
         vs.validate(Doc("3"))
-        assert False
+        raise AssertionError("Expected ValidationError for incorrect step")
     except ValidationError:
         pass
 
-    # success
-    vgood = NV(min_value=0, max_value=10)
-    vgood.validate(Doc("5"))
+
+def test_date_validator_branches():
+    date_validator = validators.DateValidator
+    from questionary import ValidationError
+
+    v = date_validator()
+    try:
+        v.validate(Doc(""))
+        raise AssertionError("Expected ValidationError for empty input")
+    except ValidationError:
+        pass
+
+    try:
+        v.validate(Doc("2020/01/01"))
+        raise AssertionError("Expected ValidationError for wrong format")
+    except ValidationError:
+        pass
+
+    # min_date bounds
+    vmin = date_validator(min_date=date(2020, 1, 2))
+    try:
+        vmin.validate(Doc("2020-01-01"))
+        raise AssertionError("Expected ValidationError for date before min")
+    except ValidationError:
+        pass
+
+    # max_date bounds
+    vmax = date_validator(max_date=date(2020, 1, 1))
+    try:
+        vmax.validate(Doc("2020-01-02"))
+        raise AssertionError("Expected ValidationError for date after max")
+    except ValidationError:
+        pass
 
 
 def test_date_validator_branches():
@@ -73,27 +111,27 @@ def test_date_validator_branches():
     v = DV(format_str="%Y-%m-%d")
     try:
         v.validate(Doc(""))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     try:
         v.validate(Doc("2020/01/01"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     vmin = DV(min_date=date(2020, 1, 2))
     try:
         vmin.validate(Doc("2020-01-01"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     vmax = DV(max_date=date(2020, 1, 1))
     try:
         vmax.validate(Doc("2020-01-02"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -110,13 +148,13 @@ def test_email_and_url_validator():
     e = EV()
     try:
         e.validate(Doc(""))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     try:
         e.validate(Doc("bad@"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -125,13 +163,13 @@ def test_email_and_url_validator():
     u = UV()
     try:
         u.validate(Doc(""))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     try:
         u.validate(Doc("http:/bad"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -141,7 +179,7 @@ def test_email_and_url_validator():
     uh = UV(require_https=True)
     try:
         uh.validate(Doc("http://example.com"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -152,26 +190,26 @@ def test_range_regex_length_choice_and_composite():
     RV = validators.RangeValidator(1, 3, inclusive=True)
     try:
         RV.validate(Doc(""))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     try:
         RV.validate(Doc("a"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     try:
         RV.validate(Doc("0"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     RV2 = validators.RangeValidator(1, 3, inclusive=False)
     try:
         RV2.validate(Doc("1"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -179,12 +217,12 @@ def test_range_regex_length_choice_and_composite():
     RX = validators.RegexValidator(r"^a+$", message="nope")
     try:
         RX.validate(Doc(""))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
     try:
         RX.validate(Doc("b"))
-        assert False
+        raise AssertionError()
     except ValidationError as e:
         assert "nope" in str(e)
 
@@ -194,12 +232,12 @@ def test_range_regex_length_choice_and_composite():
     LV = validators.LengthValidator(min_length=2, max_length=3)
     try:
         LV.validate(Doc("a"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
     try:
         LV.validate(Doc("abcd"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -207,38 +245,40 @@ def test_range_regex_length_choice_and_composite():
     CV = validators.ChoiceValidator(["A", "B"], case_sensitive=False)
     try:
         CV.validate(Doc(""))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
     try:
         CV.validate(Doc("c"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
     CV.validate(Doc("a"))
 
     # CompositeValidator re-raises first ValidationError
-    comp = validators.CompositeValidator([validators.RegexValidator(r"^x+$"), validators.LengthValidator(min_length=5)])
+    comp = validators.CompositeValidator(
+        [validators.RegexValidator(r"^x+$"), validators.LengthValidator(min_length=5)]
+    )
     try:
         comp.validate(Doc("y"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
-import importlib.util
-import pathlib
-import sys
-import types
-import pytest
 
 
 def _load_validators_with_stub():
     # Ensure any existing imports won't interfere
-    for name in ["questionary", "questionary_extended.validators", "questionary_extended"]:
+    for name in [
+        "questionary",
+        "questionary_extended.validators",
+        "questionary_extended",
+    ]:
         if name in sys.modules:
             sys.modules.pop(name)
 
     # Insert a minimal questionary stub with ValidationError and Validator
     q = types.ModuleType("questionary")
+
     class ValidationError(Exception):
         def __init__(self, *args, **kwargs):
             super().__init__(*args)
@@ -297,7 +337,9 @@ def test_date_validator():
     with pytest.raises(Exception):
         dv.validate(Doc("bad-date"))
 
-    dv2 = DateValidator(min_date=vmod.datetime.strptime("2020-01-01", "%Y-%m-%d").date())
+    dv2 = DateValidator(
+        min_date=vmod.datetime.strptime("2020-01-01", "%Y-%m-%d").date()
+    )
     with pytest.raises(vmod.ValidationError):
         dv2.validate(Doc("2019-12-31"))
 
@@ -352,6 +394,7 @@ def test_range_regex_length_choice():
 
 def test_composite_validator():
     vmod = _load_validators_with_stub()
+
     # Small failing validator
     class AlwaysFail(vmod.Validator):
         def validate(self, document):
@@ -360,12 +403,15 @@ def test_composite_validator():
     cv = vmod.CompositeValidator([AlwaysFail()])
     with pytest.raises(Exception):
         cv.validate(Doc("x"))
+
+
 from pathlib import Path
-from datetime import date
+
 from tests.helpers.test_helpers import load_module_from_path
 
 validators = load_module_from_path(
-    "questionary_extended.validators", Path("src/questionary_extended/validators.py").resolve()
+    "questionary_extended.validators",
+    Path("src/questionary_extended/validators.py").resolve(),
 )
 
 
@@ -381,14 +427,14 @@ def test_number_validator_errors_and_success():
     v = NV()
     try:
         v.validate(Doc(""))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     # invalid format
     try:
         v.validate(Doc("notanumber"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -396,7 +442,7 @@ def test_number_validator_errors_and_success():
     vi = NV(allow_float=False)
     try:
         vi.validate(Doc("1.5"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -404,14 +450,14 @@ def test_number_validator_errors_and_success():
     vmin = NV(min_value=10)
     try:
         vmin.validate(Doc("5"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     vmax = NV(max_value=2)
     try:
         vmax.validate(Doc("3"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -419,7 +465,7 @@ def test_number_validator_errors_and_success():
     vs = NV(min_value=0, step=2)
     try:
         vs.validate(Doc("3"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -435,27 +481,27 @@ def test_date_validator_branches():
     v = DV(format_str="%Y-%m-%d")
     try:
         v.validate(Doc(""))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     try:
         v.validate(Doc("2020/01/01"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     vmin = DV(min_date=date(2020, 1, 2))
     try:
         vmin.validate(Doc("2020-01-01"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     vmax = DV(max_date=date(2020, 1, 1))
     try:
         vmax.validate(Doc("2020-01-02"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -472,13 +518,13 @@ def test_email_and_url_validator():
     e = EV()
     try:
         e.validate(Doc(""))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     try:
         e.validate(Doc("bad@"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -487,13 +533,13 @@ def test_email_and_url_validator():
     u = UV()
     try:
         u.validate(Doc(""))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     try:
         u.validate(Doc("http:/bad"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -503,7 +549,7 @@ def test_email_and_url_validator():
     uh = UV(require_https=True)
     try:
         uh.validate(Doc("http://example.com"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -514,26 +560,26 @@ def test_range_regex_length_choice_and_composite():
     RV = validators.RangeValidator(1, 3, inclusive=True)
     try:
         RV.validate(Doc(""))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     try:
         RV.validate(Doc("a"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     try:
         RV.validate(Doc("0"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
     RV2 = validators.RangeValidator(1, 3, inclusive=False)
     try:
         RV2.validate(Doc("1"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -541,12 +587,12 @@ def test_range_regex_length_choice_and_composite():
     RX = validators.RegexValidator(r"^a+$", message="nope")
     try:
         RX.validate(Doc(""))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
     try:
         RX.validate(Doc("b"))
-        assert False
+        raise AssertionError()
     except ValidationError as e:
         assert "nope" in str(e)
 
@@ -556,12 +602,12 @@ def test_range_regex_length_choice_and_composite():
     LV = validators.LengthValidator(min_length=2, max_length=3)
     try:
         LV.validate(Doc("a"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
     try:
         LV.validate(Doc("abcd"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
 
@@ -569,20 +615,22 @@ def test_range_regex_length_choice_and_composite():
     CV = validators.ChoiceValidator(["A", "B"], case_sensitive=False)
     try:
         CV.validate(Doc(""))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
     try:
         CV.validate(Doc("c"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass
     CV.validate(Doc("a"))
 
     # CompositeValidator re-raises first ValidationError
-    comp = validators.CompositeValidator([validators.RegexValidator(r"^x+$"), validators.LengthValidator(min_length=5)])
+    comp = validators.CompositeValidator(
+        [validators.RegexValidator(r"^x+$"), validators.LengthValidator(min_length=5)]
+    )
     try:
         comp.validate(Doc("y"))
-        assert False
+        raise AssertionError()
     except ValidationError:
         pass

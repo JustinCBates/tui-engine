@@ -1,10 +1,10 @@
-import types
 import sys
+import types
 
 import pytest
 
-from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 from questionary_extended.core.state import PageState
+from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 
 
 class StubPrompt:
@@ -57,7 +57,9 @@ def test_creation_raises_no_console_error(monkeypatch):
         bridge.ask_component(BadCreate())
 
     err = str(exc.value)
-    assert ("questionary not usable" in err) or ("questionary prompt creation failed" in err)
+    assert ("questionary not usable" in err) or (
+        "questionary prompt creation failed" in err
+    )
 
 
 def test_ask_raises_no_console_error(monkeypatch):

@@ -56,13 +56,17 @@ def test_omitted_files_have_exclude_header():
         complex_nodes = (ast.For, ast.While, ast.If, ast.Try, ast.With)
         for node in ast.walk(tree):
             if isinstance(node, complex_nodes):
-                problems.append(f"complex node {node.__class__.__name__} at line {getattr(node,'lineno', '?')}")
+                problems.append(
+                    f"complex node {node.__class__.__name__} at line {getattr(node,'lineno', '?')}"
+                )
 
         # Functions containing complex nodes are flagged
         for fn in [n for n in tree.body if isinstance(n, ast.FunctionDef)]:
             for node in ast.walk(fn):
                 if isinstance(node, complex_nodes):
-                    problems.append(f"function {fn.name} contains {node.__class__.__name__} at line {getattr(node,'lineno','?')}")
+                    problems.append(
+                        f"function {fn.name} contains {node.__class__.__name__} at line {getattr(node,'lineno','?')}"
+                    )
 
         return problems
 

@@ -7,7 +7,9 @@ from pathlib import Path
 def load_standalone_utils():
     repo_root = Path(__file__).resolve().parents[1]
     module_path = repo_root / "src" / "questionary_extended" / "utils.py"
-    spec = importlib.util.spec_from_file_location("questionary_extended._utils_file", str(module_path))
+    spec = importlib.util.spec_from_file_location(
+        "questionary_extended._utils_file", str(module_path)
+    )
     module = importlib.util.module_from_spec(spec)
     if "questionary_extended" not in sys.modules:
         importlib.import_module("questionary_extended")
@@ -31,7 +33,9 @@ def test_table_and_tree_and_sanitize():
     row = m.create_table_row(["longtext"], [5])
     assert isinstance(row, str) and "|" in row
 
-    line = m.create_tree_line("x", level=2, is_last=False, has_children=True, expanded=True)
+    line = m.create_tree_line(
+        "x", level=2, is_last=False, has_children=True, expanded=True
+    )
     assert "└──" in line or "▶" in line or "▼" in line
 
     assert m.sanitize_input("abc\x00\x01") == "abc"

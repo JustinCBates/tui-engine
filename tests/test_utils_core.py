@@ -1,17 +1,17 @@
 """Core utilities testing - basic functionality (date, number, color, text operations)."""
 
-import pytest
 from datetime import date
+
 from questionary_extended.utils import (
+    center_text,
     format_date,
-    parse_date,
     format_number,
-    parse_number,
     parse_color,
+    parse_date,
+    parse_number,
     render_markdown,
     truncate_text,
     wrap_text,
-    center_text,
 )
 
 

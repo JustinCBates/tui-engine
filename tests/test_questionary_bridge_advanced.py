@@ -1,19 +1,17 @@
 """Questionary Bridge advanced testing - error handling, edge cases, and complex scenarios."""
 
-import importlib
-import types
-import sys
 import pytest
-from unittest.mock import MagicMock, patch
 
-from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 from questionary_extended.core.component import Component
 from questionary_extended.core.state import PageState
-from .conftest_questionary import setup_questionary_mocks, DummyState, FakePrompt
+from questionary_extended.integration.questionary_bridge import QuestionaryBridge
+
+from .conftest_questionary import setup_questionary_mocks
 
 
 class StubPrompt:
     """Stub prompt that can raise exceptions for testing."""
+
     def __init__(self, answer=None, raise_on_ask=None):
         self._answer = answer
         self._raise_on_ask = raise_on_ask
@@ -32,14 +30,17 @@ class TestQuestionaryBridgeErrorHandling:
         state = PageState()
         bridge = QuestionaryBridge(state)
 
-        # Remove questionary module
-        import questionary_extended.integration.questionary_bridge as qb
-        monkeypatch.setattr(qb, "questionary", None, raising=False)
+        # Mock _resolve_questionary to return None to simulate questionary not available
+        # This approach works even with the autouse fixture that installs questionary mocks
+        monkeypatch.setattr(bridge, "_resolve_questionary", lambda: None)
 
         component = Component(name="test", component_type="text")
-        
+
         # Should raise RuntimeError when questionary is not available
-        with pytest.raises(RuntimeError, match="questionary is not available in the current environment"):
+        with pytest.raises(
+            RuntimeError,
+            match="questionary is not available in the current environment",
+        ):
             bridge.ask_component(component)
 
     def test_ask_component_invalid_prompt_type(self, monkeypatch):
@@ -53,13 +54,18 @@ class TestQuestionaryBridgeErrorHandling:
         mock_q = setup_questionary_mocks(monkeypatch)
         mock_q.text = lambda *a, **k: StubPrompt("text_answer")
         # Defensive: ensure internal modules reference the same mock
-        monkeypatch.setattr("questionary_extended.integration.questionary_bridge.questionary", mock_q)
+        monkeypatch.setattr(
+            "questionary_extended.integration.questionary_bridge.questionary", mock_q
+        )
         monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         component = Component(name="test", component_type="invalid_type")
-        
+
         # Should raise RuntimeError when component type is unsupported
-        with pytest.raises(RuntimeError, match="questionary prompt creation failed: Unsupported component type"):
+        with pytest.raises(
+            RuntimeError,
+            match="questionary prompt creation failed: Unsupported component type",
+        ):
             bridge.ask_component(component)
 
     def test_ask_component_prompt_raises_exception(self, monkeypatch):
@@ -69,7 +75,7 @@ class TestQuestionaryBridgeErrorHandling:
 
         # Mock questionary to raise exception during .ask()
         exception_to_raise = KeyboardInterrupt("User cancelled")
-        
+
         # Use canonical helper and set factories that raise during .ask()
         mock_q = setup_questionary_mocks(monkeypatch)
         mock_q.text = lambda *a, **k: StubPrompt(raise_on_ask=exception_to_raise)
@@ -77,15 +83,19 @@ class TestQuestionaryBridgeErrorHandling:
         mock_q.confirm = lambda *a, **k: StubPrompt(raise_on_ask=exception_to_raise)
         mock_q.checkbox = lambda *a, **k: StubPrompt(raise_on_ask=exception_to_raise)
         mock_q.password = lambda *a, **k: StubPrompt(raise_on_ask=exception_to_raise)
-        mock_q.autocomplete = lambda *a, **k: StubPrompt(raise_on_ask=exception_to_raise)
+        mock_q.autocomplete = lambda *a, **k: StubPrompt(
+            raise_on_ask=exception_to_raise
+        )
         mock_q.path = lambda *a, **k: StubPrompt(raise_on_ask=exception_to_raise)
 
         # Defensive: ensure internal modules reference the same mock
-        monkeypatch.setattr("questionary_extended.integration.questionary_bridge.questionary", mock_q)
+        monkeypatch.setattr(
+            "questionary_extended.integration.questionary_bridge.questionary", mock_q
+        )
         monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         component = Component(name="test", component_type="text")
-        
+
         # Should propagate the exception
         with pytest.raises(KeyboardInterrupt):
             bridge.ask_component(component)
@@ -95,22 +105,27 @@ class TestQuestionaryBridgeErrorHandling:
         state = PageState()
         bridge = QuestionaryBridge(state)
         # Install canonical helper configured to return None for prompts
-        mock_q = setup_questionary_mocks(monkeypatch, {
-            "text": None,
-            "select": None,
-            "confirm": None,
-            "password": None,
-            "checkbox": None,
-            "autocomplete": None,
-            "path": None,
-        })
+        mock_q = setup_questionary_mocks(
+            monkeypatch,
+            {
+                "text": None,
+                "select": None,
+                "confirm": None,
+                "password": None,
+                "checkbox": None,
+                "autocomplete": None,
+                "path": None,
+            },
+        )
         # Defensive: ensure internal modules reference the same mock
-        monkeypatch.setattr("questionary_extended.integration.questionary_bridge.questionary", mock_q)
+        monkeypatch.setattr(
+            "questionary_extended.integration.questionary_bridge.questionary", mock_q
+        )
         monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
         component = Component(name="test", component_type="text", message="Test prompt")
-        
+
         result = bridge.ask_component(component)
-        
+
         # Should handle None return gracefully
         assert result is None
         assert state.get_all_state().get("test") is None
@@ -122,15 +137,18 @@ class TestQuestionaryBridgeEdgeCases:
     def test_component_without_id(self, monkeypatch):
         """Test component without an ID."""
         from tests.conftest_questionary import setup_questionary_mocks
+
         setup_questionary_mocks(monkeypatch, {"text": "answer"})
-        
+
         state = PageState()
         bridge = QuestionaryBridge(state)
 
         # Component with no ID or None ID
-        component = Component(name="no_id_test", component_type="text", message="Test question")
+        component = Component(
+            name="no_id_test", component_type="text", message="Test question"
+        )
         component.id = None
-        
+
         # Should handle gracefully - might skip persistence or use default
         result = bridge.ask_component(component)
         assert result == "answer"
@@ -141,7 +159,7 @@ class TestQuestionaryBridgeEdgeCases:
         bridge = QuestionaryBridge(state)
 
         captured_message = None
-        
+
         def capture_call(message, **kwargs):
             nonlocal captured_message
             captured_message = message
@@ -158,13 +176,15 @@ class TestQuestionaryBridgeEdgeCases:
         mock_q.path = lambda *a, **k: StubPrompt("default_path")
 
         # Defensive: ensure internal modules reference the same mock
-        monkeypatch.setattr("questionary_extended.integration.questionary_bridge.questionary", mock_q)
+        monkeypatch.setattr(
+            "questionary_extended.integration.questionary_bridge.questionary", mock_q
+        )
         monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         # Component with empty message
         component = Component(name="test", component_type="text", message="")
         bridge.ask_component(component)
-        
+
         assert captured_message == ""
 
     def test_component_with_complex_choices(self, monkeypatch):
@@ -173,7 +193,7 @@ class TestQuestionaryBridgeEdgeCases:
         bridge = QuestionaryBridge(state)
 
         captured_choices = None
-        
+
         def capture_select_call(message, choices=None, **kwargs):
             nonlocal captured_choices
             captured_choices = choices
@@ -190,43 +210,48 @@ class TestQuestionaryBridgeEdgeCases:
         mock_q.path = lambda *a, **k: StubPrompt("default_path")
 
         # Defensive: ensure internal modules reference the same mock
-        monkeypatch.setattr("questionary_extended.integration.questionary_bridge.questionary", mock_q)
+        monkeypatch.setattr(
+            "questionary_extended.integration.questionary_bridge.questionary", mock_q
+        )
         monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         # Complex choices with nested structure
         complex_choices = [
             {"name": "Option 1", "value": "opt1"},
             {"name": "Option 2", "value": "opt2"},
-            "simple_string_choice"
+            "simple_string_choice",
         ]
 
         component = Component(
             name="complex_test",
             component_type="select",
             message="Choose an option:",
-            choices=complex_choices
+            choices=complex_choices,
         )
-        
+
         bridge.ask_component(component)
-        
+
         # Should pass through complex choices as-is
         assert captured_choices == complex_choices
 
     def test_state_overwrite_behavior(self, monkeypatch):
         """Test behavior when state key is overwritten."""
         from tests.conftest_questionary import setup_questionary_mocks
+
         setup_questionary_mocks(monkeypatch, {"text": "new_answer"})
-        
+
         state = PageState()
         bridge = QuestionaryBridge(state)
 
         # Set initial state
         state.set("test", "initial_value")
-        
+
         # Ask component with same ID
-        component = Component(name="test", component_type="text", message="Enter value:")
+        component = Component(
+            name="test", component_type="text", message="Enter value:"
+        )
         result = bridge.ask_component(component)
-        
+
         # Should overwrite previous value
         assert result == "new_answer"
         assert state.get_all_state()["test"] == "new_answer"
@@ -246,8 +271,10 @@ class TestQuestionaryBridgeIntegration:
         class CustomState:
             def __init__(self):
                 self._data = {}
+
             def set(self, k, v):
                 self._data[k] = v
+
             def get_all_state(self):
                 return self._data
 
@@ -272,14 +299,20 @@ class TestQuestionaryBridgeIntegration:
         mock_q.path = lambda *a, **k: StubPrompt("/path/to/file")
 
         # Defensive: ensure internal modules reference the same mock
-        monkeypatch.setattr("questionary_extended.integration.questionary_bridge.questionary", mock_q)
+        monkeypatch.setattr(
+            "questionary_extended.integration.questionary_bridge.questionary", mock_q
+        )
         monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         # Test various prompt types work
         prompt_types = ["text", "select", "confirm", "checkbox", "password", "path"]
-        
+
         for prompt_type in prompt_types:
-            component = Component(name=f"{prompt_type}_test", component_type=prompt_type, message=f"Test {prompt_type} question")
+            component = Component(
+                name=f"{prompt_type}_test",
+                component_type=prompt_type,
+                message=f"Test {prompt_type} question",
+            )
             try:
                 result = bridge.ask_component(component)
                 assert result is not None  # Should get some result
@@ -289,15 +322,17 @@ class TestQuestionaryBridgeIntegration:
 
     def test_bridge_direct_module_import(self):
         """Test bridge can be imported and instantiated directly."""
-        from questionary_extended.integration.questionary_bridge import QuestionaryBridge
         from questionary_extended.core.state import PageState
-        
+        from questionary_extended.integration.questionary_bridge import (
+            QuestionaryBridge,
+        )
+
         state = PageState()
         bridge = QuestionaryBridge(state)
-        
+
         # Should have expected attributes
-        assert hasattr(bridge, 'state')
-        assert hasattr(bridge, 'ask_component')
+        assert hasattr(bridge, "state")
+        assert hasattr(bridge, "ask_component")
         assert bridge.state is state
 
     def test_component_parameter_passthrough(self, monkeypatch):
@@ -306,7 +341,7 @@ class TestQuestionaryBridgeIntegration:
         bridge = QuestionaryBridge(state)
 
         captured_kwargs = {}
-        
+
         def capture_all_kwargs(message, **kwargs):
             captured_kwargs.update(kwargs)
             return StubPrompt("answer")
@@ -322,7 +357,9 @@ class TestQuestionaryBridgeIntegration:
         mock_q.path = lambda *a, **k: StubPrompt("default_path")
 
         # Defensive: ensure internal modules reference the same mock
-        monkeypatch.setattr("questionary_extended.integration.questionary_bridge.questionary", mock_q)
+        monkeypatch.setattr(
+            "questionary_extended.integration.questionary_bridge.questionary", mock_q
+        )
         monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         # Component with many parameters (compatible with text input)
@@ -332,10 +369,10 @@ class TestQuestionaryBridgeIntegration:
             message="Test message",
             default="default_val",
             validate=lambda x: True,
-            style={"color": "red"}
+            style={"color": "red"},
         )
-        
+
         bridge.ask_component(component)
-        
+
         # Should pass through relevant parameters
         # (exact behavior depends on implementation details)

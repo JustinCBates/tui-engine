@@ -1,4 +1,3 @@
-import builtins
 from typing import Any
 
 import pytest
@@ -11,7 +10,10 @@ def test_wrapper_defaults_text_and_password_and_path():
     assert c.name == "first_name"
     assert c.component_type == "text"
     # default message is derived from the name
-    assert "First Name" in c.questionary_config["message"].replace("_", " ") or "First" in c.questionary_config["message"]
+    assert (
+        "First Name" in c.questionary_config["message"].replace("_", " ")
+        or "First" in c.questionary_config["message"]
+    )
 
     p = compmod.password("secret")
     assert p.component_type == "password"
@@ -63,21 +65,29 @@ def test_create_questionary_component_calls_monkeypatched_questionary(monkeypatc
     # The conftest installs a mock that returns PromptObj instances.
     # We can verify the component calls the right factory by checking the
     # PromptObj.name attribute (which gets set to the component_type by default)
-    
+
     # Test each mapping
-    for comp_type in ("text", "select", "confirm", "password", "checkbox", "autocomplete", "path"):
+    for comp_type in (
+        "text",
+        "select",
+        "confirm",
+        "password",
+        "checkbox",
+        "autocomplete",
+        "path",
+    ):
         cfg = {"message": f"hi-{comp_type}"}
         if comp_type in ("select", "checkbox", "autocomplete"):
             cfg["choices"] = ["a", "b"]
         c = compmod.Component("n", comp_type, **cfg)
         result = c.create_questionary_component()
-        
+
         # The conftest mock returns a PromptObj with .name and .kwargs attributes
         # Check that the prompt was created with the right type (name defaults to kind)
-        assert hasattr(result, 'name'), f"Expected PromptObj with name attribute"
-        assert hasattr(result, 'kwargs'), f"Expected PromptObj with kwargs attribute"
+        assert hasattr(result, "name"), "Expected PromptObj with name attribute"
+        assert hasattr(result, "kwargs"), "Expected PromptObj with kwargs attribute"
         assert result.name == comp_type, f"Expected prompt name to be {comp_type}"
-        
+
         # Verify message was passed through
         assert result.kwargs.get("message") == cfg["message"]
         if "choices" in cfg:

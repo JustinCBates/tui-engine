@@ -1,5 +1,6 @@
 from pathlib import Path
-from tests.helpers.test_helpers import load_module_from_path, skip_if_coverage_excluded
+
+from tests.helpers.test_helpers import load_module_from_path
 
 # prompts.py is intentionally excluded from coverage; skip these direct tests if so
 # NOTE: for this run we want to exercise the prompt wrappers and their
@@ -7,7 +8,8 @@ from tests.helpers.test_helpers import load_module_from_path, skip_if_coverage_e
 # skip_if_coverage_excluded("src/questionary_extended/prompts.py")
 
 prompts = load_module_from_path(
-    "questionary_extended.prompts", Path("src/questionary_extended/prompts.py").resolve()
+    "questionary_extended.prompts",
+    Path("src/questionary_extended/prompts.py").resolve(),
 )
 
 from tests.conftest_questionary import setup_questionary_mocks
@@ -69,6 +71,8 @@ def test_tree_select_flatten_and_grouped_and_rating():
 
     r = prompts.rating("rate", max_rating=3)
     assert hasattr(r, "_kwargs")
+
+
 import datetime as dt
 from unittest.mock import Mock
 
@@ -138,10 +142,10 @@ def test_tree_and_multi_and_tag_and_fuzzy(monkeypatch):
     ml = pr.multi_level_select("m", choices)
     assert hasattr(ml, "_factory")
 
-    tag = pr.tag_select("tags", ["one", "two"]) 
+    tag = pr.tag_select("tags", ["one", "two"])
     assert hasattr(tag, "_factory")
 
-    fuzzy = pr.fuzzy_select("fz", ["a"]) 
+    fuzzy = pr.fuzzy_select("fz", ["a"])
     assert hasattr(fuzzy, "_factory")
 
 
@@ -164,23 +168,28 @@ def test_grouped_select_and_rating_and_slider_and_table(monkeypatch):
 
     tb = pr.table("t", columns=[])
     assert hasattr(tb, "_factory")
+
+
 """
 Incremental test coverage for prompts.py - Phase 1
 Target: Boost coverage from 37% to 55% with basic function testing
 """
 
-import pytest
-from datetime import date, time, datetime
-from unittest.mock import Mock, patch
+from datetime import date, time
+from unittest.mock import patch
 
 from src.questionary_extended.prompts import (
-    enhanced_text,
-    rich_text,
-    number,
-    integer,
-    float_input,
-    percentage,
     date as date_prompt,
+)
+from src.questionary_extended.prompts import (
+    enhanced_text,
+    float_input,
+    integer,
+    number,
+    percentage,
+    rich_text,
+)
+from src.questionary_extended.prompts import (
     time as time_prompt,
 )
 from src.questionary_extended.prompts_core import LazyQuestion
@@ -192,7 +201,7 @@ class TestBasicPromptFunctions:
     def test_enhanced_text_basic(self):
         """Test enhanced_text with default parameters."""
         result = enhanced_text("Test message")
-        
+
         # Should return LazyQuestion instance
         assert isinstance(result, LazyQuestion)
         # Factory should be a callable (tests may patch it with lambdas)
@@ -202,22 +211,22 @@ class TestBasicPromptFunctions:
     def test_enhanced_text_with_default(self):
         """Test enhanced_text with default value."""
         result = enhanced_text("Test message", default="default_value")
-        
+
         assert isinstance(result, LazyQuestion)
-        assert result._kwargs.get('default') == "default_value"
+        assert result._kwargs.get("default") == "default_value"
 
     def test_enhanced_text_with_kwargs(self):
         """Test enhanced_text with additional kwargs."""
         result = enhanced_text(
-            "Test message", 
+            "Test message",
             default="test",
             multiline=True,
-            placeholder="Enter text here"
+            placeholder="Enter text here",
         )
-        
+
         assert isinstance(result, LazyQuestion)
         # Additional kwargs should be passed through
-        assert 'multiline' in str(result._kwargs) or True  # Basic test
+        assert "multiline" in str(result._kwargs) or True  # Basic test
 
     def test_rich_text_basic(self):
         """Test rich_text basic functionality."""
@@ -237,7 +246,7 @@ class TestBasicPromptFunctions:
             "Code input",
             default="print('hello')",
             syntax_highlighting="python",
-            line_numbers=True
+            line_numbers=True,
         )
 
         assert isinstance(result, LazyQuestion)
@@ -250,68 +259,63 @@ class TestNumericPrompts:
     def test_number_basic(self):
         """Test number function with basic parameters."""
         result = number("Enter number")
-        
+
         assert isinstance(result, LazyQuestion)
         assert result._args[0] == "Enter number"
 
     def test_number_with_default(self):
         """Test number function with default value."""
         result = number("Enter number", default=42)
-        
+
         assert isinstance(result, LazyQuestion)
         # Default should be converted to string
-        assert result._kwargs.get('default') == "42"
+        assert result._kwargs.get("default") == "42"
 
     def test_number_with_default_none(self):
         """Test number function with None default."""
         result = number("Enter number", default=None)
-        
+
         assert isinstance(result, LazyQuestion)
-        assert result._kwargs.get('default') == ""
+        assert result._kwargs.get("default") == ""
 
     def test_number_with_validation_params(self):
         """Test number function creates validator with params."""
-        result = number(
-            "Enter number",
-            min_value=1,
-            max_value=100,
-            allow_float=False
-        )
-        
+        result = number("Enter number", min_value=1, max_value=100, allow_float=False)
+
         assert isinstance(result, LazyQuestion)
         # Should have validator attached
-        assert result._kwargs.get('validate') is not None
+        assert result._kwargs.get("validate") is not None
 
     def test_integer_function(self):
         """Test integer wrapper function."""
         result = integer("Enter integer", min_value=1, max_value=10)
-        
+
         assert isinstance(result, LazyQuestion)
         # Should call number with allow_float=False
 
     def test_integer_without_limits(self):
         """Test integer without min/max values."""
         result = integer("Enter any integer")
-        
+
         assert isinstance(result, LazyQuestion)
 
     def test_float_input_function(self):
         """Test float_input wrapper function."""
         result = float_input("Enter float", min_value=0.0, max_value=1.0)
-        
+
         assert isinstance(result, LazyQuestion)
         # Should call number with allow_float=True
 
     def test_float_input_without_limits(self):
         """Test float_input without min/max values."""
         result = float_input("Enter any float")
-        
+
         assert isinstance(result, LazyQuestion)
 
     def test_percentage_function(self):
         """Test percentage wrapper function."""
         result = percentage("Enter percentage")
-        
+
         assert isinstance(result, LazyQuestion)
         # Should have 0-100 range and format string
 
@@ -319,102 +323,90 @@ class TestNumericPrompts:
 class TestDateTimePrompts:
     """Phase 1: Test date/time prompt functions."""
 
-    @patch('questionary.text')
+    @patch("questionary.text")
     def test_date_basic(self, mock_text):
         """Test date function with basic parameters."""
         mock_text.return_value = Mock()
-        
+
         result = date_prompt("Enter date")
-        
+
         mock_text.assert_called_once()
         assert result is not None
 
-    @patch('questionary.text')
+    @patch("questionary.text")
     def test_date_with_default(self, mock_text):
         """Test date function with default date."""
         mock_text.return_value = Mock()
-        
+
         today = date.today()
-        result = date_prompt("Enter date", default=today)
-        
+        date_prompt("Enter date", default=today)
+
         # Should format date as string for default
         expected_default = today.strftime("%Y-%m-%d")
         mock_text.assert_called_once()
         call_args = mock_text.call_args
-        assert call_args[1]['default'] == expected_default
+        assert call_args[1]["default"] == expected_default
 
-    @patch('questionary.text') 
+    @patch("questionary.text")
     def test_date_with_format(self, mock_text):
         """Test date function with custom format."""
         mock_text.return_value = Mock()
-        
+
         test_date = date(2023, 10, 15)
-        result = date_prompt(
-            "Enter date", 
-            default=test_date,
-            format_str="%d/%m/%Y"
-        )
-        
+        date_prompt("Enter date", default=test_date, format_str="%d/%m/%Y")
+
         expected_default = "15/10/2023"
         call_args = mock_text.call_args
-        assert call_args[1]['default'] == expected_default
+        assert call_args[1]["default"] == expected_default
 
-    @patch('questionary.text')
+    @patch("questionary.text")
     def test_date_with_validation_range(self, mock_text):
         """Test date function with min/max date validation."""
         mock_text.return_value = Mock()
-        
+
         min_date = date(2023, 1, 1)
         max_date = date(2023, 12, 31)
-        
-        result = date_prompt(
-            "Enter date",
-            min_date=min_date,
-            max_date=max_date
-        )
-        
+
+        date_prompt("Enter date", min_date=min_date, max_date=max_date)
+
         # Should have validator with date range
         call_args = mock_text.call_args
-        assert call_args[1]['validate'] is not None
+        assert call_args[1]["validate"] is not None
 
-    @patch('questionary.text')
+    @patch("questionary.text")
     def test_time_basic(self, mock_text):
         """Test time function with basic parameters."""
         mock_text.return_value = Mock()
-        
+
         result = time_prompt("Enter time")
-        
+
         mock_text.assert_called_once()
         assert result is not None
 
-    @patch('questionary.text')
+    @patch("questionary.text")
     def test_time_with_default(self, mock_text):
         """Test time function with default time."""
         mock_text.return_value = Mock()
-        
+
         test_time = time(14, 30, 0)  # 2:30 PM
-        result = time_prompt("Enter time", default=test_time)
-        
+        time_prompt("Enter time", default=test_time)
+
         # Should format time as string
         expected_default = "14:30:00"
         call_args = mock_text.call_args
-        assert call_args[1]['default'] == expected_default
+        assert call_args[1]["default"] == expected_default
 
-    @patch('questionary.text')
+    @patch("questionary.text")
     def test_time_with_format(self, mock_text):
         """Test time function with custom format."""
         mock_text.return_value = Mock()
-        
+
         test_time = time(14, 30)
-        result = time_prompt(
-            "Enter time",
-            default=test_time,
-            format_str="%H:%M"
-        )
-        
+        time_prompt("Enter time", default=test_time, format_str="%H:%M")
+
         expected_default = "14:30"
         call_args = mock_text.call_args
-        assert call_args[1]['default'] == expected_default
+        assert call_args[1]["default"] == expected_default
 
 
 class TestPromptEdgeCases:
@@ -423,43 +415,43 @@ class TestPromptEdgeCases:
     def test_enhanced_text_empty_message(self):
         """Test enhanced_text with empty message."""
         result = enhanced_text("")
-        
+
         assert isinstance(result, LazyQuestion)
         assert result._args[0] == ""
 
     def test_number_with_zero_default(self):
         """Test number function with zero as default."""
         result = number("Enter number", default=0)
-        
+
         assert isinstance(result, LazyQuestion)
-        assert result._kwargs.get('default') == "0"
+        assert result._kwargs.get("default") == "0"
 
     def test_number_with_float_default(self):
         """Test number function with float default."""
         result = number("Enter number", default=3.14)
-        
+
         assert isinstance(result, LazyQuestion)
-        assert result._kwargs.get('default') == "3.14"
+        assert result._kwargs.get("default") == "3.14"
 
     def test_date_without_default(self):
         """Test date function without default value."""
-        with patch('questionary.text') as mock_text:
+        with patch("questionary.text") as mock_text:
             mock_text.return_value = Mock()
-            
-            result = date_prompt("Enter date", default=None)
-            
+
+            date_prompt("Enter date", default=None)
+
             call_args = mock_text.call_args
-            assert call_args[1]['default'] == ""
+            assert call_args[1]["default"] == ""
 
     def test_time_without_default(self):
         """Test time function without default value."""
-        with patch('questionary.text') as mock_text:
+        with patch("questionary.text") as mock_text:
             mock_text.return_value = Mock()
-            
-            result = time_prompt("Enter time", default=None)
-            
+
+            time_prompt("Enter time", default=None)
+
             call_args = mock_text.call_args
-            assert call_args[1]['default'] == ""
+            assert call_args[1]["default"] == ""
 
 
 # Integration tests to verify the functions work together
@@ -470,10 +462,14 @@ class TestPromptIntegration:
         """Test that all prompt functions can be imported."""
         # This test covers import lines
         from src.questionary_extended.prompts import (
-            enhanced_text, rich_text, number, integer, 
-            float_input, percentage
+            enhanced_text,
+            float_input,
+            integer,
+            number,
+            percentage,
+            rich_text,
         )
-        
+
         # All should be callable
         assert callable(enhanced_text)
         assert callable(rich_text)
@@ -486,9 +482,10 @@ class TestPromptIntegration:
         """Test that validators are properly integrated."""
         # Test that NumberValidator is used
         result = number("Test", min_value=1, max_value=10)
-        validator = result._kwargs.get('validate')
-        
+        validator = result._kwargs.get("validate")
+
         assert validator is not None
         # Validator should be a NumberValidator instance
         from src.questionary_extended.validators import NumberValidator
+
         assert isinstance(validator, NumberValidator)

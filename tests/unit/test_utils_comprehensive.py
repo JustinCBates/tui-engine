@@ -1,15 +1,16 @@
 import importlib.util
 import os
 import sys
-from datetime import date, datetime
-
+from datetime import date
 
 HERE = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 SRC = os.path.join(HERE, "src", "questionary_extended")
 
 # load components first so relative imports inside utils.py resolve
 COMP_PATH = os.path.join(SRC, "components.py")
-spec_c = importlib.util.spec_from_file_location("questionary_extended.components", COMP_PATH)
+spec_c = importlib.util.spec_from_file_location(
+    "questionary_extended.components", COMP_PATH
+)
 components = importlib.util.module_from_spec(spec_c)
 spec_c.loader.exec_module(components)
 sys.modules["questionary_extended.components"] = components
@@ -77,7 +78,9 @@ def test_progress_table_tree_and_sanitize():
     row = utils.create_table_row(["hello", "world"], [6, 6])
     assert row.count("|") == 3
 
-    t1 = utils.create_tree_line("n", 0, is_last=False, has_children=True, expanded=False)
+    t1 = utils.create_tree_line(
+        "n", 0, is_last=False, has_children=True, expanded=False
+    )
     assert "n" in t1
 
     assert utils.sanitize_input("a\x00b") == "ab"

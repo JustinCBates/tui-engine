@@ -8,9 +8,9 @@ This is a minimal, incremental implementation intended to be expanded as the
 core Page/Card/Assembly APIs are completed.
 """
 
-from typing import Any, Iterable
 import importlib
 from types import SimpleNamespace
+from typing import Any, Iterable
 
 from ..core.component import Component
 from ..core.state import PageState
@@ -48,7 +48,7 @@ class QuestionaryBridge:
     def __init__(self, state: PageState) -> None:
         self.state = state
 
-    def _resolve_questionary(self):
+    def _resolve_questionary(self) -> Any:
         """Resolve the active questionary object using the preferred order:
 
         1. The package-level proxy (`questionary_proxy`) if available.
@@ -93,7 +93,9 @@ class QuestionaryBridge:
         # the module-level attribute to None), surface a clear RuntimeError
         # so callers/tests can detect that prompts are not available.
         if questionary is None:
-            raise RuntimeError("questionary is not available in the current environment")
+            raise RuntimeError(
+                "questionary is not available in the current environment"
+            )
 
         # Creating the prompt object may itself access prompt_toolkit's
         # console output and raise NoConsoleScreenBufferError on Windows
@@ -105,10 +107,14 @@ class QuestionaryBridge:
             prompt = component.create_questionary_component()
         except Exception as e:
             try:
-                from prompt_toolkit.output.win32 import NoConsoleScreenBufferError
+                from prompt_toolkit.output.win32 import (  # type: ignore
+                    NoConsoleScreenBufferError,  # type: ignore
+                )
 
                 if isinstance(e, NoConsoleScreenBufferError):
-                    raise RuntimeError("questionary not usable in this environment") from e
+                    raise RuntimeError(
+                        "questionary not usable in this environment"
+                    ) from e
             except Exception:
                 pass
 
@@ -173,4 +179,3 @@ class QuestionaryBridge:
 
 
 __all__ = ["QuestionaryBridge"]
-

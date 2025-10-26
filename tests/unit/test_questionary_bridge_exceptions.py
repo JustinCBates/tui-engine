@@ -28,7 +28,13 @@ def _make_fake_prompt_toolkit():
 
 
 class _FakeComponent:
-    def __init__(self, name: str, create_exc: Exception = None, ask_exc: Exception = None, answer=None):
+    def __init__(
+        self,
+        name: str,
+        create_exc: Exception = None,
+        ask_exc: Exception = None,
+        answer=None,
+    ):
         self.name = name
         self._create_exc = create_exc
         self._ask_exc = ask_exc
@@ -65,8 +71,17 @@ def _reload_bridge_with_fake_questionary():
         def _factory(**kwargs):
             return None
 
-        for name in ("text", "select", "confirm", "password", "checkbox", "autocomplete", "path"):
+        for name in (
+            "text",
+            "select",
+            "confirm",
+            "password",
+            "checkbox",
+            "autocomplete",
+            "path",
+        ):
             setattr(q, name, _factory)
+
         # style-related exports used by styles.py
         class Style:
             pass
@@ -84,6 +99,7 @@ def _reload_bridge_with_fake_questionary():
                 self.value = value
 
         q.Choice = Choice
+
         # validation helpers
         class ValidationError(Exception):
             pass
@@ -122,9 +138,8 @@ def test_ask_component_creation_no_console_error_stops(monkeypatch):
     # a generic creation failure. Accept either message here; lines in both
     # branches are exercised by the test.
     msg = str(exc.value)
-    assert (
-        "not usable in this environment" in msg
-        or msg.startswith("questionary prompt creation failed")
+    assert "not usable in this environment" in msg or msg.startswith(
+        "questionary prompt creation failed"
     )
 
 
@@ -143,9 +158,8 @@ def test_ask_component_ask_no_console_error_stops(monkeypatch):
         bridge.ask_component(comp)
 
     msg = str(exc.value)
-    assert (
-        "not usable in this environment" in msg
-        or msg.startswith("questionary prompt failed")
+    assert "not usable in this environment" in msg or msg.startswith(
+        "questionary prompt failed"
     )
 
 

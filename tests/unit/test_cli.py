@@ -1,8 +1,8 @@
-import importlib.util
 from pathlib import Path
 from types import SimpleNamespace
-from tests.helpers.test_helpers import load_module_from_path, skip_if_coverage_excluded
+
 from tests.conftest_questionary import setup_questionary_mocks
+from tests.helpers.test_helpers import load_module_from_path
 
 # For local runs we want to exercise the CLI callbacks. Comment out the
 # coverage-based skip and install the canonical questionary mock so imports
@@ -30,7 +30,11 @@ def make_answer(val):
 def test_themes_runs(monkeypatch):
     # patch console.print to avoid side effects
     printed = {}
-    monkeypatch.setattr(cli, "console", SimpleNamespace(print=lambda *a, **k: printed.update({"called": True})))
+    monkeypatch.setattr(
+        cli,
+        "console",
+        SimpleNamespace(print=lambda *a, **k: printed.update({"called": True})),
+    )
     # Call the underlying callback to avoid Click parsing argv
     cli.themes.callback()
     assert printed.get("called")
@@ -57,7 +61,9 @@ def test_quick_various_prompt_types(monkeypatch):
 
 def test_main_keyboardinterrupt_and_exception(monkeypatch):
     # Mock cli() to raise KeyboardInterrupt
-    monkeypatch.setattr(cli, "cli", lambda *a, **k: (_ for _ in ()).throw(KeyboardInterrupt()))
+    monkeypatch.setattr(
+        cli, "cli", lambda *a, **k: (_ for _ in ()).throw(KeyboardInterrupt())
+    )
     # patch console to avoid real printing
     monkeypatch.setattr(cli, "console", SimpleNamespace(print=lambda *a, **k: None))
 
@@ -67,7 +73,9 @@ def test_main_keyboardinterrupt_and_exception(monkeypatch):
         assert e.code == 1
 
     # Mock cli() to raise generic exception
-    monkeypatch.setattr(cli, "cli", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
+    monkeypatch.setattr(
+        cli, "cli", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom"))
+    )
     try:
         cli.main()
     except SystemExit as e:

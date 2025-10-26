@@ -1,8 +1,8 @@
-import logging
-import re
-import os
-from pathlib import Path
 import json
+import logging
+import os
+import re
+from pathlib import Path
 
 
 def sanitize_nodeid(nodeid: str, max_len: int = 200) -> str:
@@ -59,9 +59,9 @@ def redact(text: str, patterns: list[str] | None = None) -> str:
         return text
 
     pats = patterns or [
-        r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+',  # email
-        r'bearer\s+[A-Za-z0-9\-_.=]+',  # bearer tokens
-        r'[A-Fa-f0-9]{20,}',  # long hex-like tokens
+        r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+",  # email
+        r"bearer\s+[A-Za-z0-9\-_.=]+",  # bearer tokens
+        r"[A-Fa-f0-9]{20,}",  # long hex-like tokens
         r'~\\[^"\n]+',  # unix home paths starting with ~\
         r'[A-Za-z]:\\\\Users\\\\[A-Za-z0-9_.-]+\\\\[^"\n]+',  # Windows user paths
     ]
@@ -90,9 +90,9 @@ class JsonFormatter(logging.Formatter):
         }
         # Optional fields
         if hasattr(record, "nodeid"):
-            data["nodeid"] = getattr(record, "nodeid")
+            data["nodeid"] = record.nodeid
         if hasattr(record, "worker"):
-            data["worker"] = getattr(record, "worker")
+            data["worker"] = record.worker
         if record.exc_info:
             data["exc"] = self.formatException(record.exc_info)
 
@@ -107,7 +107,12 @@ class RedactingFormatter(logging.Formatter):
     plain-text formatters.
     """
 
-    def __init__(self, fmt: str | None = None, redaction_patterns: list[str] | None = None, inner: logging.Formatter | None = None):
+    def __init__(
+        self,
+        fmt: str | None = None,
+        redaction_patterns: list[str] | None = None,
+        inner: logging.Formatter | None = None,
+    ):
         super().__init__(fmt)
         self._patterns = redaction_patterns
         self._inner = inner
@@ -118,4 +123,3 @@ class RedactingFormatter(logging.Formatter):
         else:
             s = super().format(record)
         return redact(s, self._patterns)
-

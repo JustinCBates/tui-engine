@@ -8,6 +8,8 @@ def test_progress_tracker_export_and_instance():
     # Instances should be instances of the exported class
     with ProgressTracker("test", total_steps=1) as p:
         assert isinstance(p, ProgressTracker)
+
+
 from questionary_extended.prompts_core import ProgressTracker as CoreProgressTracker
 
 

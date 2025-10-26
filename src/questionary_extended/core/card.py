@@ -55,7 +55,9 @@ class Card:
         # minimal convenience implementation that creates a Component and
         # appends it so higher-level Page.run() can execute it.
         if not hasattr(self.parent_page, "state"):
-            raise NotImplementedError("Card.text is not implemented for standalone Card instances")
+            raise NotImplementedError(
+                "Card.text is not implemented for standalone Card instances"
+            )
 
         from .component import text as _text_component
 
@@ -76,7 +78,9 @@ class Card:
             Self for method chaining
         """
         if not hasattr(self.parent_page, "state"):
-            raise NotImplementedError("Card.select is not implemented for standalone Card instances")
+            raise NotImplementedError(
+                "Card.select is not implemented for standalone Card instances"
+            )
 
         from .component import select as _select_component
 

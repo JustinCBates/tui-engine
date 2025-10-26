@@ -1,16 +1,19 @@
 """Test the fundamental core functionality."""
 
-import sys
 import os
+import sys
 
 # Add src to path for testing
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+
 
 def test_basic_imports():
     """Test that basic imports work."""
     import questionary_extended as qe
+
     # Basic import should succeed and expose a __version__ attribute
     assert hasattr(qe, "__version__")
+
 
 def test_core_prompts():
     """Test core prompt functionality."""
@@ -21,6 +24,7 @@ def test_core_prompts():
     _ = qe.number("Test number", min_value=0, max_value=100)
     _ = qe.rating("Test rating", max_rating=5)
 
+
 def test_validators():
     """Test validator functionality."""
     import questionary_extended as qe
@@ -28,6 +32,7 @@ def test_validators():
     # Validators should be instantiable
     _ = qe.NumberValidator(min_value=0, max_value=100)
     _ = qe.EmailValidator()
+
 
 def test_progress_tracker():
     """Test progress tracker."""
@@ -43,11 +48,12 @@ def test_progress_tracker():
     # If we reach here, the operations didn't raise
     assert True
 
+
 def main():
     """Run all fundamental tests."""
     print("🧪 Testing Fundamental Core Implementation")
     print("=" * 50)
-    
+
     # main() remains for CLI usage; pytest will run individual test_* functions
     tests = [
         ("Basic Imports", test_basic_imports),
@@ -78,6 +84,7 @@ def main():
         print("⚠️  Some tests failed. Check the output above for details.")
 
     return passed == total
+
 
 if __name__ == "__main__":
     success = main()

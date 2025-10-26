@@ -1,16 +1,14 @@
-from questionary_extended.styles import (
-    ColorPalette,
-    Theme,
-    create_theme,
-    create_gradient_palette,
-    apply_theme_to_style,
-    StyleBuilder,
-    get_theme_names,
-    get_theme,
-)
+from click.testing import CliRunner
 
 from questionary_extended import cli
-from click.testing import CliRunner
+from questionary_extended.styles import (
+    ColorPalette,
+    StyleBuilder,
+    apply_theme_to_style,
+    create_gradient_palette,
+    create_theme,
+    get_theme,
+)
 
 
 def test_theme_creation_and_gradient():

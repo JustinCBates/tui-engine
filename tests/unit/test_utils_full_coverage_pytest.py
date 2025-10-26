@@ -1,7 +1,6 @@
 import importlib.util
 import os
-import re
-from datetime import date, datetime
+from datetime import date
 
 import pytest
 
@@ -16,10 +15,13 @@ SRC = os.path.join(HERE, "src", "questionary_extended")
 # imports inside utils.py resolve to this module instead of triggering the
 # package import machinery.
 COMP_PATH = os.path.join(SRC, "components.py")
-spec_c = importlib.util.spec_from_file_location("questionary_extended.components", COMP_PATH)
+spec_c = importlib.util.spec_from_file_location(
+    "questionary_extended.components", COMP_PATH
+)
 components = importlib.util.module_from_spec(spec_c)
 spec_c.loader.exec_module(components)
 import sys
+
 sys.modules["questionary_extended.components"] = components
 
 UTILS_PATH = os.path.join(SRC, "utils.py")
@@ -45,7 +47,9 @@ def test_format_number_variants():
     assert utils.format_number(12.3456, decimal_places=2) == "12.35"
     assert utils.format_number(0.5, percentage=True) == "0.5%"
     assert utils.format_number(1000, currency="$") == "$1000"
-    assert utils.format_number(1234567.89, decimal_places=2, thousands_sep=True, currency="$")
+    assert utils.format_number(
+        1234567.89, decimal_places=2, thousands_sep=True, currency="$"
+    )
 
 
 def test_parse_number_int_and_float():
@@ -105,7 +109,9 @@ def test_create_progress_bar_and_table_and_tree():
     row = utils.create_table_row(["a", "b"], [6, 6])
     assert row.count("|") == 3
 
-    t = utils.create_tree_line("node", 0, is_last=False, has_children=True, expanded=False)
+    t = utils.create_tree_line(
+        "node", 0, is_last=False, has_children=True, expanded=False
+    )
     assert "node" in t
 
 

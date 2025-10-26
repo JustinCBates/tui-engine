@@ -1,7 +1,5 @@
-import re
-from datetime import date, datetime
-import importlib.util
 import pathlib
+from datetime import date
 
 import pytest
 
@@ -111,5 +109,7 @@ def test_generate_choices_from_range():
     c = utils.generate_choices_from_range(1, 3)
     assert c == ["1", "2", "3"]
 
-    c2 = utils.generate_choices_from_range(0.0, 0.5, step=0.25, format_fn=lambda v: f"{v:.2f}")
+    c2 = utils.generate_choices_from_range(
+        0.0, 0.5, step=0.25, format_fn=lambda v: f"{v:.2f}"
+    )
     assert c2[0] == "0.00" and c2[-1] == "0.50"

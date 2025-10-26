@@ -20,7 +20,7 @@ def format_date(d: Any, fmt: str = "%Y-%m-%d") -> str:
     """Format a date-like object to a string."""
     if isinstance(d, (date, datetime)):
         # Handle edge case for years < 1000 where strftime doesn't zero-pad
-        if hasattr(d, 'year') and d.year < 1000 and "%Y" in fmt:
+        if hasattr(d, "year") and d.year < 1000 and "%Y" in fmt:
             # Create a properly zero-padded year
             padded_year = f"{d.year:04d}"
             # Replace %Y with the padded year in the format string

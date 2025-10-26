@@ -5,8 +5,8 @@ Intended to be used as a local pre-commit hook. It scans files passed as
 arguments and fails if it finds obvious bash-only idioms such as heredocs
 (`<<`), `||`, or `&&` which are likely to break PowerShell users.
 """
-import sys
 import re
+import sys
 from pathlib import Path
 
 PATTERNS = [
@@ -43,7 +43,9 @@ def main(argv):
                 print(f"  - {f}")
 
     if bad:
-        print("\nDetected bash-only constructs. Please rewrite examples to be PowerShell-safe or exclude binary/third-party files.")
+        print(
+            "\nDetected bash-only constructs. Please rewrite examples to be PowerShell-safe or exclude binary/third-party files."
+        )
         return 1
     return 0
 

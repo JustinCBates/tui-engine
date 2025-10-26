@@ -1,12 +1,10 @@
 """CLI commands testing - individual command functionality."""
 
-import pytest
+import importlib
 import sys
 import types
-from types import ModuleType
-from unittest.mock import patch, MagicMock
-from click.testing import CliRunner
-import importlib
+from unittest.mock import MagicMock
+
 from tests.conftest_questionary import setup_questionary_mocks
 
 
@@ -43,7 +41,7 @@ class TestQuickCommands:
 
         monkeypatch.setattr(cli, "rating", lambda *a, **k: FakePrompt())
         cli.quick.callback("rating")
-        
+
         out = capsys.readouterr().out
         assert "4" in out
 
@@ -57,9 +55,13 @@ class TestQuickCommands:
 
         monkeypatch.setattr(cli, "rating", lambda *a, **k: FakePrompt())
         cli.quick.callback("rating")
-        
+
         out = capsys.readouterr().out
-        assert "No input provided" in out or "No rating provided" in out or len(out.strip()) == 0
+        assert (
+            "No input provided" in out
+            or "No rating provided" in out
+            or len(out.strip()) == 0
+        )
 
     def test_quick_color_command(self, monkeypatch, capsys):
         """Test quick color command."""
@@ -71,7 +73,7 @@ class TestQuickCommands:
 
         monkeypatch.setattr(cli, "color", lambda *a, **k: FakePrompt())
         cli.quick.callback("color")
-        
+
         out = capsys.readouterr().out
         assert "red" in out or len(out) >= 0  # Accept any output
 
@@ -85,7 +87,7 @@ class TestQuickCommands:
 
         monkeypatch.setattr(cli, "number", lambda *a, **k: FakePrompt())
         cli.quick.callback("number")
-        
+
         out = capsys.readouterr().out
         assert "42" in out or len(out) >= 0
 
@@ -100,7 +102,7 @@ class TestFormBuilder:
         # Mock questionary module
         monkeypatch.setattr(cli, "questionary", types.SimpleNamespace())
         fake_q = cli.questionary
-        
+
         # Setup sequential responses
         fake_q.confirm = make_seq_factory([True, False])  # Add field, then stop
         fake_q.text = make_seq_factory(["field1", "Prompt for field1", "a, b, c"])
@@ -120,7 +122,7 @@ class TestFormBuilder:
 
         monkeypatch.setattr(cli, "questionary", types.SimpleNamespace())
         fake_q = cli.questionary
-        
+
         fake_q.confirm = make_seq_factory([True, False])
         fake_q.text = make_seq_factory(["field1", "Enter text"])
         fake_q.select = make_seq_factory(["text"])
@@ -143,7 +145,7 @@ class TestFormBuilder:
         fn = getattr(cli.form_builder, "callback", cli.form_builder)
         fn()
 
-        out = capsys.readouterr().out
+        capsys.readouterr().out
         # Should handle empty form gracefully
 
 
@@ -154,7 +156,7 @@ class TestDemoCommand:
         """Test basic demo functionality."""
         # Apply comprehensive questionary mocking to avoid console issues
         setup_questionary_mocks(monkeypatch)
-        
+
         cli = _reload_cli()
 
         # Mock progress tracker
@@ -190,24 +192,26 @@ class TestDemoCommand:
         mock_prompt = MagicMock()
         mock_prompt.ask = fake_ask
 
-        # Mock all prompt types used in demo 
+        # Mock all prompt types used in demo
         monkeypatch.setattr(cli, "enhanced_text", lambda *a, **k: mock_prompt)
         monkeypatch.setattr(cli, "color", lambda *a, **k: mock_prompt)
         monkeypatch.setattr(cli, "number", lambda *a, **k: mock_prompt)
         monkeypatch.setattr(cli, "rating", lambda *a, **k: mock_prompt)
         monkeypatch.setattr(cli, "tree_select", lambda *a, **k: mock_prompt)
+
         # Mock date_prompt to return a mock prompt object
         def mock_date_prompt(*a, **k):
             date_prompt = MagicMock()
             date_prompt.ask = lambda: "1990-01-01"
             return date_prompt
+
         monkeypatch.setattr(cli, "date_prompt", mock_date_prompt)
 
         # Call demo
         fn = getattr(cli.demo, "callback", cli.demo)
         fn()
 
-        out = capsys.readouterr().out
+        capsys.readouterr().out
         # Demo should complete without error
 
 
@@ -221,23 +225,23 @@ class TestThemeCommands:
         fn = getattr(cli.themes, "callback", cli.themes)
         fn()
 
-        out = capsys.readouterr().out
+        capsys.readouterr().out
         # Should display available themes information
 
     def test_cli_import_and_basic_functionality(self):
         """Test CLI module can be imported and has expected commands."""
         cli = _reload_cli()
-        
+
         # Check that main commands exist
         assert hasattr(cli, "quick")
-        assert hasattr(cli, "form_builder") 
+        assert hasattr(cli, "form_builder")
         assert hasattr(cli, "demo")
         assert hasattr(cli, "themes")
 
     def test_cli_main_execution(self, monkeypatch):
         """Test CLI main execution path."""
         cli = _reload_cli()
-        
+
         # Mock click's main group execution
         with monkeypatch.context() as m:
             m.setattr("sys.argv", ["cli"])

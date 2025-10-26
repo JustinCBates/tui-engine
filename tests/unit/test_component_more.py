@@ -18,7 +18,15 @@ def test_create_questionary_component_various_types(monkeypatch):
     monkeypatch.setattr(questionary, "autocomplete", lambda **kw: _fake_factory(**kw))
     monkeypatch.setattr(questionary, "path", lambda **kw: _fake_factory(**kw))
 
-    types = ["text", "select", "confirm", "password", "checkbox", "autocomplete", "path"]
+    types = [
+        "text",
+        "select",
+        "confirm",
+        "password",
+        "checkbox",
+        "autocomplete",
+        "path",
+    ]
     for t in types:
         c = comp_mod.Component("nm", t, foo=1)
         q = c.create_questionary_component()

@@ -1,9 +1,12 @@
 from pathlib import Path
+
 from tests.helpers.test_helpers import load_module_from_path
 
 
 def _load_utils_module():
-    module_path = Path(__file__).parents[2] / "src" / "questionary_extended" / "utils.py"
+    module_path = (
+        Path(__file__).parents[2] / "src" / "questionary_extended" / "utils.py"
+    )
     mod = load_module_from_path("questionary_extended.utils", str(module_path))
     return mod
 
@@ -99,7 +102,9 @@ def test_progress_bar_and_table_and_tree():
 
     line = mod.create_tree_line("leaf", 0, is_last=True, has_children=False)
     assert line.endswith("leaf")
-    line2 = mod.create_tree_line("node", 1, is_last=False, has_children=True, expanded=True)
+    line2 = mod.create_tree_line(
+        "node", 1, is_last=False, has_children=True, expanded=True
+    )
     assert "▼" in line2 or "▶" in line2
 
 
@@ -124,5 +129,7 @@ def test_sanitize_and_fuzzy_and_validators_and_range():
     choices = mod.generate_choices_from_range(1, 3)
     assert choices == ["1", "2", "3"]
 
-    choices2 = mod.generate_choices_from_range(0.0, 0.5, step=0.25, format_fn=lambda x: f"{x:.2f}")
+    choices2 = mod.generate_choices_from_range(
+        0.0, 0.5, step=0.25, format_fn=lambda x: f"{x:.2f}"
+    )
     assert "0.25" in choices2

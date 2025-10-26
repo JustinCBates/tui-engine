@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from tests.helpers.test_helpers import load_module_from_path, skip_if_coverage_excluded
 
 # styles.py is a thin wrapper around styling helpers; respect exclusion guard
@@ -26,13 +27,16 @@ def test_theme_to_style_and_overrides():
     assert isinstance(qstyle, Style)
 
     # Ensure override applied
-    found = any(item[0] == "qmark" and "#123456" in item[1] for item in getattr(qstyle, "_style_rules", []))
+    found = any(
+        item[0] == "qmark" and "#123456" in item[1]
+        for item in getattr(qstyle, "_style_rules", [])
+    )
     assert found
 
 
 def test_apply_theme_to_style_merge():
     t = styles.Theme("MergeTest")
-    theme_style = t.to_questionary_style()
+    t.to_questionary_style()
 
     # create a fake base_style with some rules
     class FakeRule:
@@ -41,7 +45,10 @@ def test_apply_theme_to_style_merge():
             self.style = style
 
     base = type("B", (), {})()
-    base._style_rules = [("qmark", "fg:#111111"), ("custom", "fg:#222222")]  # tuple form
+    base._style_rules = [
+        ("qmark", "fg:#111111"),
+        ("custom", "fg:#222222"),
+    ]  # tuple form
 
     merged = styles.apply_theme_to_style(t, base_style=base)
     assert isinstance(merged, Style)

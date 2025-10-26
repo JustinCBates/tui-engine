@@ -1,9 +1,9 @@
-import importlib.util
 import sys
 import types
 from pathlib import Path
-from tests.helpers.test_helpers import load_module_from_path
+
 from tests.conftest_questionary import setup_questionary_mocks
+from tests.helpers.test_helpers import load_module_from_path
 
 
 def _load_prompts_with_stubs():
@@ -51,7 +51,11 @@ def _load_prompts_with_stubs():
     fake_pc = types.SimpleNamespace()
 
     def LazyQuestion(func, message, **kwargs):
-        return {"func": getattr(func, "__name__", str(func)), "message": message, **kwargs}
+        return {
+            "func": getattr(func, "__name__", str(func)),
+            "message": message,
+            **kwargs,
+        }
 
     fake_pc.LazyQuestion = LazyQuestion
     fake_pc.ProgressTracker = lambda *a, **k: None
@@ -79,7 +83,9 @@ def _load_prompts_with_stubs():
     sys.modules["questionary_extended.validators"] = fake_val
 
     # load the prompts module by path using centralized helper
-    module_path = Path(__file__).parents[2] / "src" / "questionary_extended" / "prompts.py"
+    module_path = (
+        Path(__file__).parents[2] / "src" / "questionary_extended" / "prompts.py"
+    )
     mod = load_module_from_path("questionary_extended.prompts", str(module_path))
     return mod
 
@@ -154,6 +160,7 @@ def _cleanup():
         "questionary_extended.validators",
     ]:
         sys.modules.pop(k, None)
+
 
 atexit.register(_cleanup)
 

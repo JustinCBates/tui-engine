@@ -1,7 +1,7 @@
-import questionary
 import pytest
+import questionary
 
-from questionary_extended import utils, prompts_core, prompts
+from questionary_extended import prompts, prompts_core, utils
 
 
 def test_create_progress_bar_total_zero():
@@ -51,16 +51,28 @@ def test_progress_tracker_exception_path(capsys):
 
 def test_prompts_color_defaults_and_tag_and_fuzzy(monkeypatch):
     # Avoid building real prompts
-    monkeypatch.setattr(questionary, "text", lambda *a, **kw: type("Q", (), {"_kw": kw, "kwargs": kw})())
-    monkeypatch.setattr(questionary, "checkbox", lambda *a, **kw: type("Q", (), {"_kw": kw, "kwargs": kw})())
-    monkeypatch.setattr(questionary, "autocomplete", lambda *a, **kw: type("Q", (), {"_kw": kw, "kwargs": kw})())
+    monkeypatch.setattr(
+        questionary, "text", lambda *a, **kw: type("Q", (), {"_kw": kw, "kwargs": kw})()
+    )
+    monkeypatch.setattr(
+        questionary,
+        "checkbox",
+        lambda *a, **kw: type("Q", (), {"_kw": kw, "kwargs": kw})(),
+    )
+    monkeypatch.setattr(
+        questionary,
+        "autocomplete",
+        lambda *a, **kw: type("Q", (), {"_kw": kw, "kwargs": kw})(),
+    )
 
     lq = prompts.color("pick")
-    assert getattr(lq, "_kwargs", {}).get("formats") is None or isinstance(getattr(lq, "_kwargs", {}).get("formats"), list)
+    assert getattr(lq, "_kwargs", {}).get("formats") is None or isinstance(
+        getattr(lq, "_kwargs", {}).get("formats"), list
+    )
 
-    lq2 = prompts.tag_select("t", ["a", "b"]) 
+    lq2 = prompts.tag_select("t", ["a", "b"])
     # tag_select returns a LazyQuestion (inspect internals)
     assert hasattr(lq2, "_kwargs")
 
-    lq3 = prompts.fuzzy_select("f", ["one", "two"]) 
+    lq3 = prompts.fuzzy_select("f", ["one", "two"])
     assert hasattr(lq3, "_kwargs")

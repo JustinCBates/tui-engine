@@ -1,10 +1,8 @@
 import importlib.util
 import os
-import types
 import sys
 
 import pytest
-
 
 # Load the standalone utils.py to ensure we exercise that file (there's also a
 # package-style utils which doesn't expose all functions). This mirrors the
@@ -14,7 +12,9 @@ SRC = os.path.join(HERE, "src", "questionary_extended")
 
 # load components first so relative imports inside utils.py resolve
 COMP_PATH = os.path.join(SRC, "components.py")
-spec_c = importlib.util.spec_from_file_location("questionary_extended.components", COMP_PATH)
+spec_c = importlib.util.spec_from_file_location(
+    "questionary_extended.components", COMP_PATH
+)
 components = importlib.util.module_from_spec(spec_c)
 spec_c.loader.exec_module(components)
 sys.modules["questionary_extended.components"] = components
@@ -99,3 +99,33 @@ def test_fuzzy_match_exact_and_custom_objects():
 
     matches3 = utils.fuzzy_match("ap", [FakeChoice2("apricot")], threshold=0.1)
     assert any(abs(score - 0.6) < 1e-6 for (_, score) in matches3)
+
+
+def test_format_date_year_less_than_1000():
+    """Test date formatting edge case for years < 1000 (lines 21-25)."""
+    from datetime import date
+
+    # Test the edge case where year < 1000 and format contains %Y
+    ancient_date = date(year=567, month=3, day=15)
+
+    # This should trigger the special handling for years < 1000
+    result = utils.format_date(ancient_date, "%Y-%m-%d")
+    assert result == "0567-03-15"
+
+    # Test with more complex format string
+    result2 = utils.format_date(ancient_date, "Year %Y, Month %m, Day %d")
+    assert result2 == "Year 0567, Month 03, Day 15"
+
+    # Test edge case with year 999
+    edge_date = date(year=999, month=12, day=31)
+    result3 = utils.format_date(edge_date, "%Y")
+    assert result3 == "0999"
+
+    # Test normal case (year >= 1000) to ensure we don't break existing behavior
+    normal_date = date(year=2023, month=6, day=1)
+    result4 = utils.format_date(normal_date, "%Y-%m-%d")
+    assert result4 == "2023-06-01"
+
+    # Test format without %Y (should not trigger special handling)
+    result5 = utils.format_date(ancient_date, "%m/%d")
+    assert result5 == "03/15"

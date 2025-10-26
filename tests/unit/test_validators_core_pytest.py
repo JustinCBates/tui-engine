@@ -1,6 +1,6 @@
-import pytest
 from datetime import date
 
+import pytest
 from questionary import ValidationError
 
 from questionary_extended import validators
@@ -165,6 +165,8 @@ def test_regex_length_choice_validators_and_composite():
     cv.validate("a")
 
     # composite should re-raise the first validation error
-    comp = validators.CompositeValidator([validators.LengthValidator(min_length=5), validators.RegexValidator(r"^x")])
+    comp = validators.CompositeValidator(
+        [validators.LengthValidator(min_length=5), validators.RegexValidator(r"^x")]
+    )
     with pytest.raises(ValidationError):
         comp.validate("no")

@@ -1,4 +1,4 @@
-from questionary_extended.components import ColorInfo, TreeNode, ProgressStep
+from questionary_extended.components import ColorInfo, ProgressStep, TreeNode
 
 
 def test_colorinfo_from_hex():

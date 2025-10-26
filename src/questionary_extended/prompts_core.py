@@ -3,12 +3,12 @@
 # COVERAGE_EXCLUDE: thin wrapper — do not add original logic here
 # COVERAGE_EXCLUDE_ALLOW_COMPLEX: intentionally contains original logic; exempt from AST triviality checks
 
+import importlib
 from types import TracebackType
 from typing import Any, Callable, Dict, List, Optional, Type, Union
-import importlib
 
 
-def _resolve_questionary():
+def _resolve_questionary() -> Any:
     """Resolve the runtime `questionary` object via the centralized accessor.
 
     Returns the module/object or raises ImportError if not available. Tests
@@ -40,7 +40,7 @@ def _lazy_factory(name: str) -> Callable[..., Any]:
         _q = None
 
     if _q is not None:
-        return getattr(_q, name)
+        return getattr(_q, name)  # type: ignore
 
     def _f(*a: Any, **kw: Any) -> Any:
         q = _resolve_questionary()
@@ -140,7 +140,9 @@ def number(
     clean_kwargs = {
         k: v for k, v in kwargs.items() if k not in ["validate", "validator"]
     }
-    return LazyQuestion("text", message, default=default_str, validate=validator, **clean_kwargs)
+    return LazyQuestion(
+        "text", message, default=default_str, validate=validator, **clean_kwargs
+    )
 
 
 def integer(
@@ -157,7 +159,7 @@ def integer(
 def form(questions: List[Dict[str, Any]], **kwargs: Any) -> Dict[str, Any]:
     # questionary.prompt returns a dict of answers
     q = _resolve_questionary()
-    return q.prompt(questions, **kwargs)
+    return q.prompt(questions, **kwargs)  # type: ignore
 
 
 class ProgressTracker:
@@ -222,18 +224,22 @@ class ProgressTracker:
 # Expose class name following Python conventions
 
 
-
-def confirm_enhanced(message: str, default: bool = True, **kwargs: Any) -> "LazyQuestion | Any":
+def confirm_enhanced(
+    message: str, default: bool = True, **kwargs: Any
+) -> "LazyQuestion | Any":
     """Enhanced confirmation prompt."""
     return LazyQuestion("confirm", message, default=default, **kwargs)
 
 
-
-def select_enhanced(message: str, choices: List[Any], **kwargs: Any) -> "LazyQuestion | Any":
+def select_enhanced(
+    message: str, choices: List[Any], **kwargs: Any
+) -> "LazyQuestion | Any":
     """Enhanced selection prompt."""
     return LazyQuestion("select", message, choices=choices, **kwargs)
 
 
-def checkbox_enhanced(message: str, choices: List[Any], **kwargs: Any) -> "LazyQuestion | Any":
+def checkbox_enhanced(
+    message: str, choices: List[Any], **kwargs: Any
+) -> "LazyQuestion | Any":
     """Enhanced checkbox prompt."""
     return LazyQuestion("checkbox", message, choices=choices, **kwargs)

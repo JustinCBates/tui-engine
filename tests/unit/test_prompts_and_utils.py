@@ -1,8 +1,7 @@
-from questionary import Separator
 import questionary
+from questionary import Separator
 
 from questionary_extended import prompts, utils
-from questionary_extended.components import ColorInfo
 
 
 def _fake_select_factory(message, choices=None, **kw):
@@ -18,7 +17,11 @@ def test_grouped_select_builds_choices_list(monkeypatch):
     choices = lq._kwargs.get("choices")
     # Accept either internal storage: ensure separators and items present
     assert any(isinstance(c, Separator) for c in choices)
-    assert any((isinstance(c, str) and "apple" in c) or (not isinstance(c, str) and "apple" in str(c)) for c in choices)
+    assert any(
+        (isinstance(c, str) and "apple" in c)
+        or (not isinstance(c, str) and "apple" in str(c))
+        for c in choices
+    )
 
 
 def test_rating_choices_allow_zero_and_values(monkeypatch):

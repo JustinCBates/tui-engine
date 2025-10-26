@@ -1,6 +1,6 @@
-import importlib.util
 from pathlib import Path
 from types import SimpleNamespace
+
 from tests.helpers.test_helpers import load_module_from_path
 
 styles = load_module_from_path(
@@ -50,7 +50,9 @@ def test_questionary_bridge_no_questionary(monkeypatch):
     qb = bridge_mod.QuestionaryBridge(FakeState())
     # ask_component should raise when questionary is None
     try:
-        qb.ask_component(SimpleNamespace(name="x", create_questionary_component=lambda: None))
-        assert False
+        qb.ask_component(
+            SimpleNamespace(name="x", create_questionary_component=lambda: None)
+        )
+        raise AssertionError()
     except RuntimeError:
         pass

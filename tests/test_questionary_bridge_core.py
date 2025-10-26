@@ -1,13 +1,10 @@
 """Questionary Bridge core testing - basic functionality and integration."""
 
-import types
-import pytest
-from unittest.mock import MagicMock, patch
-
-from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 from questionary_extended.core.component import Component
 from questionary_extended.core.state import PageState
-from .conftest_questionary import setup_questionary_mocks, DummyState, FakePrompt
+from questionary_extended.integration.questionary_bridge import QuestionaryBridge
+
+from .conftest_questionary import DummyState, FakePrompt, setup_questionary_mocks
 
 
 class TestQuestionaryBridgeCore:
@@ -39,9 +36,9 @@ class TestQuestionaryBridgeCore:
         # Setup mocks with specific responses for each prompt type
         mock_responses = {
             "text": "text_answer",
-            "select": "select_answer", 
+            "select": "select_answer",
             "confirm": True,
-            "checkbox": ["option1", "option2"]
+            "checkbox": ["option1", "option2"],
         }
         setup_questionary_mocks(monkeypatch, mock_responses)
 
@@ -63,7 +60,7 @@ class TestQuestionaryBridgeCore:
         bridge = QuestionaryBridge(state)
 
         captured_message = None
-        
+
         def capture_text_call(message, **kwargs):
             nonlocal captured_message
             captured_message = message
@@ -75,10 +72,14 @@ class TestQuestionaryBridgeCore:
         mock_q = setup_questionary_mocks(monkeypatch)
         mock_q.text = capture_text_call
         # Ensure internal modules reference our mock as well (defensive)
-        monkeypatch.setattr("questionary_extended.integration.questionary_bridge.questionary", mock_q)
+        monkeypatch.setattr(
+            "questionary_extended.integration.questionary_bridge.questionary", mock_q
+        )
         monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
-        component = Component(name="test", component_type="text", message="What is your name?")
+        component = Component(
+            name="test", component_type="text", message="What is your name?"
+        )
         bridge.ask_component(component)
 
         assert captured_message == "What is your name?"
@@ -87,7 +88,7 @@ class TestQuestionaryBridgeCore:
         """Test bridge integration with PageState."""
         state = PageState()
         bridge = QuestionaryBridge(state)
-        
+
         # Should be able to create bridge with PageState
         assert bridge is not None
         assert bridge.state is state
@@ -104,7 +105,7 @@ class TestQuestionaryBridgeWalking:
         # Mock questionary to return sequential answers
         answers = ["answer1", "answer2", "answer3"]
         answer_iter = iter(answers)
-        
+
         def make_prompt(*args, **kwargs):
             return FakePrompt(next(answer_iter))
 
@@ -114,14 +115,16 @@ class TestQuestionaryBridgeWalking:
         mock_q = setup_questionary_mocks(monkeypatch)
         mock_q.text = make_prompt
         # Defensive: ensure internal modules reference the same mock
-        monkeypatch.setattr("questionary_extended.integration.questionary_bridge.questionary", mock_q)
+        monkeypatch.setattr(
+            "questionary_extended.integration.questionary_bridge.questionary", mock_q
+        )
         monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         # Create components to walk (add required message parameter)
         components = [
             Component(name="comp1", component_type="text", message="Question 1"),
             Component(name="comp2", component_type="text", message="Question 2"),
-            Component(name="comp3", component_type="text", message="Question 3")
+            Component(name="comp3", component_type="text", message="Question 3"),
         ]
 
         # Walk through components
@@ -131,7 +134,7 @@ class TestQuestionaryBridgeWalking:
             results.append(result)
 
         assert results == ["answer1", "answer2", "answer3"]
-        
+
         # All answers should be persisted
         final_state = state.get_all_state()
         assert final_state["comp1"] == "answer1"
@@ -144,8 +147,7 @@ class TestQuestionaryBridgeWalking:
         bridge = QuestionaryBridge(state)
 
         # Mock questionary responses
-        responses = {"name": "John", "age": "25", "confirm": True}
-        
+
         def make_prompt_factory(prompt_type):
             def prompt_func(*args, **kwargs):
                 if prompt_type == "text":
@@ -153,9 +155,9 @@ class TestQuestionaryBridgeWalking:
                     message = ""
                     if args:
                         message = args[0]
-                    elif 'message' in kwargs:
-                        message = kwargs['message']
-                    
+                    elif "message" in kwargs:
+                        message = kwargs["message"]
+
                     if "name" in message.lower():
                         return FakePrompt("John")
                     elif "age" in message.lower():
@@ -163,6 +165,7 @@ class TestQuestionaryBridgeWalking:
                 elif prompt_type == "confirm":
                     return FakePrompt(True)
                 return FakePrompt("default")
+
             return prompt_func
 
         # Use the canonical helper so the runtime accessor is set and
@@ -178,16 +181,24 @@ class TestQuestionaryBridgeWalking:
         mock_q.path = lambda *a, **k: FakePrompt("default_path")
 
         # Defensive: ensure internal modules reference the same mock
-        monkeypatch.setattr("questionary_extended.integration.questionary_bridge.questionary", mock_q)
+        monkeypatch.setattr(
+            "questionary_extended.integration.questionary_bridge.questionary", mock_q
+        )
         monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         # Simulate workflow
-        name_comp = Component(name="name", component_type="text", message="What's your name?")
-        age_comp = Component(name="age", component_type="text", message="What's your age?")
-        confirm_comp = Component(name="confirm", component_type="confirm", message="Is this correct?")
+        name_comp = Component(
+            name="name", component_type="text", message="What's your name?"
+        )
+        age_comp = Component(
+            name="age", component_type="text", message="What's your age?"
+        )
+        confirm_comp = Component(
+            name="confirm", component_type="confirm", message="Is this correct?"
+        )
 
         workflow = [name_comp, age_comp, confirm_comp]
-        
+
         results = []
         for comp in workflow:
             result = bridge.ask_component(comp)
@@ -205,7 +216,7 @@ class TestQuestionaryBridgeOptions:
         bridge = QuestionaryBridge(state)
 
         captured_choices = None
-        
+
         def capture_select_call(message, choices=None, **kwargs):
             nonlocal captured_choices
             captured_choices = choices
@@ -217,18 +228,20 @@ class TestQuestionaryBridgeOptions:
         mock_q = setup_questionary_mocks(monkeypatch)
         mock_q.select = capture_select_call
         # Defensive: ensure internal modules reference the same mock
-        monkeypatch.setattr("questionary_extended.integration.questionary_bridge.questionary", mock_q)
+        monkeypatch.setattr(
+            "questionary_extended.integration.questionary_bridge.questionary", mock_q
+        )
         monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         component = Component(
             name="select_test",
             component_type="select",
             message="Choose one:",
-            choices=["choice1", "choice2", "choice3"]
+            choices=["choice1", "choice2", "choice3"],
         )
-        
+
         result = bridge.ask_component(component)
-        
+
         assert result == "choice1"
         assert captured_choices == ["choice1", "choice2", "choice3"]
 
@@ -238,7 +251,7 @@ class TestQuestionaryBridgeOptions:
         bridge = QuestionaryBridge(state)
 
         captured_default = None
-        
+
         def capture_text_call(message, default=None, **kwargs):
             nonlocal captured_default
             captured_default = default
@@ -256,18 +269,20 @@ class TestQuestionaryBridgeOptions:
         mock_q.path = lambda *a, **k: FakePrompt("default_path")
 
         # Defensive: ensure internal modules reference the same mock
-        monkeypatch.setattr("questionary_extended.integration.questionary_bridge.questionary", mock_q)
+        monkeypatch.setattr(
+            "questionary_extended.integration.questionary_bridge.questionary", mock_q
+        )
         monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         component = Component(
             name="default_test",
             component_type="text",
             message="Enter value:",
-            default="default_value"
+            default="default_value",
         )
-        
+
         bridge.ask_component(component)
-        
+
         assert captured_default == "default_value"
 
     def test_component_with_validation(self, monkeypatch):
@@ -276,7 +291,7 @@ class TestQuestionaryBridgeOptions:
         bridge = QuestionaryBridge(state)
 
         captured_validate = None
-        
+
         def capture_text_call(message, validate=None, **kwargs):
             nonlocal captured_validate
             captured_validate = validate
@@ -294,7 +309,9 @@ class TestQuestionaryBridgeOptions:
         mock_q.path = lambda *a, **k: FakePrompt("default_path")
 
         # Defensive: ensure internal modules reference the same mock
-        monkeypatch.setattr("questionary_extended.integration.questionary_bridge.questionary", mock_q)
+        monkeypatch.setattr(
+            "questionary_extended.integration.questionary_bridge.questionary", mock_q
+        )
         monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         def validator(text):
@@ -304,10 +321,10 @@ class TestQuestionaryBridgeOptions:
             name="validate_test",
             component_type="text",
             message="Enter value:",
-            validate=validator
+            validate=validator,
         )
-        
+
         bridge.ask_component(component)
-        
+
         # Should pass validator function through
         assert captured_validate is validator

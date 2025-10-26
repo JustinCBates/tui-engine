@@ -5,10 +5,11 @@ module's functions can be executed without user interaction. It's intended to
 be executed under coverage in a subprocess and then combined with the tests'
 coverage data.
 """
+
 import importlib
+import runpy
 import sys
 import types
-import runpy
 
 
 def make_stub_prompt(value=None):
@@ -45,7 +46,9 @@ def _patch_module(mod):
         _q.confirm = ConfirmFactory()
         _q.text = lambda *a, **k: make_stub_prompt("stub")()
         _q.select = lambda *a, **k: make_stub_prompt("Option 1")()
-        _q.prompt = lambda questions: {q.get("name", f"field_{i}"): "value" for i, q in enumerate(questions)}
+        _q.prompt = lambda questions: {
+            q.get("name", f"field_{i}"): "value" for i, q in enumerate(questions)
+        }
     except Exception:
         # If questionary isn't importable, ignore - the module may already
         # provide replacements in tests/CI.
@@ -160,7 +163,10 @@ def main():
     fake_q.confirm = lambda *a, **k: make_stub_prompt(False)()
     fake_q.text = lambda *a, **k: make_stub_prompt("stub")()
     fake_q.select = lambda *a, **k: make_stub_prompt("Option 1")()
-    fake_q.prompt = lambda questions: {q.get("name", f"field_{i}"): "value" for i, q in enumerate(questions)}
+    fake_q.prompt = lambda questions: {
+        q.get("name", f"field_{i}"): "value" for i, q in enumerate(questions)
+    }
+
     # minimal Question symbol expected by prompts.py
     class Question:
         def __init__(self, *a, **k):

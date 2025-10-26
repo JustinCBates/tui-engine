@@ -11,10 +11,10 @@ from __future__ import annotations
 
 import importlib
 import sys
-from typing import Any, Optional
+from typing import Any
 
 # Cached runtime object (may be a real module or a test-provided SimpleNamespace)
-_QUESTIONARY: Optional[Any] = None
+_QUESTIONARY: Any | None = None
 
 
 def set_questionary_for_tests(obj: Any) -> None:
@@ -34,7 +34,7 @@ def clear_questionary_for_tests() -> None:
     _QUESTIONARY = None
 
 
-def get_questionary() -> Optional[Any]:
+def get_questionary() -> Any | None:
     """Return the resolved `questionary` object or ``None`` if unavailable.
 
     Resolution order:

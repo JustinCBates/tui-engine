@@ -15,7 +15,7 @@ def test_wrappers_and_create_questionary_component(monkeypatch):
     # The conftest installs a questionary mock that wraps all responses in PromptObj.
     # We don't need to monkeypatch individual functions since we're just testing
     # that the Component wrappers create the right component type.
-    
+
     # text wrapper default message
     t = comp_mod.text("user_name")
     assert isinstance(t, comp_mod.Component)
@@ -23,9 +23,9 @@ def test_wrappers_and_create_questionary_component(monkeypatch):
     assert t.component_type == "text"
     created = t.create_questionary_component()
     # The conftest mock returns PromptObj with .name and .kwargs
-    assert hasattr(created, 'name')
+    assert hasattr(created, "name")
     assert created.name == "text"  # name defaults to component type
-    assert hasattr(created, 'kwargs')
+    assert hasattr(created, "kwargs")
     assert "message" in created.kwargs
 
     # select wrapper default choices and message
@@ -37,15 +37,17 @@ def test_wrappers_and_create_questionary_component(monkeypatch):
     assert created_s.kwargs.get("choices") == []
 
     # confirm, password, checkbox, autocomplete, path should all work
-    for fn, expected_type in [(comp_mod.confirm, "confirm"), 
-                               (comp_mod.password, "password"), 
-                               (comp_mod.checkbox, "checkbox"), 
-                               (comp_mod.autocomplete, "autocomplete"), 
-                               (comp_mod.path, "path")]:
+    for fn, expected_type in [
+        (comp_mod.confirm, "confirm"),
+        (comp_mod.password, "password"),
+        (comp_mod.checkbox, "checkbox"),
+        (comp_mod.autocomplete, "autocomplete"),
+        (comp_mod.path, "path"),
+    ]:
         comp = fn("x")
         assert isinstance(comp, comp_mod.Component)
         result = comp.create_questionary_component()
-        assert hasattr(result, 'ask'), f"Expected PromptObj for {expected_type}"
+        assert hasattr(result, "ask"), f"Expected PromptObj for {expected_type}"
 
     # custom message provided preserved
     p = comp_mod.text("abc", message="Hello!")

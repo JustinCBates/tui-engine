@@ -10,11 +10,11 @@ This proxy supports:
 This keeps modules import-safe (no prompt_toolkit sessions at import time)
 while preserving tests' ability to monkeypatch module.questionary.*
 """
+
 from __future__ import annotations
 
-from types import SimpleNamespace
-from typing import Any, Callable, Dict
 import importlib
+from typing import Any
 
 
 def _default_placeholder(*a: object, **kw: object) -> object:
@@ -37,7 +37,7 @@ class QuestionaryProxy:
         object.__setattr__(self, "_overrides", {})
 
     def __getattr__(self, name: str) -> Any:
-        overrides: Dict[str, Any] = object.__getattribute__(self, "_overrides")
+        overrides: dict[str, Any] = object.__getattribute__(self, "_overrides")
         if name in overrides:
             return overrides[name]
 
@@ -56,7 +56,7 @@ class QuestionaryProxy:
 
     def __setattr__(self, name: str, value: Any) -> None:
         # Put everything into overrides (tests will replace functions).
-        overrides: Dict[str, Any] = object.__getattribute__(self, "_overrides")
+        overrides: dict[str, Any] = object.__getattribute__(self, "_overrides")
         overrides[name] = value
 
     def __delattr__(self, name: str) -> None:
@@ -65,7 +65,7 @@ class QuestionaryProxy:
         Removes the override if present; otherwise raise AttributeError to
         match normal object semantics.
         """
-        overrides: Dict[str, Any] = object.__getattribute__(self, "_overrides")
+        overrides: dict[str, Any] = object.__getattribute__(self, "_overrides")
         if name in overrides:
             del overrides[name]
             return
@@ -73,7 +73,7 @@ class QuestionaryProxy:
 
     def __dir__(self) -> list[str]:
         # Useful for introspection in tests/tools
-        overrides: Dict[str, Any] = object.__getattribute__(self, "_overrides")
+        overrides: dict[str, Any] = object.__getattribute__(self, "_overrides")
         names = set(overrides.keys())
         # Try to include real questionary attributes when available
         try:

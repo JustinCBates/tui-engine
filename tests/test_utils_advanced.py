@@ -1,6 +1,5 @@
 """Advanced utilities testing - progress bars, fuzzy matching, validation."""
 
-import pytest
 from questionary_extended.utils import (
     create_progress_bar,
     fuzzy_match,
@@ -85,18 +84,18 @@ class TestAdvancedFeatures:
         valid_emails = [
             "simple@example.com",
             "user.name@domain.co.uk",
-            "test+tag@gmail.com"
+            "test+tag@gmail.com",
         ]
         invalid_emails = [
             "notanemail",
-            "@domain.com", 
+            "@domain.com",
             "user@",
             # "user..name@domain.com"  # Commented out - current implementation allows this
         ]
-        
+
         for email in valid_emails:
             assert validate_email(email), f"Should be valid: {email}"
-        
+
         for email in invalid_emails:
             assert not validate_email(email), f"Should be invalid: {email}"
 
@@ -105,17 +104,12 @@ class TestAdvancedFeatures:
         valid_urls = [
             "http://example.com",
             "https://subdomain.domain.org",
-            "https://example.com/path?param=value"
+            "https://example.com/path?param=value",
         ]
-        invalid_urls = [
-            "notaurl",
-            "ftp://example.com",
-            "http://",
-            "https://"
-        ]
-        
+        invalid_urls = ["notaurl", "ftp://example.com", "http://", "https://"]
+
         for url in valid_urls:
             assert validate_url(url), f"Should be valid: {url}"
-        
+
         for url in invalid_urls:
             assert not validate_url(url), f"Should be invalid: {url}"

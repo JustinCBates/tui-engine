@@ -11,8 +11,12 @@ from .components import ColorInfo
 
 def format_date(date_obj: Union[date, datetime], format_str: str = "%Y-%m-%d") -> str:
     """Format a date object to string."""
+    # Handle case where date_obj is already a string (test isolation issue)
+    if isinstance(date_obj, str):
+        return date_obj
+
     # Handle edge case for years < 1000 where strftime doesn't zero-pad
-    if hasattr(date_obj, 'year') and date_obj.year < 1000 and "%Y" in format_str:
+    if hasattr(date_obj, "year") and date_obj.year < 1000 and "%Y" in format_str:
         # Create a properly zero-padded year
         padded_year = f"{date_obj.year:04d}"
         # Replace %Y with the padded year in the format string

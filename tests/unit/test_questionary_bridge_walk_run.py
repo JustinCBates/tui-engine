@@ -12,7 +12,15 @@ def _ensure_fake_questionary():
         def _factory(**kwargs):
             return None
 
-        for name in ("text", "select", "confirm", "password", "checkbox", "autocomplete", "path"):
+        for name in (
+            "text",
+            "select",
+            "confirm",
+            "password",
+            "checkbox",
+            "autocomplete",
+            "path",
+        ):
             setattr(q, name, _factory)
 
         sys.modules["questionary"] = q
@@ -34,8 +42,8 @@ def test_walk_components_and_run_calls_ask(monkeypatch):
     comp2 = Component("c2", "text")
 
     # Card and Assembly accept a 'parent' argument but it's not used at runtime here
-    from questionary_extended.core.card import Card
     from questionary_extended.core.assembly import Assembly
+    from questionary_extended.core.card import Card
 
     card = Card("CardTitle", parent=None)
     sub_asm = Assembly("sub", parent=None)
@@ -190,4 +198,3 @@ def test_walk_components_assembly_with_nested_container():
     found = list(bridge._walk_components([asm]))
     names = {c.name for c in found}
     assert "inner" in names
-

@@ -1,6 +1,6 @@
-import re
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
+
 from tests.helpers.test_helpers import load_module_from_path
 
 # Load utils via centralized helper which sets __package__ correctly and
@@ -41,7 +41,7 @@ def test_truncate_and_wrap_and_center():
     # ensure lines are not longer than width
     assert all(len(line) <= 7 for line in wrapped)
 
-    centered = u.center_text("hi", 6, fill_char='-')
+    centered = u.center_text("hi", 6, fill_char="-")
     assert centered == "--hi--" or len(centered) == 6
 
 
@@ -61,7 +61,9 @@ def test_create_tree_line():
     assert root == "root"
     child = u.create_tree_line("leaf", 1, is_last=True, has_children=False)
     assert "└──" in child
-    branch = u.create_tree_line("node", 2, is_last=False, has_children=True, expanded=False)
+    branch = u.create_tree_line(
+        "node", 2, is_last=False, has_children=True, expanded=False
+    )
     assert "├──" in branch and "▶" in branch
 
 
@@ -89,7 +91,9 @@ def test_validate_email_and_url():
 def test_generate_choices_from_range():
     choices = u.generate_choices_from_range(1, 5, step=2)
     assert choices == ["1", "3", "5"]
-    choices2 = u.generate_choices_from_range(0.0, 0.5, step=0.25, format_fn=lambda x: f"{x:.2f}")
+    choices2 = u.generate_choices_from_range(
+        0.0, 0.5, step=0.25, format_fn=lambda x: f"{x:.2f}"
+    )
     assert choices2[0] == "0.00"
 
 
@@ -145,7 +149,9 @@ def test_create_table_row_truncate():
 
 def test_create_tree_line_expanded():
     # Ensure the expanded icon (▼) is used when has_children and expanded are True
-    line = u.create_tree_line("node", level=1, is_last=False, has_children=True, expanded=True)
+    line = u.create_tree_line(
+        "node", level=1, is_last=False, has_children=True, expanded=True
+    )
     assert "▼" in line
 
 

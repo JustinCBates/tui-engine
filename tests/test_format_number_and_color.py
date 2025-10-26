@@ -7,7 +7,9 @@ from pathlib import Path
 def load_standalone_utils():
     repo_root = Path(__file__).resolve().parents[1]
     module_path = repo_root / "src" / "questionary_extended" / "utils.py"
-    spec = importlib.util.spec_from_file_location("questionary_extended._utils_file", str(module_path))
+    spec = importlib.util.spec_from_file_location(
+        "questionary_extended._utils_file", str(module_path)
+    )
     module = importlib.util.module_from_spec(spec)
     if "questionary_extended" not in sys.modules:
         importlib.import_module("questionary_extended")
@@ -23,7 +25,7 @@ def test_format_number_variants():
     assert m.format_number(1234.567, decimal_places=2) == "1234.57"
     assert m.format_number(1000, thousands_sep=True) in ("1,000", "1,000.0", "1,000.0")
     assert m.format_number(0.5, percentage=True).endswith("%")
-    assert m.format_number(9.5, currency="$") .startswith("$")
+    assert m.format_number(9.5, currency="$").startswith("$")
 
 
 def test_parse_color_cases():

@@ -1,7 +1,7 @@
 import pytest
+from questionary import ValidationError
 
 from questionary_extended import validators
-from questionary import ValidationError
 
 
 class Doc:

@@ -54,7 +54,7 @@ def test_not_implemented_placeholders_raise():
 
     # text() and select() are now implemented, so they should NOT raise
     # Only test methods that DO raise NotImplementedError
-    
+
     with pytest.raises(NotImplementedError):
         a.show_components(["a"])
 

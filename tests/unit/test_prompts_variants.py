@@ -1,10 +1,13 @@
 import questionary
+
 from questionary_extended import prompts
 
 
 def test_percentage_prompt_uses_number_validator(monkeypatch):
     # monkeypatch questionary.text to avoid prompt_toolkit
-    monkeypatch.setattr(questionary, "text", lambda *a, **kw: type("Q", (), {"_kw": kw})())
+    monkeypatch.setattr(
+        questionary, "text", lambda *a, **kw: type("Q", (), {"_kw": kw})()
+    )
 
     lq = prompts.percentage("pct")
     # validator should be present in LazyQuestion kwargs
@@ -12,7 +15,9 @@ def test_percentage_prompt_uses_number_validator(monkeypatch):
 
 
 def test_date_prompt_default_and_format_str(monkeypatch):
-    monkeypatch.setattr(questionary, "text", lambda *a, **kw: type("Q", (), {"_kw": kw, "kwargs": kw})())
+    monkeypatch.setattr(
+        questionary, "text", lambda *a, **kw: type("Q", (), {"_kw": kw, "kwargs": kw})()
+    )
 
     import datetime as dt
 
@@ -23,7 +28,9 @@ def test_date_prompt_default_and_format_str(monkeypatch):
 
 
 def test_enhanced_text_validator_propagation(monkeypatch):
-    monkeypatch.setattr(questionary, "text", lambda *a, **kw: type("Q", (), {"_kw": kw})())
+    monkeypatch.setattr(
+        questionary, "text", lambda *a, **kw: type("Q", (), {"_kw": kw})()
+    )
 
     def my_validator(text):
         return True

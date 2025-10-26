@@ -18,10 +18,10 @@ try:
 except Exception:
     # Fallback: provide a SimpleNamespace so tests can monkeypatch attributes
     # on the module-level `questionary` even in early import scenarios.
-    def _questionary_placeholder(*a: object, **kw: object) -> object:  # type: ignore
+    def _questionary_placeholder(*a: object, **kw: object) -> object:
         raise NotImplementedError("questionary is not configured in this environment")
 
-    questionary = SimpleNamespace(
+    questionary: Any = SimpleNamespace(  # type: ignore[no-redef]
         text=_questionary_placeholder,
         select=_questionary_placeholder,
         confirm=_questionary_placeholder,
@@ -86,7 +86,7 @@ class Component:
 
     def create_questionary_component(self) -> Any:
         """Create the underlying questionary component."""
-        from typing import Callable as _Callable
+
         # Resolution strategy (single-source-first): prefer the centralized
         # runtime accessor so behavior is consistent with the repository-wide
         # contract. The runtime accessor itself should consult sys.modules or
@@ -134,7 +134,15 @@ class Component:
         # importable 'questionary' module, or the runtime accessor).
         # Validate supported component types early so callers get a clear
         # ValueError for unsupported types (matches existing tests).
-        supported = {"text", "select", "confirm", "password", "checkbox", "autocomplete", "path"}
+        supported = {
+            "text",
+            "select",
+            "confirm",
+            "password",
+            "checkbox",
+            "autocomplete",
+            "path",
+        }
         if self.component_type not in supported:
             raise ValueError(f"Unsupported component type: {self.component_type}")
         candidates = []
@@ -166,7 +174,9 @@ class Component:
         component_func = None
         mod_q = globals().get("questionary", None)
         try:
-            attr_mod = getattr(mod_q, self.component_type, None) if mod_q is not None else None
+            attr_mod = (
+                getattr(mod_q, self.component_type, None) if mod_q is not None else None
+            )
         except Exception:
             attr_mod = None
 
@@ -176,7 +186,11 @@ class Component:
         except Exception:
             rt_candidate = None
         try:
-            attr_rt = getattr(rt_candidate, self.component_type, None) if rt_candidate is not None else None
+            attr_rt = (
+                getattr(rt_candidate, self.component_type, None)
+                if rt_candidate is not None
+                else None
+            )
         except Exception:
             attr_rt = None
 
@@ -186,11 +200,15 @@ class Component:
         except Exception:
             imp_candidate = None
         try:
-            attr_imp = getattr(imp_candidate, self.component_type, None) if imp_candidate is not None else None
+            attr_imp = (
+                getattr(imp_candidate, self.component_type, None)
+                if imp_candidate is not None
+                else None
+            )
         except Exception:
             attr_imp = None
 
-        def _is_valid_factory(f):
+        def _is_valid_factory(f: Any) -> bool:
             if not callable(f):
                 return False
             if f is globals().get("_questionary_placeholder"):
@@ -217,7 +235,9 @@ class Component:
             component_func = attr_mod
 
         if component_func is None:
-            raise ValueError(f"Unsupported component type or missing factory: {self.component_type}")
+            raise ValueError(
+                f"Unsupported component type or missing factory: {self.component_type}"
+            )
 
         try:
             return component_func(**self.questionary_config)

@@ -1,9 +1,11 @@
 from pathlib import Path
+
 from tests.helpers.test_helpers import load_module_from_path
 
 # Load components via centralized loader to ensure __package__ and relative imports
 components = load_module_from_path(
-    "questionary_extended.components", Path("src/questionary_extended/components.py").resolve()
+    "questionary_extended.components",
+    Path("src/questionary_extended/components.py").resolve(),
 )
 
 

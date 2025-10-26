@@ -1,9 +1,8 @@
-import runpy
-import pytest
+import importlib
 import sys
 from types import ModuleType
 
-import importlib
+import pytest
 
 
 def _reload_cli():
@@ -67,6 +66,7 @@ def test_run_module_as_main_with_fake_click(monkeypatch):
             # When called as a CLI entrypoint (no args), call the underlying
             # function with a fake context and default theme to avoid real CLI parsing.
             if not args and not kwargs:
+
                 class Ctx:
                     def __init__(self):
                         self.obj = {}
@@ -122,6 +122,7 @@ def test_run_module_as_main_with_fake_click(monkeypatch):
 
     fake_click.Choice = Choice
     fake_click.Path = Path
+
     # Minimal Context class so annotations in cli.py can be resolved at import-time
     class Context:
         pass
@@ -242,7 +243,6 @@ def test_run_module_as_main_executes(monkeypatch):
     so the module's if __name__ == '__main__' path executes without spawning
     a real CLI parse.
     """
-    import runpy
     from types import ModuleType
 
     # minimal _Cmd similar to other tests above
@@ -257,6 +257,7 @@ def test_run_module_as_main_executes(monkeypatch):
             except TypeError:
                 # some command functions expect (ctx, theme)
                 try:
+
                     class Ctx:
                         def __init__(self):
                             self.obj = {}
@@ -324,6 +325,7 @@ def test_run_module_as_main_executes(monkeypatch):
     fake_q.prompt = lambda *a, **k: {}
     # Make the fake module look like a real module to import machinery
     import importlib.machinery
+
     fake_q.__spec__ = importlib.machinery.ModuleSpec("questionary", loader=None)
     fake_q.__file__ = "<faked>"
     # Ensure 'Question' is available for 'from questionary import Question'
@@ -360,7 +362,6 @@ def test_run_module_as_main_clean_import(monkeypatch):
     This ensures the literal bottom guard line is executed in a fresh import
     so coverage attributes the execution to that line.
     """
-    import runpy
     import sys
     from types import ModuleType
 
@@ -376,6 +377,7 @@ def test_run_module_as_main_clean_import(monkeypatch):
                 return self._fn()
             except TypeError:
                 try:
+
                     class Ctx:
                         def __init__(self):
                             self.obj = {}
@@ -439,7 +441,9 @@ def test_run_module_as_main_clean_import(monkeypatch):
 
     # Back up sys.modules entries we will remove
     removed = {}
-    to_remove = [k for k in list(sys.modules.keys()) if k.startswith("questionary_extended")]
+    to_remove = [
+        k for k in list(sys.modules.keys()) if k.startswith("questionary_extended")
+    ]
     for k in to_remove:
         removed[k] = sys.modules.pop(k)
 

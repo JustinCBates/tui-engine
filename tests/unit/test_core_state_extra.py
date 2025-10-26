@@ -1,5 +1,3 @@
-import pytest
-
 from src.questionary_extended.core.state import PageState
 
 

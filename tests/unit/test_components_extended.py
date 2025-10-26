@@ -1,8 +1,10 @@
 from pathlib import Path
+
 from tests.helpers.test_helpers import load_module_from_path
 
 comp = load_module_from_path(
-    "questionary_extended.components", Path("src/questionary_extended/components.py").resolve()
+    "questionary_extended.components",
+    Path("src/questionary_extended/components.py").resolve(),
 )
 
 
@@ -16,7 +18,10 @@ def test_tree_node_from_dict_and_methods():
     data = {"a": {"b": [1, 2], "c": {"d": []}}, "z": []}
     root = comp.TreeNode.from_dict(data, name="root")
     # root should have children
-    assert any(child.name == "a/" or child.name == "a" or child.name == "z/" for child in root.children)
+    assert any(
+        child.name == "a/" or child.name == "a" or child.name == "z/"
+        for child in root.children
+    )
     # add_child and is_leaf
     node = comp.TreeNode("leaf")
     assert node.is_leaf()
@@ -47,6 +52,8 @@ def test_progressstep_to_question_dict():
     qd = ps1.to_question_dict()
     assert qd["name"] == "s1"
 
-    ps2 = comp.ProgressStep(name="s2", description="desc", question={"type": "input", "message": "m"})
+    ps2 = comp.ProgressStep(
+        name="s2", description="desc", question={"type": "input", "message": "m"}
+    )
     qd2 = ps2.to_question_dict()
     assert qd2.get("type") == "input"

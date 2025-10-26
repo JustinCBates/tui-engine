@@ -1,21 +1,24 @@
-import pytest
 from unittest.mock import Mock
-from tests.conftest_questionary import setup_questionary_mocks
+
+import pytest
 
 from src.questionary_extended.core.component import (
     Component,
-    text,
-    select,
+    autocomplete,
+    checkbox,
     confirm,
     password,
-    checkbox,
-    autocomplete,
     path,
+    select,
+    text,
 )
+from tests.conftest_questionary import setup_questionary_mocks
 
 
 def test_component_init_and_config_extraction():
-    c = Component("name", "text", message="Hi", when="cond", enhanced_validation=True, extra=1)
+    c = Component(
+        "name", "text", message="Hi", when="cond", enhanced_validation=True, extra=1
+    )
     assert c.name == "name"
     assert c.component_type == "text"
     assert c.when_condition == "cond"
@@ -53,7 +56,7 @@ def test_create_questionary_component_text(monkeypatch):
 
 def test_create_questionary_component_select(monkeypatch):
     setup_questionary_mocks(monkeypatch)
-    c = Component("n", "select", message="m", choices=["a"]) 
+    c = Component("n", "select", message="m", choices=["a"])
     res = c.create_questionary_component()
     assert hasattr(res, "ask")
     val = res.ask()
@@ -98,7 +101,7 @@ def test_convenience_wrappers_defaults_and_choices():
 # Edge case: message templates
 def test_message_default_templates():
     t = text("my_field")
-    assert "My Field" in t.questionary_config["message"].replace('_',' ').title()
+    assert "My Field" in t.questionary_config["message"].replace("_", " ").title()
 
 
 def test_create_questionary_component_other_types(monkeypatch):

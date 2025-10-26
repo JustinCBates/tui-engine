@@ -7,7 +7,9 @@ def _load_utils_module():
         os.path.dirname(__file__), "..", "src", "questionary_extended", "utils.py"
     )
     path = os.path.abspath(path)
-    spec = importlib.util.spec_from_file_location("questionary_extended._utils_file", path)
+    spec = importlib.util.spec_from_file_location(
+        "questionary_extended._utils_file", path
+    )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -77,7 +79,9 @@ def test_progress_table_tree_and_sanitize():
     row = mod.create_table_row(["a long text"], [8])
     assert "|" in row
 
-    line = mod.create_tree_line("node", 1, is_last=True, has_children=True, expanded=False)
+    line = mod.create_tree_line(
+        "node", 1, is_last=True, has_children=True, expanded=False
+    )
     assert "└──" in line or "├──" in line
 
     assert mod.sanitize_input("abc\x00def") == "abcdef"
@@ -85,7 +89,7 @@ def test_progress_table_tree_and_sanitize():
 
 def test_fuzzy_and_validation_and_generate_choices():
     mod = _load_utils_module()
-    matches = mod.fuzzy_match("app", ["apple", "application", "banana"]) 
+    matches = mod.fuzzy_match("app", ["apple", "application", "banana"])
     assert any(m[0].startswith("app") for m in matches)
 
     assert mod.validate_email("me@example.com") is True

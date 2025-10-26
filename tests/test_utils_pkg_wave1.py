@@ -1,9 +1,9 @@
 from questionary_extended.utils import (
-    format_number,
-    parse_number,
-    parse_color,
     create_progress_bar,
+    format_number,
     fuzzy_match,
+    parse_color,
+    parse_number,
     validate_email,
     validate_url,
 )

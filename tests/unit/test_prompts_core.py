@@ -1,8 +1,7 @@
-import importlib.util
 from pathlib import Path
-import builtins
-from tests.helpers.test_helpers import load_module_from_path
+
 from tests.conftest_questionary import setup_questionary_mocks
+from tests.helpers.test_helpers import load_module_from_path
 
 # Install the canonical questionary mock before importing/loading modules
 # so that modules loaded via load_module_from_path pick up the fake module
@@ -58,9 +57,11 @@ def test_wrappers_return_lazyquestion():
     assert isinstance(sq, pc.LazyQuestion)
     cb = pc.checkbox_enhanced("cb", [1, 2])
     assert isinstance(cb, pc.LazyQuestion)
-import pytest
+
+
 from unittest.mock import Mock
 
+import pytest
 import questionary
 
 from src.questionary_extended import prompts_core as pc
@@ -86,7 +87,9 @@ def test_enhanced_text_includes_validator_in_kwargs():
     def dummy_validator(x):
         return True
 
-    lq = pc.enhanced_text("hello", default="d", multiline=True, validator=dummy_validator, extra=1)
+    lq = pc.enhanced_text(
+        "hello", default="d", multiline=True, validator=dummy_validator, extra=1
+    )
     # validator should be placed into kwargs under 'validate'
     assert isinstance(lq, pc.LazyQuestion)
     assert "validate" in lq._kwargs
@@ -105,7 +108,9 @@ def test_number_uses_numbervalidator_and_default_str(monkeypatch):
         def __call__(self, val):
             return True
 
-    monkeypatch.setattr("src.questionary_extended.validators.NumberValidator", DummyNumberValidator)
+    monkeypatch.setattr(
+        "src.questionary_extended.validators.NumberValidator", DummyNumberValidator
+    )
 
     lq = pc.number("num", default=7, min_value=0, max_value=10, allow_float=False)
     assert isinstance(lq, pc.LazyQuestion)
@@ -154,7 +159,7 @@ def test_confirm_select_checkbox_return_lazyquestion():
     assert isinstance(s, pc.LazyQuestion)
     assert s._factory is questionary.select
 
-    cb = pc.checkbox_enhanced("Pick many", choices=["a"]) 
+    cb = pc.checkbox_enhanced("Pick many", choices=["a"])
     assert isinstance(cb, pc.LazyQuestion)
     assert cb._factory is questionary.checkbox
 
@@ -181,7 +186,9 @@ def test_integer_delegates_to_number(monkeypatch):
         def __call__(self, v):
             return True
 
-    monkeypatch.setattr("src.questionary_extended.validators.NumberValidator", DummyNumberValidator)
+    monkeypatch.setattr(
+        "src.questionary_extended.validators.NumberValidator", DummyNumberValidator
+    )
     lq = pc.integer("intmsg", min_value=0, max_value=5)
     assert isinstance(lq, pc.LazyQuestion)
     # integer should set allow_float=False on the validator
@@ -220,8 +227,12 @@ def test_number_removes_user_validate_and_uses_internal_validator(monkeypatch):
         def __call__(self, v):
             return True
 
-    monkeypatch.setattr("src.questionary_extended.validators.NumberValidator", DummyNumberValidator)
-    lq = pc.number("n", default=None, min_value=0, max_value=10, extra=5, validate="ignore_me")
+    monkeypatch.setattr(
+        "src.questionary_extended.validators.NumberValidator", DummyNumberValidator
+    )
+    lq = pc.number(
+        "n", default=None, min_value=0, max_value=10, extra=5, validate="ignore_me"
+    )
     # The user-supplied 'validate' must be removed from clean_kwargs and replaced by internal validator
     assert isinstance(lq._kwargs.get("validate"), DummyNumberValidator)
     assert lq._kwargs.get("extra") == 5
@@ -234,9 +245,13 @@ def test_progress_tracker_step_with_total(capsys):
     assert p.completed_steps == ["a", "b"]
     out = capsys.readouterr().out
     assert "[" in out and "]" in out
-from types import SimpleNamespace
 
-from questionary_extended.prompts_core import LazyQuestion, ProgressTracker, enhanced_text
+
+from questionary_extended.prompts_core import (
+    LazyQuestion,
+    ProgressTracker,
+    enhanced_text,
+)
 
 
 def test_lazy_question_repr_and_build_and_ask(monkeypatch):
@@ -250,7 +265,8 @@ def test_lazy_question_repr_and_build_and_ask(monkeypatch):
             return f"asked:{self.msg}:{self.default}"
 
     # monkeypatch questionary.text factory via a simple factory
-    fake_factory = lambda message, default=None, **kw: FakeQ(message, default=default)
+    def fake_factory(message, default=None, **kw):
+        return FakeQ(message, default=default)
 
     lq = LazyQuestion(fake_factory, "hello", default="x")
     r = repr(lq)
@@ -283,8 +299,6 @@ def test_enhanced_text_returns_lazy_question():
     # Should be callable and have a repr that mentions LazyQuestion
     assert callable(lq)
     assert "LazyQuestion" in repr(lq)
-from questionary_extended.prompts_core import LazyQuestion, ProgressTracker
-import questionary
 
 
 def test_lazy_question_repr_and_build(monkeypatch):

@@ -1,7 +1,7 @@
-import importlib
+import pathlib
 import sys
 import types
-import pathlib
+
 from tests.helpers.test_helpers import load_module_from_path
 
 
@@ -37,7 +37,9 @@ def _load_prompts_with_stubs(monkeypatch):
     # Minimal questionary stub
     q = types.ModuleType("questionary")
     q.text = lambda *a, **k: DummyPrompt(k.get("default", ""))
-    q.select = lambda *a, **k: DummyPrompt((k.get("choices") or [])[0] if k.get("choices") else None)
+    q.select = lambda *a, **k: DummyPrompt(
+        (k.get("choices") or [])[0] if k.get("choices") else None
+    )
     q.autocomplete = lambda *a, **k: DummyPrompt(None)
     q.checkbox = lambda *a, **k: DummyPrompt([])
     q.confirm = lambda *a, **k: DummyPrompt(True)
@@ -50,6 +52,7 @@ def _load_prompts_with_stubs(monkeypatch):
 
     # Minimal components stub
     comp = types.ModuleType("questionary_extended.components")
+
     class Column:
         def __init__(self, name, type=None, width=20, **k):
             self.name = name
@@ -60,7 +63,9 @@ def _load_prompts_with_stubs(monkeypatch):
 
     comp.Column = Column
     comp.ProgressStep = ProgressStep
-    comp.ColorInfo = types.SimpleNamespace(from_hex=lambda x: types.SimpleNamespace(hex=x))
+    comp.ColorInfo = types.SimpleNamespace(
+        from_hex=lambda x: types.SimpleNamespace(hex=x)
+    )
 
     # Minimal Choice and others to satisfy package __init__ imports
     class Choice:
@@ -88,6 +93,7 @@ def _load_prompts_with_stubs(monkeypatch):
 
     # Minimal styles stub to satisfy `from .styles import Theme`
     styles = types.ModuleType("questionary_extended.styles")
+
     class Theme:
         def __init__(self, name):
             self.name = name

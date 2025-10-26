@@ -3,18 +3,21 @@
 This test suite aims to achieve 100% coverage for utils.py module.
 """
 
-import pytest
 from datetime import date, datetime
+
+import pytest
+
 from questionary_extended.utils import (
     format_date,
-    parse_date,
     format_number,
-    parse_number,
     parse_color,
+    parse_date,
+    parse_number,
     render_markdown,
     truncate_text,
     wrap_text,
 )
+
 # Note: parse_color returns a Color object, not ColorInfo
 
 
@@ -85,7 +88,10 @@ class TestNumberUtilities:
 
     def test_format_number_thousands_separator_with_decimals(self):
         """Test thousands separator with decimal places."""
-        assert format_number(1234567.89, decimal_places=2, thousands_sep=True) == "1,234,567.89"
+        assert (
+            format_number(1234567.89, decimal_places=2, thousands_sep=True)
+            == "1,234,567.89"
+        )
 
     def test_format_number_currency(self):
         """Test currency formatting."""
@@ -139,33 +145,44 @@ class TestColorUtilities:
         """Test parsing hex colors with hash."""
         result = parse_color("#ff0000")
         # Test that it returns a color object with expected attributes
-        assert hasattr(result, 'hex')
-        assert hasattr(result, 'rgb')
+        assert hasattr(result, "hex")
+        assert hasattr(result, "rgb")
         assert result.hex == "#ff0000"
         assert result.rgb == (255, 0, 0)
 
     def test_parse_color_hex_without_hash(self):
         """Test parsing hex colors without hash."""
         result = parse_color("ff0000")
-        assert hasattr(result, 'hex')
+        assert hasattr(result, "hex")
         assert result.hex == "#ff0000"
 
     def test_parse_color_named_colors(self):
         """Test parsing named colors."""
         named_colors = [
-            "red", "green", "blue", "yellow", "cyan", "magenta",
-            "black", "white", "gray", "grey", "orange", "purple",
-            "pink", "brown"
+            "red",
+            "green",
+            "blue",
+            "yellow",
+            "cyan",
+            "magenta",
+            "black",
+            "white",
+            "gray",
+            "grey",
+            "orange",
+            "purple",
+            "pink",
+            "brown",
         ]
-        
+
         for color_name in named_colors:
             result = parse_color(color_name)
-            assert hasattr(result, 'hex')
-            assert hasattr(result, 'rgb')
-            
+            assert hasattr(result, "hex")
+            assert hasattr(result, "rgb")
+
             # Test case insensitive
             result_upper = parse_color(color_name.upper())
-            assert hasattr(result_upper, 'hex')
+            assert hasattr(result_upper, "hex")
 
     def test_parse_color_rgb_format(self):
         """Test parsing RGB format colors."""
@@ -174,11 +191,11 @@ class TestColorUtilities:
             "rgb(0,255,0)",
             "rgb( 0 , 0 , 255 )",
         ]
-        
+
         for rgb_str in test_cases:
             result = parse_color(rgb_str)
-            assert hasattr(result, 'hex')
-            assert hasattr(result, 'rgb')
+            assert hasattr(result, "hex")
+            assert hasattr(result, "rgb")
 
     def test_parse_color_invalid_format(self):
         """Test behavior with invalid color formats (returns default black)."""
@@ -190,7 +207,7 @@ class TestColorUtilities:
     def test_parse_color_whitespace_handling(self):
         """Test that color parsing handles whitespace correctly."""
         result = parse_color("  red  ")
-        assert hasattr(result, 'hex')
+        assert hasattr(result, "hex")
 
 
 class TestMarkdownUtilities:
@@ -213,7 +230,7 @@ class TestMarkdownUtilities:
         # Test code backticks - NOT implemented in the actual function
         result = render_markdown("This is `code` text")
         assert "`code`" in result  # Should be unchanged
-        
+
     def test_render_markdown_headers_not_implemented(self):
         """Test that headers are not implemented in the actual function."""
         result = render_markdown("# Header 1\n## Header 2")
@@ -226,7 +243,7 @@ class TestMarkdownUtilities:
         result = render_markdown(text)
         assert "\033[1m" in result  # Bold formatting works
         assert "\033[3m" in result  # Italic formatting works
-        assert "`code`" in result    # Code formatting not implemented
+        assert "`code`" in result  # Code formatting not implemented
 
     def test_render_markdown_no_formatting(self):
         """Test plain text without markdown."""
@@ -271,7 +288,9 @@ class TestTextUtilities:
         result = truncate_text(text, 2)
         # When width is too small for content + "...", just returns "..."
         assert result == "..."
-        assert len(result) == 3  # Always returns "..." when truncation needed and width is small
+        assert (
+            len(result) == 3
+        )  # Always returns "..." when truncation needed and width is small
 
     def test_wrap_text_simple_case(self):
         """Test basic text wrapping."""
@@ -327,7 +346,7 @@ class TestEdgeCases:
         # Test leap year
         leap_date = date(2024, 2, 29)
         assert format_date(leap_date) == "2024-02-29"
-        
+
         # Test year boundaries
         assert format_date(date(1, 1, 1)) == "0001-01-01"
         assert format_date(date(9999, 12, 31)) == "9999-12-31"
@@ -344,11 +363,11 @@ class TestEdgeCases:
         """Test edge cases for color parsing."""
         # Test RGB edge values
         result = parse_color("rgb(0, 0, 0)")
-        assert hasattr(result, 'hex')
+        assert hasattr(result, "hex")
         assert result.rgb == (0, 0, 0)
-        
+
         result = parse_color("rgb(255, 255, 255)")
-        assert hasattr(result, 'hex')
+        assert hasattr(result, "hex")
         assert result.rgb == (255, 255, 255)
 
     def test_wrap_text_edge_cases(self):
@@ -356,7 +375,7 @@ class TestEdgeCases:
         # Width of 1
         result = wrap_text("hello world", 1)
         assert len(result) > 0  # Should handle this gracefully
-        
+
         # Very large width
         result = wrap_text("short text", 1000)
         assert result == ["short text"]

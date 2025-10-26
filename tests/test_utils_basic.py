@@ -1,12 +1,9 @@
-import pytest
-from datetime import date
-
 from questionary_extended.utils import (
+    create_progress_bar,
     format_number,
+    fuzzy_match,
     parse_number,
     truncate_text,
-    create_progress_bar,
-    fuzzy_match,
 )
 
 

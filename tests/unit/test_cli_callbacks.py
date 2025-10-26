@@ -1,8 +1,7 @@
-import importlib.util
 import sys
 import types
 from pathlib import Path
-from tests.helpers.test_helpers import skip_if_coverage_excluded, load_module_from_path
+
 from tests.conftest_questionary import setup_questionary_mocks
 
 # Centralized: skip this test module if the CLI wrapper is intentionally excluded
@@ -40,7 +39,7 @@ class DummyProgressTracker:
 def load_cli_module():
     # locate the cli.py relative to this test file
     repo_root = Path(__file__).resolve().parents[2]
-    cli_path = repo_root / "src" / "questionary_extended" / "cli.py"
+    repo_root / "src" / "questionary_extended" / "cli.py"
     # Prefer importing the package from the local `src/` directory so package
     # metadata and relative imports resolve as expected. This avoids issues
     # when tests use an import-from-path loader that can inadvertently pick
@@ -53,7 +52,7 @@ def load_cli_module():
     pkg = importlib.import_module("questionary_extended")
     # Ensure package exposes a version for modules that expect it
     if not hasattr(pkg, "__version__"):
-        setattr(pkg, "__version__", "0.0.0")
+        pkg.__version__ = "0.0.0"
 
     module = importlib.import_module("questionary_extended.cli")
     try:
@@ -130,7 +129,11 @@ def test_wizard_demo_runs_with_dummy_progress(monkeypatch, capsys):
     # patch ProgressTracker and questionary.text and time.sleep
     monkeypatch.setattr(cli, "ProgressTracker", DummyProgressTracker)
     # questionary is used via cli.questionary.text in wizard; ensure text returns a value
-    monkeypatch.setattr(cli, "questionary", types.SimpleNamespace(text=lambda *a, **k: DummyPrompt("stepval")))
+    monkeypatch.setattr(
+        cli,
+        "questionary",
+        types.SimpleNamespace(text=lambda *a, **k: DummyPrompt("stepval")),
+    )
     import time as _time
 
     monkeypatch.setattr(_time, "sleep", lambda s: None)

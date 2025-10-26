@@ -5,26 +5,25 @@ Command-line interface for questionary-extended.
 # COVERAGE_EXCLUDE: thin wrapper — do not add original logic here
 # COVERAGE_EXCLUDE_ALLOW_COMPLEX: intentionally contains original logic; exempt from AST triviality checks
 
+import importlib
 import sys
+from types import SimpleNamespace
+from typing import Any
 
 import click
-import importlib
-from types import SimpleNamespace
 
 # Expose the shared proxy as the module-level `questionary` so tests can
 # monkeypatch attributes on the module (monkeypatch.setattr(module, 'questionary', ...)).
 try:
-    from ._questionary_proxy import questionary_proxy as questionary
-except Exception:
-    # If the proxy isn't importable yet (very early import scenarios), expose
-    # a None placeholder — tests/helpers will install a mock via sys.modules
+    from .._questionary_proxy import questionary_proxy as questionary
+except ImportError:
+    # fallback: a None placeholder — tests/helpers will install a mock via sys.modules
     # or the runtime accessor.
-    from types import SimpleNamespace
 
     def _questionary_placeholder(*a: object, **kw: object) -> object:
         raise NotImplementedError("questionary is not configured in this environment")
 
-    questionary = SimpleNamespace(
+    questionary: Any = SimpleNamespace(  # type: ignore
         text=_questionary_placeholder,
         select=_questionary_placeholder,
         confirm=_questionary_placeholder,
@@ -66,7 +65,9 @@ def _resolve_questionary():
     # If the module-level questionary has been replaced (not the original
     # placeholder), prefer that value so tests that do
     # `monkeypatch.setattr(cli, 'questionary', ...)` work as intended.
-    if q_mod is not None and q_mod is not globals().get("_default_questionary_placeholder"):
+    if q_mod is not None and q_mod is not globals().get(
+        "_default_questionary_placeholder"
+    ):
         return q_mod
 
     # Otherwise fall back to the centralized runtime resolver.

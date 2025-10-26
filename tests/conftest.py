@@ -2,7 +2,6 @@ import pytest
 
 from .conftest_questionary import setup_questionary_mocks
 
-
 # Ensure a minimal `questionary` mock is present at import/collection time so
 # test modules that `import questionary` or `from questionary import ...` at
 # module scope receive the compatibility shim. setup_questionary_mocks accepts
@@ -18,19 +17,22 @@ def _install_questionary_mock(monkeypatch):
     """
     setup_questionary_mocks(monkeypatch)
     yield
-import os
-import threading
+
+
 import logging
+import os
 import sys
+import threading
+
 import pytest
 
 from .logging_utils import (
-    sanitize_nodeid,
-    ensure_dir,
-    default_log_dir,
-    get_worker_id,
     JsonFormatter,
     RedactingFormatter,
+    default_log_dir,
+    ensure_dir,
+    get_worker_id,
+    sanitize_nodeid,
 )
 
 # Default per-test timeout in seconds. Can be overridden with environment variable
@@ -38,6 +40,7 @@ from .logging_utils import (
 DEFAULT_TIMEOUT = int(os.getenv("TEST_TIMEOUT_SECONDS", "5"))
 
 _has_timeout_plugin = False
+
 
 def pytest_configure(config):
     global _has_timeout_plugin
@@ -66,6 +69,7 @@ def pytest_runtest_setup(item):
     # Print a concise RUNNING line to the terminal
     print(f"RUNNING {item.nodeid} (timeout={timeout}s)")
 
+
 def pytest_runtest_call(item):
     """Run each test with a timeout fallback when pytest-timeout is not installed.
 
@@ -86,9 +90,9 @@ def pytest_runtest_call(item):
     def _target():
         try:
             item.runtest()
-            result['ok'] = True
+            result["ok"] = True
         except Exception as e:
-            result['exc'] = e
+            result["exc"] = e
 
     t = threading.Thread(target=_target, name=f"test-thread-{item.nodeid}")
     t.daemon = True
@@ -96,11 +100,14 @@ def pytest_runtest_call(item):
     t.join(timeout)
     if t.is_alive():
         # Fail the test with a clear timeout message
-        pytest.fail(f"Test '{item.nodeid}' exceeded time limit of {timeout} seconds", pytrace=False)
+        pytest.fail(
+            f"Test '{item.nodeid}' exceeded time limit of {timeout} seconds",
+            pytrace=False,
+        )
 
-    if 'exc' in result:
+    if "exc" in result:
         # Re-raise the captured exception so pytest records it normally
-        raise result['exc']
+        raise result["exc"]
 
 
 @pytest.fixture(autouse=True)
@@ -153,13 +160,17 @@ def per_test_logger(request):
     if json_mode:
         inner_fmt = JsonFormatter()
         if redact_mode:
-            fmt = RedactingFormatter(inner=inner_fmt, redaction_patterns=redact_patterns)
+            fmt = RedactingFormatter(
+                inner=inner_fmt, redaction_patterns=redact_patterns
+            )
         else:
             fmt = inner_fmt
     else:
         base = logging.Formatter("%(asctime)s %(levelname)s [%(name)s] %(message)s")
         if redact_mode:
-            fmt = RedactingFormatter(fmt=base._fmt, redaction_patterns=redact_patterns, inner=base)
+            fmt = RedactingFormatter(
+                fmt=base._fmt, redaction_patterns=redact_patterns, inner=base
+            )
         else:
             fmt = base
 
@@ -167,6 +178,7 @@ def per_test_logger(request):
     fh.setLevel(level)
 
     root = logging.getLogger()
+
     # Inject nodeid/worker into each record so formatters (esp JSON) can include them
     class _InjectNodeFilter(logging.Filter):
         def __init__(self, nodeid, worker):
@@ -216,15 +228,17 @@ def per_test_logger(request):
         # If test failed during the call phase, print the log file to stdout
         rep = getattr(request.node, "rep_call", None)
         if rep is not None and rep.failed:
-            print("\n=== LOG OUTPUT FOR FAILED TEST: {} ===".format(nodeid))
+            print(f"\n=== LOG OUTPUT FOR FAILED TEST: {nodeid} ===")
             try:
-                with open(path, "r", encoding="utf8") as fh2:
+                with open(path, encoding="utf8") as fh2:
                     for line in fh2:
                         # Print lines as-is so terminal preserves formatting
                         sys.stdout.write(line)
             except Exception as e:
                 print(f"(failed to read log file {path}: {e})")
             print("=== END LOG OUTPUT ===\n")
+
+
 """Test conftest helpers.
 
 This file patches importlib.util.module_from_spec to pre-set module.__package__
@@ -282,8 +296,8 @@ def pytest_collection_modifyitems(config, items):
 # mock installation/teardown.
 @pytest.fixture(autouse=True)
 def ensure_questionary_mock(request, monkeypatch):
-    import sys
     import importlib
+    import sys
 
     prev = sys.modules.get("questionary", None)
     from .conftest_questionary import setup_questionary_mocks
@@ -296,7 +310,7 @@ def ensure_questionary_mock(request, monkeypatch):
     try:
         mod = getattr(request, "module", None)
         if mod is not None and hasattr(mod, "questionary"):
-            setattr(mod, "questionary", mock)
+            mod.questionary = mock
     except Exception:
         pass
 
@@ -329,8 +343,14 @@ def ensure_questionary_mock(request, monkeypatch):
         import sys as _sys
 
         aliases = [
-            ("questionary_extended.core.component", "src.questionary_extended.core.component"),
-            ("questionary_extended.prompts_core", "src.questionary_extended.prompts_core"),
+            (
+                "questionary_extended.core.component",
+                "src.questionary_extended.core.component",
+            ),
+            (
+                "questionary_extended.prompts_core",
+                "src.questionary_extended.prompts_core",
+            ),
             ("questionary_extended.prompts", "src.questionary_extended.prompts"),
             ("questionary_extended.core", "src.questionary_extended.core"),
         ]

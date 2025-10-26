@@ -1,13 +1,13 @@
-from datetime import date, datetime
+from datetime import datetime
 
 from questionary_extended.utils import (
-    format_date,
-    parse_date,
-    wrap_text,
     center_text,
     create_progress_bar,
+    format_date,
+    parse_date,
     validate_email,
     validate_url,
+    wrap_text,
 )
 
 

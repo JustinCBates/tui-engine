@@ -1,9 +1,8 @@
 from types import SimpleNamespace
-from pathlib import Path
 
 import pytest
 
-from tests.helpers.test_helpers import load_module_from_path, _find_repo_root
+from tests.helpers.test_helpers import _find_repo_root, load_module_from_path
 
 
 def _load_utils_module():
@@ -203,7 +202,9 @@ def test_fuzzy_match_startswith_and_wordstartswith_via_custom_lower():
     assert any(score == 0.7 for _, score in res)
 
     # any(word.startswith) branch: __contains__ False, startswith False, but split words start with query
-    cl2 = CLow("alpha beta", contains=False, starts=False, split_parts=["alpha", "beta"])
+    cl2 = CLow(
+        "alpha beta", contains=False, starts=False, split_parts=["alpha", "beta"]
+    )
     choice2 = ChoiceObj("alpha beta", cl2)
     res2 = mod.fuzzy_match("be", [choice2])
     assert any(score == 0.6 for _, score in res2)

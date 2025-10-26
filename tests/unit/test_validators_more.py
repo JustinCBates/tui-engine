@@ -1,4 +1,3 @@
-import importlib.util
 import sys
 import types
 from pathlib import Path
@@ -22,7 +21,9 @@ def _load_validators_with_stub():
 
     sys.modules["questionary"] = fake_q
 
-    module_path = Path(__file__).parents[2] / "src" / "questionary_extended" / "validators.py"
+    module_path = (
+        Path(__file__).parents[2] / "src" / "questionary_extended" / "validators.py"
+    )
     from tests.helpers.test_helpers import load_module_from_path
 
     mod = load_module_from_path("questionary_extended.validators", module_path)
