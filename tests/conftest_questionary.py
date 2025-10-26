@@ -356,16 +356,8 @@ def setup_questionary_mocks(monkeypatch, responses=None):
     # import time.
     mock_q.Validator = object
 
-    # Provide a minimal Separator class and a prompt() helper so tests that
-    # import `from questionary import Separator` get a consistent object and
-    # so calls to `questionary.prompt(...)` don't hit the real implementation
-    # (which would create prompt_toolkit sessions).
-    class Separator:
-        def __init__(self, title: str = ""):
-            self.title = title
-
-        def __repr__(self):
-            return f"<Separator {self.title!r}>"
+    # Use the module-level Separator class for consistency
+    mock_q.Separator = Separator
 
     def _prompt(questions, **kwargs):
         # Default behavior: return a dict with a 'prompted' key so tests that
