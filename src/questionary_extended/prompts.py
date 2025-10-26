@@ -3,6 +3,8 @@ Advanced prompt types that extend questionary's capabilities.
 This is the main prompts module - imports working implementations from prompts_core.
 """
 
+# COVERAGE_EXCLUDE_ALLOW_COMPLEX: thin wrapper — do not add original logic here
+
 # (Coverage markers removed so prompt tests run in CI)
 
 # Import working core implementations

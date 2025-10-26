@@ -2,6 +2,31 @@
 
 import pytest
 import os
+import sys
+import importlib.util
+from pathlib import Path
+
+
+def _find_repo_root():
+    """Find the repository root directory."""
+    current = Path(__file__).parent
+    while current != current.parent:
+        if (current / ".git").exists() or (current / "pyproject.toml").exists():
+            return current
+        current = current.parent
+    return Path.cwd()
+
+
+def load_module_from_path(module_name, file_path):
+    """Load a module from a file path."""
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load module {module_name} from {file_path}")
+    
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def skip_if_coverage_excluded(func):
