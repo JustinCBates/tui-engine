@@ -344,14 +344,14 @@ def ensure_questionary_mock(request, monkeypatch):
 
         aliases = [
             (
-                "questionary_extended.core.component",
-                "src.questionary_extended.core.component",
+                "questionary_extended.core.component_wrappers",
+                "src.questionary_extended.core.component_wrappers",
             ),
             (
-                "questionary_extended.prompts_core",
-                "src.questionary_extended.prompts_core",
+                "questionary_extended.prompts_base",
+                "src.questionary_extended.prompts_base",
             ),
-            ("questionary_extended.prompts", "src.questionary_extended.prompts"),
+            ("questionary_extended.prompts_extended", "src.questionary_extended.prompts_extended"),
             ("questionary_extended.core", "src.questionary_extended.core"),
         ]
         for base, alias in aliases:

@@ -478,16 +478,16 @@ def setup_questionary_mocks(monkeypatch, responses=None):
         import importlib as _il
 
         for modname in (
-            "questionary_extended.prompts_core",
-            "questionary_extended.prompts",
-            # NOTE: avoid injecting proxies into core.component here. The
-            # component module defines its own convenience factory
+            "questionary_extended.prompts_base",
+            "questionary_extended.prompts_extended",
+            # NOTE: avoid injecting proxies into core.component_wrappers here. The
+            # component_wrappers module defines its own convenience factory
             # functions (text/select/...) which should remain as the
             # canonical Component factories during tests. Injecting
             # proxies here can accidentally replace those factory
             # functions with direct proxies to the runtime `questionary`
             # mock (causing convenience wrappers to return prompt
-            # instances instead of Component objects). The core.component
+            # instances instead of Component objects). The core.component_wrappers
             # module will still receive a `questionary` attribute so
             # runtime resolution works; we only avoid replacing its
             # factory symbols.

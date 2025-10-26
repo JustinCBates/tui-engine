@@ -22,7 +22,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from . import __version__
-from .prompts import (
+from .prompts_extended import (
     ProgressTracker,
     color,
     enhanced_text,
@@ -30,7 +30,7 @@ from .prompts import (
     rating,
     tree_select,
 )
-from .prompts import (
+from .prompts_extended import (
     date as date_prompt,
 )
 from .styles import THEMES, get_theme_names

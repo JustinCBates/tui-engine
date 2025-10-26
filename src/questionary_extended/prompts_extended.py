@@ -1,6 +1,6 @@
 """
 Advanced prompt types that extend questionary's capabilities.
-This is the main prompts module - imports working implementations from prompts_core.
+This is the main prompts module - imports working implementations from prompts_base.
 """
 
 # COVERAGE_EXCLUDE_ALLOW_COMPLEX: thin wrapper — do not add original logic here
@@ -49,13 +49,13 @@ from .component_dataclasses import Column, ProgressStep
 
 try:
     # Prefer direct relative import (normal package import)
-    from .prompts_core import LazyQuestion, _lazy_factory
+    from .prompts_base import LazyQuestion, _lazy_factory
 except Exception:
     # Fallback for tests that load modules from a path where relative
     # imports may fail; import by absolute package name instead.
     import importlib as _il
 
-    _pc = _il.import_module("questionary_extended.prompts_core")
+    _pc = _il.import_module("questionary_extended.prompts_base")
     # Use _lazy_factory from the imported module when available; otherwise
     # fall back to the local _lazy_factory defined above. If the imported
     # object is a test-provided stub (e.g., types.SimpleNamespace) that
@@ -107,7 +107,7 @@ except Exception:
             pass
 
 # Re-export core helpers
-from .prompts_core import ProgressTracker as CoreProgressTracker
+from .prompts_base import ProgressTracker as CoreProgressTracker
 from .styles import Theme
 
 # Import our validators and components

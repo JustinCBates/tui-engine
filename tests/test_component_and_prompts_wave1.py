@@ -1,6 +1,6 @@
 import questionary
 
-from questionary_extended import prompts
+from questionary_extended import prompts_extended as prompts
 from questionary_extended.core.component_wrappers import Component
 from tests.helpers.questionary_helpers import mock_questionary
 
