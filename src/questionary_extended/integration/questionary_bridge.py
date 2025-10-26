@@ -8,11 +8,12 @@ This is a minimal, incremental implementation intended to be expanded as the
 core Page/Card/Assembly APIs are completed.
 """
 
-from typing import Any, Iterable
 import importlib
 from types import SimpleNamespace
+from typing import Any, Iterable
 
-from ..core.component import Component
+from src.tui_engine.questionary_factory import get_questionary
+from ..core.component_wrappers import Component
 from ..core.state import PageState
 
 
@@ -48,34 +49,26 @@ class QuestionaryBridge:
     def __init__(self, state: PageState) -> None:
         self.state = state
 
-    def _resolve_questionary(self):
-        """Resolve the active questionary object using the preferred order:
+    def _resolve_questionary(self) -> Any:
+        """Resolve the active questionary object using the DI system with fallbacks.
 
-        1. The package-level proxy (`questionary_proxy`) if available.
-        2. The runtime accessor (`questionary_extended._runtime.get_questionary`).
-        3. Fallback placeholder object.
+        Resolution order:
+        1. Module-level `questionary` override (for test monkeypatching)
+        2. DI system questionary module
+        3. Fallback placeholder object
         """
         # Honor a module-level `questionary` when present (tests may set this
-        # explicitly to None to simulate absence). This mirrors older behavior
-        # where tests monkeypatch the bridge module directly.
+        # explicitly to None to simulate absence). This preserves monkeypatch support.
         if "questionary" in globals():
             return globals().get("questionary")
 
+        # Use the DI system as primary resolution
         try:
-            # Prefer the proxy when present; it supports per-attribute monkeypatching.
-            from .._questionary_proxy import questionary_proxy as questionary
-
-            return questionary
-        except Exception:
-            pass
-
-        try:
-            rt = importlib.import_module("questionary_extended._runtime")
-            q = rt.get_questionary()
+            q = get_questionary()
             if q is not None:
                 return q
         except Exception:
-            # Import/runtime resolution failed; fall back to placeholder
+            # DI system failed; fall back to placeholder
             pass
 
         return _FALLBACK_QUESTIONARY
@@ -93,7 +86,9 @@ class QuestionaryBridge:
         # the module-level attribute to None), surface a clear RuntimeError
         # so callers/tests can detect that prompts are not available.
         if questionary is None:
-            raise RuntimeError("questionary is not available in the current environment")
+            raise RuntimeError(
+                "questionary is not available in the current environment"
+            )
 
         # Creating the prompt object may itself access prompt_toolkit's
         # console output and raise NoConsoleScreenBufferError on Windows
@@ -105,10 +100,14 @@ class QuestionaryBridge:
             prompt = component.create_questionary_component()
         except Exception as e:
             try:
-                from prompt_toolkit.output.win32 import NoConsoleScreenBufferError
+                from prompt_toolkit.output.win32 import (  # type: ignore
+                    NoConsoleScreenBufferError,  # type: ignore
+                )
 
                 if isinstance(e, NoConsoleScreenBufferError):
-                    raise RuntimeError("questionary not usable in this environment") from e
+                    raise RuntimeError(
+                        "questionary not usable in this environment"
+                    ) from e
             except Exception:
                 pass
 
@@ -120,7 +119,7 @@ class QuestionaryBridge:
         try:
             answer = prompt.ask()
         except Exception as e:
-            raise RuntimeError("prompt failed") from e
+            raise RuntimeError("questionary prompt failed") from e
 
         # Persist into state using the component name (global key)
         # Callers may prefer to namespace the key (assembly.field) themselves
@@ -173,4 +172,3 @@ class QuestionaryBridge:
 
 
 __all__ = ["QuestionaryBridge"]
-

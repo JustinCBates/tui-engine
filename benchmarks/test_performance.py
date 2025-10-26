@@ -5,36 +5,37 @@ Run with: pytest benchmarks/ --benchmark-json=benchmark-results.json
 """
 
 import pytest
+
 from questionary_extended import (
+    EmailValidator,
     NumberValidator,
-    EmailValidator, 
     enhanced_text,
     number,
-    rating
+    rating,
 )
 
 
 class TestValidatorPerformance:
     """Benchmark validator performance."""
-    
+
     def test_number_validator_performance(self, benchmark):
         """Benchmark NumberValidator performance."""
         validator = NumberValidator(min_value=0, max_value=100)
-        
+
         def validate_numbers():
             for i in range(100):
                 validator.validate(str(i))
-        
+
         result = benchmark(validate_numbers)
-    
+
     def test_email_validator_performance(self, benchmark):
         """Benchmark EmailValidator performance."""
         validator = EmailValidator()
-        
+
         def validate_emails():
             emails = [
                 "test@example.com",
-                "user.name@domain.co.uk", 
+                "user.name@domain.co.uk",
                 "invalid-email",
                 "another@test.org",
                 "bad@",
@@ -44,43 +45,47 @@ class TestValidatorPerformance:
                     validator.validate(email)
                 except:
                     pass
-        
+
         result = benchmark(validate_emails)
 
 
 class TestPromptPerformance:
     """Benchmark prompt creation performance."""
-    
+
     def test_enhanced_text_creation(self, benchmark):
         """Benchmark enhanced_text prompt creation."""
+
         def create_text_prompts():
             for i in range(100):
                 prompt = enhanced_text(f"Question {i}", default="test")
-        
+
         result = benchmark(create_text_prompts)
-    
+
     def test_number_prompt_creation(self, benchmark):
         """Benchmark number prompt creation."""
+
         def create_number_prompts():
             for i in range(100):
                 prompt = number(f"Number {i}", min_value=0, max_value=100)
-        
+
         result = benchmark(create_number_prompts)
-    
+
     def test_rating_prompt_creation(self, benchmark):
         """Benchmark rating prompt creation."""
+
         def create_rating_prompts():
             for i in range(100):
                 prompt = rating(f"Rate {i}", max_rating=5)
-        
+
         result = benchmark(create_rating_prompts)
 
 
 class TestProgressTrackerPerformance:
     """Benchmark progress tracker performance."""
-    
+
     def test_progress_tracker_updates(self, benchmark):
         """Benchmark progress tracker update performance."""
+
         def progress_updates():
             from questionary_extended import ProgressTracker
 
@@ -88,13 +93,14 @@ class TestProgressTrackerPerformance:
             with tracker:
                 for i in range(100):
                     tracker.update(i + 1, f"Step {i + 1}")
-        
+
         # Redirect print to avoid cluttering benchmark output
         import io
         import sys
+
         old_stdout = sys.stdout
         sys.stdout = io.StringIO()
-        
+
         try:
             result = benchmark(progress_updates)
         finally:
@@ -103,37 +109,37 @@ class TestProgressTrackerPerformance:
 
 class TestMemoryUsage:
     """Test memory efficiency."""
-    
+
     def test_validator_memory_usage(self):
         """Test that validators don't leak memory."""
         import gc
         import sys
-        
+
         # Create many validators
         validators = []
         for i in range(1000):
-            validators.append(NumberValidator(min_value=i, max_value=i+100))
-        
+            validators.append(NumberValidator(min_value=i, max_value=i + 100))
+
         # Force garbage collection
         gc.collect()
-        
+
         # Clear references
         validators.clear()
         gc.collect()
-        
+
         # This is a simple memory leak test
         assert len(gc.garbage) == 0
-    
+
     def test_progress_tracker_cleanup(self):
         """Test that progress trackers clean up properly."""
         import gc
-        import sys
         import io
-        
+        import sys
+
         # Redirect stdout to avoid print spam
         old_stdout = sys.stdout
         sys.stdout = io.StringIO()
-        
+
         try:
             trackers = []
             for i in range(100):
@@ -144,14 +150,14 @@ class TestMemoryUsage:
                     for j in range(10):
                         tracker.update(j + 1, f"Step {j + 1}")
                 trackers.append(tracker)
-            
+
             # Force cleanup
             trackers.clear()
             gc.collect()
-            
+
             # Check for leaks
             assert len(gc.garbage) == 0
-            
+
         finally:
             sys.stdout = old_stdout
 

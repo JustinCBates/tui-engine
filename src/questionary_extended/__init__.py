@@ -25,7 +25,7 @@ except Exception:
     pass
 
 # Import core functionality - start with basics that work
-from .components import (
+from .component_dataclasses import (
     Choice,
     ProgressStep,
     Separator,
@@ -34,7 +34,7 @@ from .components import (
 
 # Export newly implemented core API (Page/Card/Assembly/components)
 from .core import (
-    Assembly,
+    AssemblyBase,
     Card,
     Component,
     # convenience wrappers also available
@@ -48,12 +48,17 @@ from .core import (
     select,
     text,
 )
+
 # Provide a higher-level Page implementation that wires runtime execution.
-from .page import Page  # noqa: E402
-from .prompts import rating
+from .page_runtime import Page  # noqa: E402
+
+# Provide a higher-level Assembly implementation that wires runtime execution.
+from .assembly_runtime import Assembly  # noqa: E402
+
+from .prompts_extended import rating
 
 # Import existing prompts and utilities
-from .prompts_core import (
+from .core.prompts_base import (
     ProgressTracker,
     enhanced_text,
     form,
@@ -87,31 +92,20 @@ from .validators import (
 # resolved above when possible and otherwise remains the default.
 
 __all__ = [
-    # Version
-    "__version__",
-    # Working prompts (core functionality)
+    # High-level containers
+    "Page",
+    "Assembly",
+    # Advanced prompts
+    "rating",
     "enhanced_text",
     "number",
     "integer",
-    "rating",
     "form",
     "ProgressTracker",
-    # Core types
-    "Assembly",
-    "Card",
-    "Component",
-    "Page",
-    "PageState",
-    # Components
-    "Choice",
-    "Separator",
-    "ProgressStep",
-    "ValidationResult",
     # Validators
-    "NumberValidator",
     "DateValidator",
-    "EmailValidator",
-    "URLValidator",
+    "EmailValidator", 
+    "NumberValidator",
     "RangeValidator",
     "RegexValidator",
     # Styles

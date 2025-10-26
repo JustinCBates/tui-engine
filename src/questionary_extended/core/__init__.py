@@ -10,9 +10,9 @@ This module contains the fundamental building blocks:
 - State: Page-scoped state management with assembly namespacing
 """
 
-from .assembly import Assembly
+from .assembly_base import AssemblyBase
 from .card import Card
-from .component import (
+from .component_wrappers import (
     Component,
     autocomplete,
     checkbox,
@@ -22,13 +22,13 @@ from .component import (
     select,
     text,
 )
-from .page import Page
+from .page_base import PageBase
 from .state import PageState
 
 __all__ = [
-    "Page",
+    "PageBase",
     "Card",
-    "Assembly",
+    "AssemblyBase",
     "Component",
     "PageState",
     # Component convenience functions

@@ -8,7 +8,7 @@ Enhanced styling and theming support for questionary-extended.
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from questionary import Style
+from prompt_toolkit.styles.style import Style
 
 
 @dataclass
