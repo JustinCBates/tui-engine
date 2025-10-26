@@ -3,22 +3,22 @@
 # COVERAGE_EXCLUDE: thin wrapper — do not add original logic here
 # COVERAGE_EXCLUDE_ALLOW_COMPLEX: intentionally contains original logic; exempt from AST triviality checks
 
-import importlib
 from types import TracebackType
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
+from src.tui_engine.questionary_factory import get_questionary
+
 
 def _resolve_questionary() -> Any:
-    """Resolve the runtime `questionary` object via the centralized accessor.
+    """Resolve the questionary object via the DI system.
 
     Returns the module/object or raises ImportError if not available. Tests
-    should call `setup_questionary_mocks()` to install a mock.
+    should use mock_questionary() or similar helpers from tests.helpers.questionary_helpers.
     """
-    _rt = importlib.import_module("questionary_extended._runtime")
-    q = _rt.get_questionary()
+    q = get_questionary()
     if q is None:
         raise ImportError(
-            "`questionary` is not available. In tests call setup_questionary_mocks() to install a mock."
+            "questionary is not available. Use DI helpers from tests.helpers.questionary_helpers in tests."
         )
     return q
 
@@ -30,12 +30,11 @@ def _lazy_factory(name: str) -> Callable[..., Any]:
     prompt-toolkit/prompt sessions at module import time.
     """
 
-    # If a runtime mock is already installed, return the real factory
-    # function directly to preserve identity checks in tests. Otherwise
-    # return a lightweight resolver that resolves at call-time.
+    # Check if questionary is already available via DI system
+    # If so, return the real factory function directly to preserve 
+    # identity checks in tests. Otherwise return a lazy resolver.
     try:
-        _rt = importlib.import_module("questionary_extended._runtime")
-        _q = _rt.get_questionary()
+        _q = get_questionary()
     except Exception:
         _q = None
 

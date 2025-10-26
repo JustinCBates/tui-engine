@@ -49,22 +49,13 @@ class Assembly:
         Returns:
             Self for method chaining
         """
-        # Provide a minimal implementation that creates a Component using
-        # the core convenience wrapper and appends it to this assembly's
-        # component list. This keeps smoke tests simple while concrete
-        # runners may override rendering behaviour.
         from .component import text as _text_component
 
         comp = _text_component(name, **kwargs)
         # Namespace the component name with the assembly's name so that
         # PageState receives keys like 'assembly.field' when the bridge
         # persists answers. Tests expect assembly-scoped keys (e.g. 'a.x').
-        try:
-            comp.name = f"{self.name}.{name}"
-        except Exception:
-            # If the component is not writable for some reason, fall back
-            # to leaving the original name to avoid breaking callers.
-            pass
+        comp.name = f"{self.name}.{name}"
         self.components.append(comp)
         return self
 
@@ -85,10 +76,7 @@ class Assembly:
         comp = _select_component(name, choices=choices, **kwargs)
         # Namespace the component name with the assembly's name so that
         # answers are stored under 'assembly.field' in PageState.
-        try:
-            comp.name = f"{self.name}.{name}"
-        except Exception:
-            pass
+        comp.name = f"{self.name}.{name}"
         self.components.append(comp)
         return self
 

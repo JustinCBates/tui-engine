@@ -12,6 +12,7 @@ import importlib
 from types import SimpleNamespace
 from typing import Any, Iterable
 
+from src.tui_engine.questionary_factory import get_questionary
 from ..core.component import Component
 from ..core.state import PageState
 
@@ -49,33 +50,25 @@ class QuestionaryBridge:
         self.state = state
 
     def _resolve_questionary(self) -> Any:
-        """Resolve the active questionary object using the preferred order:
+        """Resolve the active questionary object using the DI system with fallbacks.
 
-        1. The package-level proxy (`questionary_proxy`) if available.
-        2. The runtime accessor (`questionary_extended._runtime.get_questionary`).
-        3. Fallback placeholder object.
+        Resolution order:
+        1. Module-level `questionary` override (for test monkeypatching)
+        2. DI system questionary module
+        3. Fallback placeholder object
         """
         # Honor a module-level `questionary` when present (tests may set this
-        # explicitly to None to simulate absence). This mirrors older behavior
-        # where tests monkeypatch the bridge module directly.
+        # explicitly to None to simulate absence). This preserves monkeypatch support.
         if "questionary" in globals():
             return globals().get("questionary")
 
+        # Use the DI system as primary resolution
         try:
-            # Prefer the proxy when present; it supports per-attribute monkeypatching.
-            from .._questionary_proxy import questionary_proxy as questionary
-
-            return questionary
-        except Exception:
-            pass
-
-        try:
-            rt = importlib.import_module("questionary_extended._runtime")
-            q = rt.get_questionary()
+            q = get_questionary()
             if q is not None:
                 return q
         except Exception:
-            # Import/runtime resolution failed; fall back to placeholder
+            # DI system failed; fall back to placeholder
             pass
 
         return _FALLBACK_QUESTIONARY

@@ -14,36 +14,25 @@ from types import SimpleNamespace
 
 # Import types for advanced features
 from typing import Any, Dict, List, Optional, Union
+from src.tui_engine.questionary_factory import get_questionary
 
-# Use the shared proxy as the module-level `questionary` object. This keeps
-# imports safe and lets tests monkeypatch `questionary` attributes on this
-# module when needed.
-try:
-    from ._questionary_proxy import questionary_proxy as questionary
-except Exception:
-    from types import SimpleNamespace
-
-    def _questionary_placeholder(*a: object, **kw: object) -> object:
-        raise NotImplementedError("questionary is not configured in this environment")
-
-    questionary: Any = SimpleNamespace(  # type: ignore
-        text=_questionary_placeholder,
-        select=_questionary_placeholder,
-        confirm=_questionary_placeholder,
-        password=_questionary_placeholder,
-        checkbox=_questionary_placeholder,
-        autocomplete=_questionary_placeholder,
-        path=_questionary_placeholder,
-        prompt=_questionary_placeholder,
-    )
+# Module-level questionary variable for monkeypatch support
+# Tests can set this to override the DI system
+questionary: Any = None
 
 
 def _resolve_questionary():
-    _rt = importlib.import_module("questionary_extended._runtime")
-    q = _rt.get_questionary()
+    """Resolve questionary using DI system with monkeypatch support."""
+    # Prefer an explicit module-level override (tests can monkeypatch prompts.questionary)
+    q_mod = globals().get("questionary", None)
+    if q_mod is not None:
+        return q_mod
+
+    # Use DI system as primary resolution
+    q = get_questionary()
     if q is None:
         raise ImportError(
-            "`questionary` is not available. In tests call setup_questionary_mocks() to install a mock."
+            "questionary is not available. Use DI helpers from tests.helpers.questionary_helpers in tests."
         )
     return q
 

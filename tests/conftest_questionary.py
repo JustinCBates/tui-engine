@@ -1,3 +1,22 @@
+"""
+DEPRECATED: Complex questionary mocking system.
+
+This file contains 669 lines of complex questionary mocking logic that is
+largely superfluous due to the new dependency injection system.
+
+For NEW tests, use the clean helpers from tests.helpers.questionary_helpers:
+- mock_questionary() for simple mocking  
+- mock_questionary_with_types() for multiple component types
+- QuestionaryTestHelper for advanced scenarios
+
+This file is maintained for backward compatibility with existing tests that
+haven't been migrated to the DI system yet. Eventually most of this can be
+removed as tests are migrated to the cleaner DI patterns.
+
+The DI system eliminates the need for complex fallback resolution and 
+provides clean, maintainable test patterns.
+"""
+
 import sys
 import types
 from typing import Any, Callable, Dict, Optional

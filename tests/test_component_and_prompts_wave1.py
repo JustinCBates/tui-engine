@@ -2,21 +2,19 @@ import questionary
 
 from questionary_extended import prompts
 from questionary_extended.core.component import Component
+from tests.helpers.questionary_helpers import mock_questionary
 
 
-def test_component_create_questionary_component_monkeypatched(monkeypatch):
-    calls = {}
-
-    def fake_text(**kwargs):
-        calls["text"] = kwargs
-        return "TEXT_QUESTION"
-
-    monkeypatch.setattr(questionary, "text", fake_text)
-
-    comp = Component("name", "text", message="hi", foo="bar")
-    res = comp.create_questionary_component()
-    assert res == "TEXT_QUESTION"
-    assert "text" in calls and calls["text"]["message"] == "hi"
+def test_component_create_questionary_component_di():
+    """Test component creation using clean DI pattern."""
+    with mock_questionary() as mock_q:
+        mock_q.text.return_value = "TEXT_QUESTION"
+        
+        comp = Component("name", "text", message="hi", foo="bar")
+        res = comp.create_questionary_component()
+        
+        assert res == "TEXT_QUESTION"
+        mock_q.text.assert_called_once_with(message="hi", foo="bar")
 
 
 def test_component_unsupported_type_raises():

@@ -5,8 +5,6 @@ import sys
 import types
 from unittest.mock import MagicMock
 
-from tests.conftest_questionary import setup_questionary_mocks
-
 
 def _reload_cli():
     """Helper to reload CLI module for testing."""
@@ -19,11 +17,16 @@ def _reload_cli():
 
 def make_seq_factory(values):
     """Create a factory for sequential prompt responses."""
+    if not isinstance(values, (list, tuple)):
+        values = [values]
     it = iter(values)
 
     class FakePrompt:
         def ask(self):
-            return next(it)
+            try:
+                return next(it)
+            except StopIteration:
+                return values[-1] if values else None
 
     return lambda *a, **k: FakePrompt()
 
@@ -35,6 +38,7 @@ class TestQuickCommands:
         """Test quick rating command returning a value."""
         cli = _reload_cli()
 
+        # Mock the rating function from prompts
         class FakePrompt:
             def ask(self):
                 return 4
@@ -154,10 +158,17 @@ class TestDemoCommand:
 
     def test_demo_basic(self, monkeypatch, capsys):
         """Test basic demo functionality."""
-        # Apply comprehensive questionary mocking to avoid console issues
-        setup_questionary_mocks(monkeypatch)
-
         cli = _reload_cli()
+
+        # Mock questionary module with comprehensive responses
+        monkeypatch.setattr(cli, "questionary", types.SimpleNamespace())
+        fake_q = cli.questionary
+        
+        # Set up sequential responses for different prompt types
+        fake_q.text = make_seq_factory(["Test User", "1990-01-01"])
+        fake_q.select = make_seq_factory(["blue"]) 
+        fake_q.confirm = make_seq_factory([True])
+        fake_q.number = make_seq_factory([42, 8])
 
         # Mock progress tracker
         class FakeProgressTracker:
@@ -179,8 +190,9 @@ class TestDemoCommand:
 
         monkeypatch.setattr(cli, "ProgressTracker", FakeProgressTracker)
 
-        # Mock questionary responses - enhance to work with date prompts too
-        fake_responses = ["Test User", "blue", 42, 8, "1990-01-01"]  # Add date response
+        # Mock specific prompt functions with shared prompt object
+        mock_prompt = MagicMock()
+        fake_responses = ["Test User", "blue", 42, 8, "1990-01-01"]
         response_iter = iter(fake_responses)
 
         def fake_ask():
@@ -189,7 +201,6 @@ class TestDemoCommand:
             except StopIteration:
                 return None
 
-        mock_prompt = MagicMock()
         mock_prompt.ask = fake_ask
 
         # Mock all prompt types used in demo

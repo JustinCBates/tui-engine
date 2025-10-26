@@ -72,12 +72,7 @@ class Page:
         Returns:
             Flat dictionary with component results
         """
-        # In this foundational implementation the Page.run behavior is not
-        # implemented. Higher-level runners or integration layers should
-        # provide the execution engine (QuestionaryBridge). Tests expect
-        # this to raise NotImplementedError until an execution bridge is
-        # supplied.
-        raise NotImplementedError("Page execution not yet implemented")
+        raise NotImplementedError("Page execution requires a QuestionaryBridge")
 
 
 __all__ = ["Page"]

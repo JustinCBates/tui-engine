@@ -1,29 +1,12 @@
+from tests.helpers.questionary_helpers import mock_questionary_with_types
 import types
 
 
-class FakeQ:
-    def __init__(self, value=None):
-        self._value = value
-
-    def ask(self, *a, **k):
-        return self._value
-
-
-def test_component_create_questionary_component_mappings(monkeypatch):
-    # Stub questionary functions to return identifiable objects
-    import questionary
-
+def test_component_create_questionary_component_mappings():
+    # Test questionary component type mappings using DI mock
     from questionary_extended.core.component import Component
 
-    monkeypatch.setattr(questionary, "text", lambda **k: FakeQ("t"))
-    monkeypatch.setattr(questionary, "select", lambda **k: FakeQ("s"))
-    monkeypatch.setattr(questionary, "confirm", lambda **k: FakeQ(True))
-    monkeypatch.setattr(questionary, "password", lambda **k: FakeQ("p"))
-    monkeypatch.setattr(questionary, "checkbox", lambda **k: FakeQ(["a"]))
-    monkeypatch.setattr(questionary, "autocomplete", lambda **k: FakeQ("auto"))
-    monkeypatch.setattr(questionary, "path", lambda **k: FakeQ("C:/"))
-
-    # For each type, ensure create_questionary_component returns an object with ask()
+    # Define expected values for each component type
     types_to_expected = {
         "text": "t",
         "select": "s",
@@ -34,11 +17,20 @@ def test_component_create_questionary_component_mappings(monkeypatch):
         "path": "C:/",
     }
 
-    for comp_type, expected in types_to_expected.items():
-        c = Component(name=f"n_{comp_type}", component_type=comp_type, message="m")
-        obj = c.create_questionary_component()
-        assert hasattr(obj, "ask")
-        assert obj.ask() == expected
+    with mock_questionary_with_types(
+        text="t",
+        select="s", 
+        confirm=True,
+        password="p",
+        checkbox=["a"],
+        autocomplete="auto",
+        path="C:/"
+    ):
+        for comp_type, expected in types_to_expected.items():
+            c = Component(name=f"n_{comp_type}", component_type=comp_type, message="m")
+            obj = c.create_questionary_component()
+            assert hasattr(obj, "ask")
+            assert obj.ask() == expected
 
 
 def test_component_create_unsupported_type_raises():
@@ -72,7 +64,7 @@ def test_questionary_bridge_handles_prompt_creation_and_ask_errors(monkeypatch):
     import sys
 
     fake_mod = types.SimpleNamespace(NoConsoleScreenBufferError=FakeConsoleError)
-    sys.modules["prompt_toolkit.output.win32"] = fake_mod
+    sys.modules["prompt_toolkit.output.win32"] = fake_mod  # type: ignore
 
     # First: creation raises FakeConsoleError and bridge should wrap to RuntimeError
     def bad_factory(**k):

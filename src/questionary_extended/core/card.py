@@ -48,15 +48,9 @@ class Card:
         Returns:
             Self for method chaining
         """
-        # By default the base Card may not be connected to a fully-featured
-        # Page/runner. Tests that construct a bare Card with a dummy parent
-        # expect NotImplementedError. If this Card is owned by a real Page
-        # implementation (which exposes a `state` attribute), provide a
-        # minimal convenience implementation that creates a Component and
-        # appends it so higher-level Page.run() can execute it.
         if not hasattr(self.parent_page, "state"):
             raise NotImplementedError(
-                "Card.text is not implemented for standalone Card instances"
+                "Card.text requires a parent Page with state management"
             )
 
         from .component import text as _text_component
@@ -79,7 +73,7 @@ class Card:
         """
         if not hasattr(self.parent_page, "state"):
             raise NotImplementedError(
-                "Card.select is not implemented for standalone Card instances"
+                "Card.select requires a parent Page with state management"
             )
 
         from .component import select as _select_component
