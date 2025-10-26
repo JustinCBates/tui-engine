@@ -52,12 +52,9 @@ def test_not_implemented_placeholders_raise():
     p = FakePage()
     a = Assembly("y", p)
 
-    with pytest.raises(NotImplementedError):
-        a.text("t")
-
-    with pytest.raises(NotImplementedError):
-        a.select("s", choices=["a", "b"])
-
+    # text() and select() are now implemented, so they should NOT raise
+    # Only test methods that DO raise NotImplementedError
+    
     with pytest.raises(NotImplementedError):
         a.show_components(["a"])
 

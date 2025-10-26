@@ -45,12 +45,9 @@ def test_component_methods_raise_not_implemented():
     p = DummyPage()
     a = Assembly("z", p)
 
-    with pytest.raises(NotImplementedError):
-        a.text("name")
-
-    with pytest.raises(NotImplementedError):
-        a.select("name", ["a"]) 
-
+    # text() and select() are now implemented, so they should NOT raise
+    # Only test methods that DO raise NotImplementedError
+    
     with pytest.raises(NotImplementedError):
         a.show_components(["a"])
 

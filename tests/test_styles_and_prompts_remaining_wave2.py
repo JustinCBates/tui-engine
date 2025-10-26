@@ -12,7 +12,7 @@ class FakeQ:
 def test_theme_and_stylebuilder_merge_and_palette():
     from questionary_extended.styles import Theme, ColorPalette, create_theme, StyleBuilder, apply_theme_to_style
     from questionary_extended.styles import DARK_PALETTE
-    from questionary import Style
+    from prompt_toolkit.styles.style import Style
 
     th = create_theme('t', palette=DARK_PALETTE)
     qs = th.to_questionary_style()

@@ -12,7 +12,7 @@ import pytest
 from unittest.mock import Mock
 
 from questionary_extended import styles
-from questionary import Style
+from prompt_toolkit.styles.style import Style
 
 
 def test_apply_theme_to_style_no_base_style():

@@ -120,7 +120,7 @@ class QuestionaryBridge:
         try:
             answer = prompt.ask()
         except Exception as e:
-            raise RuntimeError("prompt failed") from e
+            raise RuntimeError("questionary prompt failed") from e
 
         # Persist into state using the component name (global key)
         # Callers may prefer to namespace the key (assembly.field) themselves
