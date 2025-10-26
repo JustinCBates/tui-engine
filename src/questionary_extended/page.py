@@ -1,10 +1,10 @@
 from typing import Any, Dict
 
-from .core.page import Page as CorePage
+from .core.page import PageBase
 from .integration.questionary_bridge import QuestionaryBridge
 
 
-class Page(CorePage):
+class Page(PageBase):
     """Higher-level Page with a runtime `run()` that executes prompts.
 
     This class extends the foundational Core Page (which intentionally

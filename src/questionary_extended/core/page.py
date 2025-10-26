@@ -10,11 +10,11 @@ from typing import TYPE_CHECKING, Any, Dict, List
 from .state import PageState
 
 if TYPE_CHECKING:
-    from .assembly import Assembly
+    from .assembly import AssemblyBase
     from .card import Card
 
 
-class Page:
+class PageBase:
     """
     Top-level container for questionary-extended multi-component interfaces.
 
@@ -51,7 +51,7 @@ class Page:
         self.components.append(card)
         return card
 
-    def assembly(self, name: str) -> "Assembly":
+    def assembly(self, name: str) -> "AssemblyBase":
         """Add an Assembly for interactive component groups.
 
         Args:
@@ -60,9 +60,9 @@ class Page:
         Returns:
             Assembly instance for method chaining
         """
-        from .assembly import Assembly
+        from .assembly import AssemblyBase
 
-        assembly = Assembly(name, self)
+        assembly = AssemblyBase(name, self)
         self.components.append(assembly)
         return assembly
 
@@ -75,4 +75,4 @@ class Page:
         raise NotImplementedError("Page execution requires a QuestionaryBridge")
 
 
-__all__ = ["Page"]
+__all__ = ["PageBase"]

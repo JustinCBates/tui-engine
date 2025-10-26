@@ -8,10 +8,10 @@ conditional behavior, cross-field validation, and state management.
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Union
 
 if TYPE_CHECKING:
-    from .page import Page
+    from .page import PageBase
 
 
-class Assembly:
+class AssemblyBase:
     """
     Interactive component group with event-driven behavior.
 
@@ -22,7 +22,7 @@ class Assembly:
     - Reusable template patterns
     """
 
-    def __init__(self, name: str, parent: "Page") -> None:
+    def __init__(self, name: str, parent: "PageBase") -> None:
         """
         Initialize a new Assembly.
 
@@ -38,7 +38,7 @@ class Assembly:
             str, List[Union[Callable[..., Any], Tuple[str, Callable[..., Any]]]]
         ] = {"change": [], "validate": [], "complete": []}
 
-    def text(self, name: str, **kwargs: Any) -> "Assembly":
+    def text(self, name: str, **kwargs: Any) -> "AssemblyBase":
         """
         Add a text input component.
 
@@ -49,38 +49,33 @@ class Assembly:
         Returns:
             Self for method chaining
         """
-        from .component import text as _text_component
+        # Implementation pending Component system
+        from ..core.component import create_questionary_component
 
-        comp = _text_component(name, **kwargs)
-        # Namespace the component name with the assembly's name so that
-        # PageState receives keys like 'assembly.field' when the bridge
-        # persists answers. Tests expect assembly-scoped keys (e.g. 'a.x').
-        comp.name = f"{self.name}.{name}"
-        self.components.append(comp)
+        component = create_questionary_component("text", name, **kwargs)
+        self.components.append(component)
         return self
 
-    def select(self, name: str, choices: List[str], **kwargs: Any) -> "Assembly":
+    def select(self, name: str, choices: List[str], **kwargs: Any) -> "AssemblyBase":
         """
-        Add a selection component.
+        Add a select input component.
 
         Args:
             name: Component name for state storage
-            choices: List of selection options
+            choices: List of selectable options
             **kwargs: Component configuration options (when, default, etc.)
 
         Returns:
             Self for method chaining
         """
-        from .component import select as _select_component
+        # Implementation pending Component system
+        from ..core.component import create_questionary_component
 
-        comp = _select_component(name, choices=choices, **kwargs)
-        # Namespace the component name with the assembly's name so that
-        # answers are stored under 'assembly.field' in PageState.
-        comp.name = f"{self.name}.{name}"
-        self.components.append(comp)
+        component = create_questionary_component("select", name, choices=choices, **kwargs)
+        self.components.append(component)
         return self
 
-    def on_change(self, field: str, handler: Callable[..., Any]) -> "Assembly":
+    def on_change(self, field: str, handler: Callable[..., Any]) -> "AssemblyBase":
         """
         Register handler for field change events.
 
@@ -95,7 +90,7 @@ class Assembly:
         self.event_handlers["change"].append((field, handler))
         return self
 
-    def on_validate(self, handler: Callable[..., Any]) -> "Assembly":
+    def on_validate(self, handler: Callable[..., Any]) -> "AssemblyBase":
         """
         Register handler for assembly validation.
 
@@ -109,7 +104,7 @@ class Assembly:
         self.event_handlers["validate"].append(handler)
         return self
 
-    def on_complete(self, field: str, handler: Callable[..., Any]) -> "Assembly":
+    def on_complete(self, field: str, handler: Callable[..., Any]) -> "AssemblyBase":
         """
         Register handler for field completion events.
 
@@ -123,6 +118,10 @@ class Assembly:
         # Implementation pending Event system
         self.event_handlers["complete"].append((field, handler))
         return self
+
+    def execute(self) -> Dict[str, Any]:
+        """Execute the assembly and return collected results."""
+        raise NotImplementedError("Assembly execution requires a QuestionaryBridge")
 
     def show_components(self, component_names: List[str]) -> None:
         """Show specified components."""
@@ -140,9 +139,9 @@ class Assembly:
         """Get value from other assemblies (cross-boundary access)."""
         raise NotImplementedError("Assembly get_related_value is not implemented")
 
-    def parent(self) -> "Page":
+    def parent(self) -> "PageBase":
         """Return parent Page for navigation."""
         return self.parent_page
 
 
-__all__ = ["Assembly"]
+__all__ = ["AssemblyBase"]

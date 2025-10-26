@@ -8,7 +8,7 @@ dynamic show/hide capabilities, and responsive layout management.
 from typing import TYPE_CHECKING, Any, List
 
 if TYPE_CHECKING:
-    from .page import Page
+    from .page import PageBase
 
 
 class Card:
@@ -22,7 +22,7 @@ class Card:
     - Component overflow handling and scrolling
     """
 
-    def __init__(self, title: str, parent: "Page", style: str = "minimal") -> None:
+    def __init__(self, title: str, parent: "PageBase", style: str = "minimal") -> None:
         """
         Initialize a new Card.
 
@@ -90,7 +90,7 @@ class Card:
         """Hide this card."""
         self.visible = False
 
-    def parent(self) -> "Page":
+    def parent(self) -> "PageBase":
         """Return parent Page for navigation."""
         return self.parent_page
 

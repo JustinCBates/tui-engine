@@ -1,7 +1,7 @@
 def test_card_show_hide_and_parent():
-    from questionary_extended.core.page import Page
+    from questionary_extended.core.page import PageBase
 
-    p = Page(title="Main")
+    p = PageBase(title="Main")
     c = p.card("Card 1")
 
     assert c.visible is True
@@ -14,9 +14,9 @@ def test_card_show_hide_and_parent():
 
 
 def test_assembly_event_handlers_and_parent():
-    from questionary_extended.core.page import Page
+    from questionary_extended.core.page import PageBase
 
-    p = Page(title="Main")
+    p = PageBase(title="Main")
     a = p.assembly("asm1")
 
     called = {}
