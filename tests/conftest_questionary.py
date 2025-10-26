@@ -478,7 +478,7 @@ def setup_questionary_mocks(monkeypatch, responses=None):
         import importlib as _il
 
         for modname in (
-            "questionary_extended.prompts_base",
+            "questionary_extended.core.prompts_base",
             "questionary_extended.prompts_extended",
             # NOTE: avoid injecting proxies into core.component_wrappers here. The
             # component_wrappers module defines its own convenience factory

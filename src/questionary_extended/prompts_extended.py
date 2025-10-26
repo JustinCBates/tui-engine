@@ -49,13 +49,13 @@ from .component_dataclasses import Column, ProgressStep
 
 try:
     # Prefer direct relative import (normal package import)
-    from .prompts_base import LazyQuestion, _lazy_factory
+    from .core.prompts_base import LazyQuestion, _lazy_factory
 except Exception:
     # Fallback for tests that load modules from a path where relative
     # imports may fail; import by absolute package name instead.
     import importlib as _il
 
-    _pc = _il.import_module("questionary_extended.prompts_base")
+    _pc = _il.import_module("questionary_extended.core.prompts_base")
     # Use _lazy_factory from the imported module when available; otherwise
     # fall back to the local _lazy_factory defined above. If the imported
     # object is a test-provided stub (e.g., types.SimpleNamespace) that
@@ -107,7 +107,7 @@ except Exception:
             pass
 
 # Re-export core helpers
-from .prompts_base import ProgressTracker as CoreProgressTracker
+from .core.prompts_base import ProgressTracker as CoreProgressTracker
 from .styles import Theme
 
 # Import our validators and components

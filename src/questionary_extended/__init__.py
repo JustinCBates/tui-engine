@@ -58,7 +58,7 @@ from .assembly_runtime import Assembly  # noqa: E402
 from .prompts_extended import rating
 
 # Import existing prompts and utilities
-from .prompts_base import (
+from .core.prompts_base import (
     ProgressTracker,
     enhanced_text,
     form,
