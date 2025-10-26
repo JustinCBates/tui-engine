@@ -25,7 +25,7 @@ except Exception:
     pass
 
 # Import core functionality - start with basics that work
-from .components import (
+from .component_dataclasses import (
     Choice,
     ProgressStep,
     Separator,

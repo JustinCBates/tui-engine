@@ -5,7 +5,7 @@ import types
 
 import pytest
 
-from questionary_extended.core.component import Component
+from questionary_extended.core.component_wrappers import Component
 from questionary_extended.core.state import PageState
 from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 from tests.conftest_questionary import setup_questionary_mocks
@@ -45,7 +45,6 @@ class TestQuestionaryBridgeCompatibility:
         monkeypatch.setattr(
             "questionary_extended.integration.questionary_bridge.questionary", mock_q
         )
-        monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         # Test different prompt types
         components = [
@@ -104,7 +103,6 @@ class TestQuestionaryBridgeCompatibility:
         monkeypatch.setattr(
             "questionary_extended.integration.questionary_bridge.questionary", mock_q
         )
-        monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         # Test that our mocked questionary has the expected methods
         expected_methods = ["text", "select", "confirm", "checkbox"]
@@ -182,7 +180,6 @@ class TestQuestionaryBridgeEndToEnd:
         monkeypatch.setattr(
             "questionary_extended.integration.questionary_bridge.questionary", mock_q
         )
-        monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         # Define form components
         form_components = [
@@ -254,7 +251,6 @@ class TestQuestionaryBridgeEndToEnd:
         monkeypatch.setattr(
             "questionary_extended.integration.questionary_bridge.questionary", mock_q
         )
-        monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         # Conditional workflow: ask follow-up questions based on answers
         signup = Component(name="signup", component_type="confirm", message="Sign up?")
@@ -328,7 +324,6 @@ class TestQuestionaryBridgeEndToEnd:
         monkeypatch.setattr(
             "questionary_extended.integration.questionary_bridge.questionary", mock_q
         )
-        monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         component = Component(
             name="retry_test", component_type="text", message="Enter value:"
@@ -349,7 +344,7 @@ class TestQuestionaryBridgeModuleIntegration:
     def test_bridge_module_imports(self):
         """Test that all necessary imports work correctly."""
         # Test direct imports
-        from questionary_extended.core.component import Component
+        from questionary_extended.core.component_wrappers import Component
         from questionary_extended.core.state import PageState
         from questionary_extended.integration.questionary_bridge import (
             QuestionaryBridge,
@@ -403,7 +398,6 @@ class TestQuestionaryBridgeModuleIntegration:
         monkeypatch.setattr(
             "questionary_extended.integration.questionary_bridge.questionary", mock_q
         )
-        monkeypatch.setattr("questionary_extended.core.component.questionary", mock_q)
 
         # Minimal component - needs message parameter for questionary API
         minimal_component = Component(

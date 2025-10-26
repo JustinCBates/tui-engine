@@ -53,7 +53,7 @@ class Card:
                 "Card.text requires a parent Page with state management"
             )
 
-        from .component import text as _text_component
+        from .component_wrappers import text as _text_component
 
         comp = _text_component(name, **kwargs)
         self.components.append(comp)
@@ -76,7 +76,7 @@ class Card:
                 "Card.select requires a parent Page with state management"
             )
 
-        from .component import select as _select_component
+        from .component_wrappers import select as _select_component
 
         comp = _select_component(name, choices=choices, **kwargs)
         self.components.append(comp)

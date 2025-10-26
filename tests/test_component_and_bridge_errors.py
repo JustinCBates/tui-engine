@@ -4,7 +4,7 @@ import types
 
 def test_component_create_questionary_component_mappings():
     # Test questionary component type mappings using DI mock
-    from questionary_extended.core.component import Component
+    from questionary_extended.core.component_wrappers import Component
 
     # Define expected values for each component type
     types_to_expected = {
@@ -34,7 +34,7 @@ def test_component_create_questionary_component_mappings():
 
 
 def test_component_create_unsupported_type_raises():
-    from questionary_extended.core.component import Component
+    from questionary_extended.core.component_wrappers import Component
 
     c = Component(name="bad", component_type="nope")
     try:
@@ -48,7 +48,7 @@ def test_component_create_unsupported_type_raises():
 
 def test_questionary_bridge_handles_prompt_creation_and_ask_errors(monkeypatch):
     # Simulate prompt_toolkit NoConsoleScreenBufferError during creation and ask
-    from questionary_extended.core.component import Component
+    from questionary_extended.core.component_wrappers import Component
     from questionary_extended.core.state import PageState
     from questionary_extended.integration.questionary_bridge import QuestionaryBridge
 

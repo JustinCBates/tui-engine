@@ -13,7 +13,7 @@ from types import SimpleNamespace
 from typing import Any, Iterable
 
 from src.tui_engine.questionary_factory import get_questionary
-from ..core.component import Component
+from ..core.component_wrappers import Component
 from ..core.state import PageState
 
 

@@ -6,7 +6,7 @@ import re
 from datetime import date, datetime
 from typing import List, Optional, Tuple, Union
 
-from .components import ColorInfo
+from .component_dataclasses import ColorInfo
 
 
 def format_date(date_obj: Union[date, datetime], format_str: str = "%Y-%m-%d") -> str:

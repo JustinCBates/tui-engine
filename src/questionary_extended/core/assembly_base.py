@@ -50,9 +50,9 @@ class AssemblyBase:
             Self for method chaining
         """
         # Implementation pending Component system
-        from ..core.component import create_questionary_component
+        from .component_wrappers import text
 
-        component = create_questionary_component("text", name, **kwargs)
+        component = text(name, **kwargs)
         self.components.append(component)
         return self
 
@@ -69,9 +69,9 @@ class AssemblyBase:
             Self for method chaining
         """
         # Implementation pending Component system
-        from ..core.component import create_questionary_component
+        from .component_wrappers import select
 
-        component = create_questionary_component("select", name, choices=choices, **kwargs)
+        component = select(name, choices=choices, **kwargs)
         self.components.append(component)
         return self
 

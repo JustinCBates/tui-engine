@@ -45,7 +45,7 @@ def _lazy_factory(name: str):
     return _f
 
 
-from .components import Column, ProgressStep
+from .component_dataclasses import Column, ProgressStep
 
 try:
     # Prefer direct relative import (normal package import)

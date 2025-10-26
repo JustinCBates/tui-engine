@@ -12,7 +12,7 @@ This module contains the fundamental building blocks:
 
 from .assembly_base import AssemblyBase
 from .card import Card
-from .component import (
+from .component_wrappers import (
     Component,
     autocomplete,
     checkbox,

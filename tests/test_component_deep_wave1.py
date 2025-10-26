@@ -1,6 +1,6 @@
 import questionary
 
-from questionary_extended.core.component import Component
+from questionary_extended.core.component_wrappers import Component
 from tests.helpers.questionary_helpers import mock_questionary_with_types
 
 
