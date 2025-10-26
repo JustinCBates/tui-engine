@@ -12,42 +12,44 @@ def make_stub(component_name):
 
 
 def test_wrappers_and_create_questionary_component(monkeypatch):
-    # Monkeypatch questionary functions to simple stubs
-    monkeypatch.setattr(comp_mod.questionary, "text", make_stub("text"))
-    monkeypatch.setattr(comp_mod.questionary, "select", make_stub("select"))
-    monkeypatch.setattr(comp_mod.questionary, "confirm", make_stub("confirm"))
-    monkeypatch.setattr(comp_mod.questionary, "password", make_stub("password"))
-    monkeypatch.setattr(comp_mod.questionary, "checkbox", make_stub("checkbox"))
-    monkeypatch.setattr(comp_mod.questionary, "autocomplete", make_stub("autocomplete"))
-    monkeypatch.setattr(comp_mod.questionary, "path", make_stub("path"))
-
+    # The conftest installs a questionary mock that wraps all responses in PromptObj.
+    # We don't need to monkeypatch individual functions since we're just testing
+    # that the Component wrappers create the right component type.
+    
     # text wrapper default message
     t = comp_mod.text("user_name")
     assert isinstance(t, comp_mod.Component)
     assert t.name == "user_name"
     assert t.component_type == "text"
     created = t.create_questionary_component()
-    assert created["component"] == "text"
-    assert "message" in created["kwargs"]
+    # The conftest mock returns PromptObj with .name and .kwargs
+    assert hasattr(created, 'name')
+    assert created.name == "text"  # name defaults to component type
+    assert hasattr(created, 'kwargs')
+    assert "message" in created.kwargs
 
     # select wrapper default choices and message
     s = comp_mod.select("fruit")
     assert s.component_type == "select"
     created_s = s.create_questionary_component()
-    assert created_s["component"] == "select"
+    assert created_s.name == "select"
     # default choices becomes empty list
-    assert created_s["kwargs"].get("choices") == []
+    assert created_s.kwargs.get("choices") == []
 
-    # confirm, password, checkbox, autocomplete, path should all return stubs
-    for fn in (comp_mod.confirm, comp_mod.password, comp_mod.checkbox, comp_mod.autocomplete, comp_mod.path):
+    # confirm, password, checkbox, autocomplete, path should all work
+    for fn, expected_type in [(comp_mod.confirm, "confirm"), 
+                               (comp_mod.password, "password"), 
+                               (comp_mod.checkbox, "checkbox"), 
+                               (comp_mod.autocomplete, "autocomplete"), 
+                               (comp_mod.path, "path")]:
         comp = fn("x")
         assert isinstance(comp, comp_mod.Component)
         result = comp.create_questionary_component()
-        assert isinstance(result, dict) and "component" in result
+        assert hasattr(result, 'ask'), f"Expected PromptObj for {expected_type}"
 
     # custom message provided preserved
     p = comp_mod.text("abc", message="Hello!")
-    assert p.create_questionary_component()["kwargs"]["message"] == "Hello!"
+    assert p.create_questionary_component().kwargs["message"] == "Hello!"
 
     # add_validator and is_visible
     c = comp_mod.Component("n", "text")

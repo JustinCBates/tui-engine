@@ -60,20 +60,10 @@ def test_add_validator_and_is_visible_branching():
 
 
 def test_create_questionary_component_calls_monkeypatched_questionary(monkeypatch):
-    # Prepare sentinels and capture kwargs
-    sentinel = object()
-
-    def make_fake(name):
-        def _fake(**kwargs):
-            # return a tuple so tests can inspect call
-            return (name, kwargs)
-
-        return _fake
-
-    # Patch all functions used in the map
-    for k in ("text", "select", "confirm", "password", "checkbox", "autocomplete", "path"):
-        monkeypatch.setattr(compmod.questionary, k, make_fake(k))
-
+    # The conftest installs a mock that returns PromptObj instances.
+    # We can verify the component calls the right factory by checking the
+    # PromptObj.name attribute (which gets set to the component_type by default)
+    
     # Test each mapping
     for comp_type in ("text", "select", "confirm", "password", "checkbox", "autocomplete", "path"):
         cfg = {"message": f"hi-{comp_type}"}
@@ -81,13 +71,17 @@ def test_create_questionary_component_calls_monkeypatched_questionary(monkeypatc
             cfg["choices"] = ["a", "b"]
         c = compmod.Component("n", comp_type, **cfg)
         result = c.create_questionary_component()
-        assert isinstance(result, tuple)
-        name, kwargs = result
-        assert name == comp_type
-        # message should be passed through
-        assert kwargs.get("message") == cfg["message"]
+        
+        # The conftest mock returns a PromptObj with .name and .kwargs attributes
+        # Check that the prompt was created with the right type (name defaults to kind)
+        assert hasattr(result, 'name'), f"Expected PromptObj with name attribute"
+        assert hasattr(result, 'kwargs'), f"Expected PromptObj with kwargs attribute"
+        assert result.name == comp_type, f"Expected prompt name to be {comp_type}"
+        
+        # Verify message was passed through
+        assert result.kwargs.get("message") == cfg["message"]
         if "choices" in cfg:
-            assert kwargs.get("choices") == cfg["choices"]
+            assert result.kwargs.get("choices") == cfg["choices"]
 
 
 def test_create_questionary_component_unsupported():

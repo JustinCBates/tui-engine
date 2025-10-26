@@ -27,18 +27,18 @@ def test_add_validator_and_visibility():
 
 
 def test_create_questionary_component_calls_mapped_factory(monkeypatch):
-    called = {}
-
-    def fake_text(**kwargs):
-        called.update(kwargs)
-        return "created"
-
-    monkeypatch.setattr(comp_mod.questionary, "text", fake_text)
-
+    # The conftest mock intercepts questionary calls, so we can't easily
+    # monkeypatch the factories. Instead, just verify that the Component
+    # correctly passes configuration to create_questionary_component.
+    
     c = comp_mod.Component("n", "text", message="m")
     res = c.create_questionary_component()
-    assert res == "created"
-    assert called.get("message") == "m"
+    
+    # The conftest wraps return values in PromptObj
+    # Check that it has the expected structure and the message was passed through
+    assert hasattr(res, 'ask'), "Expected PromptObj with ask() method"
+    assert hasattr(res, 'kwargs'), "Expected PromptObj with kwargs attribute"
+    assert res.kwargs.get("message") == "m", "Message should be passed through"
 
 
 def test_create_questionary_component_unsupported():

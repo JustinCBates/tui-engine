@@ -8,7 +8,7 @@ styles = load_module_from_path(
     "questionary_extended.styles", Path("src/questionary_extended/styles.py").resolve()
 )
 
-from questionary import Style
+from prompt_toolkit.styles.style import Style
 
 
 def test_create_theme_and_palette():
