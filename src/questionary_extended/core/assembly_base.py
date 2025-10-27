@@ -33,6 +33,7 @@ class AssemblyBase:
         self.name = name
         self.parent_page = parent
         self.components: List[Any] = []
+        self.visible = True
         # Event handlers may be simple callables or (field, handler) tuples
         self.event_handlers: Dict[
             str, List[Union[Callable[..., Any], Tuple[str, Callable[..., Any]]]]
@@ -130,6 +131,14 @@ class AssemblyBase:
     def hide_components(self, component_names: List[str]) -> None:
         """Hide specified components."""
         raise NotImplementedError("Assembly hide_components is not implemented")
+
+    def show(self) -> None:
+        """Make this assembly visible."""
+        self.visible = True
+
+    def hide(self) -> None:
+        """Hide this assembly."""
+        self.visible = False
 
     def get_value(self, field: str) -> Any:
         """Get value from assembly's local state."""

@@ -82,6 +82,22 @@ class Card:
         self.components.append(comp)
         return self
 
+    def assembly(self, name: str) -> "Any":
+        """
+        Add an Assembly for interactive component groups within this card.
+
+        Args:
+            name: Assembly namespace for state management
+
+        Returns:
+            Assembly instance for method chaining
+        """
+        from .assembly_base import AssemblyBase
+
+        assembly = AssemblyBase(name, self.parent_page)
+        self.components.append(assembly)
+        return assembly
+
     def show(self) -> None:
         """Make this card visible."""
         self.visible = True

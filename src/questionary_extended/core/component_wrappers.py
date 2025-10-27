@@ -56,6 +56,14 @@ class Component:
         # expression evaluator is implemented.
         return True
 
+    def show(self) -> None:
+        """Make this component visible."""
+        self.visible = True
+
+    def hide(self) -> None:
+        """Hide this component."""
+        self.visible = False
+
     def create_questionary_component(self) -> Any:
         """Create the underlying questionary component."""
         

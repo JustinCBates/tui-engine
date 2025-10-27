@@ -1,129 +1,162 @@
 # Card Shuffling Navigation Demo
 
-This demo showcases a card-based navigation interface where users can navigate between cards using actual Page Up/Down keys with automatic screen clearing and reprinting.
+This demo showcases the **proper TUI engine architecture** with universal visibility system and central screen management through `Page.refresh()`.
 
-## Features
+## 🏗️ **TUI Engine Architecture**
 
-- **Direct Key Interception**: Captures Page Up/Down keys directly without prompting
-- **Screen Management**: Automatically clears screen and reprints header + current card
-- **Card Navigation**: 5 cards with descriptive content, only one visible at a time
-- **Wrap-around Navigation**: Moving past the last card goes to first, and vice versa
-- **Integration Ready**: Built on TUI engine architecture for easy extension
+### **Hierarchical Structure**
+```
+Page (Top-level container)
+├── Card (Visual grouping) 
+│   └── Assembly (Interactive component groups)
+│       └── Component (questionary elements)
+└── Assembly (Direct page assemblies - not in cards)
+    └── Component (questionary elements)
+```
 
-## Files
+### **Universal Visibility System**
+- **All elements** (Page, Card, Assembly, Component) have `visible` property
+- **Show/Hide methods**: `.show()` and `.hide()` on all elements
+- **State-driven display**: Only visible elements are rendered
+- **Central management**: `Page.refresh()` handles all screen updates
 
-### `pagekey_demo.py`
-Simple standalone demo demonstrating pure Page Up/Down key navigation:
-- Direct key capture using `termios` and `tty`
-- Screen clearing and reprinting on each navigation event
-- No navigation prompts - just automatic card switching
-- Clean minimal implementation for testing key capture
+### **Key Features**
+- **Mixed placement**: Assemblies can be in Cards OR directly on Page
+- **Automatic screen management**: Page clears screen and reprints visible elements in order
+- **Event-driven navigation**: Page Up/Down changes visibility state, triggers refresh
+- **Consistent API**: All elements follow same visibility patterns
 
-### `card_shuffling_demo.py`
-Full-featured demo with TUI engine integration:
-- Complete card shuffling navigation system
-- Page Up/Down key interception with screen management
-- Additional features: run cards, show results, number key shortcuts
-- Integration with TUI engine architecture (Page, Assembly classes)
+## 📁 **Demo Files**
 
-### `simple_demo.py`
-Original prompt-based navigation demo:
-- Menu-driven navigation system
-- Uses text prompts for user input
-- Demonstrates basic TUI engine usage patterns
-- Good for understanding core concepts
+### **`proper_card_demo.py`** ⭐ **RECOMMENDED**
+The correct implementation using TUI engine architecture:
+- **Proper structure**: Page → Cards → Assemblies → Components
+- **Visibility management**: Uses `.show()/.hide()` methods
+- **Central refresh**: `page.refresh()` handles all screen updates
+- **State-driven navigation**: Page Up/Down changes Card visibility
 
-## Usage
+### **`architecture_demo.py`**
+Comprehensive architecture demonstration:
+- **Mixed structure**: Shows Cards with Assemblies + Page-level Assemblies
+- **Multiple views**: Navigate between different visibility configurations
+- **Educational**: Shows how universal visibility system works
 
-### Quick Test (Direct Key Navigation)
+### **`test_refresh.py`**
+Simple test demonstrating the refresh architecture:
+- **Validation**: Tests visibility and refresh functionality
+- **Step-by-step**: Shows elements being hidden/shown with refresh
+
+### **Legacy Demos** (Pre-Architecture)
+- **`pagekey_demo.py`**: Direct key capture without TUI engine
+- **`card_shuffling_demo.py`**: Enhanced but bypasses architecture  
+- **`simple_demo.py`**: Original prompt-based navigation
+
+## 🚀 **Usage**
+
+### **Proper Architecture Demo** (Recommended)
 ```bash
 cd examples/card_shuffling_navigation
-python3 pagekey_demo.py
+python3 proper_card_demo.py
 ```
 
 **Controls:**
-- **Page Up**: Previous card (with automatic screen clear/reprint)
-- **Page Down**: Next card (with automatic screen clear/reprint) 
-- **Q**: Quit demo
-
-### Full Demo (Enhanced Features)
-```bash
-cd examples/card_shuffling_navigation
-python3 card_shuffling_demo.py
-```
-
-**Controls:**
-- **Page Up**: Previous card (automatic screen management)
-- **Page Down**: Next card (automatic screen management)
-- **R**: Run current card (collect integer input)
-- **S**: Show all collected results
+- **Page Up**: Previous card (changes visibility + refresh)
+- **Page Down**: Next card (changes visibility + refresh)
 - **1-5**: Jump directly to specific card
+- **R**: Run current card (demo assembly structure)
+- **A**: Show all cards (architecture overview)
 - **Q**: Quit demo
 
-### Legacy Demo (Prompt-based)
+### **Architecture Overview Demo**
 ```bash
-cd examples/card_shuffling_navigation
-python3 simple_demo.py
+python3 architecture_demo.py
 ```
 
-## Technical Implementation
+**Features:**
+- Navigate between 6 different visibility configurations
+- See how mixed Page/Card/Assembly structure works
+- Understand universal visibility system
 
-### Key Interception
-The demos use `termios` and `tty` modules to capture raw keyboard input:
+### **Simple Refresh Test**
+```bash
+python3 test_refresh.py
+```
 
+**Output:** Shows step-by-step visibility changes with refresh
+
+## 🏗️ **Architecture Implementation**
+
+### **Page.refresh() Method**
 ```python
-def get_key():
-    """Get a single keypress from the terminal."""
-    fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
-    try:
-        tty.setcbreak(fd)
-        ch = sys.stdin.read(1)
-        
-        # Handle escape sequences (Page Up/Down)
-        if ch == '\x1b':  # ESC sequence
-            ch += sys.stdin.read(2)
-            # Page Up/Down have longer sequences
-        
-        return ch
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+def refresh(self) -> None:
+    """Clear screen and reprint all visible elements in order."""
+    self.clear_screen()
+    self._render_header()
+    
+    for component in self.components:
+        self._render_component(component)
 ```
 
-### Screen Management
-Each navigation event triggers:
-1. Screen clearing (`clear` command)
-2. Header reprinting
-3. Current card display
-4. Navigation status update
+### **Universal Visibility**
+```python
+# All elements have these methods:
+element.show()    # Make visible
+element.hide()    # Make invisible
+element.visible   # Boolean property
 
-### Key Codes
-- **Page Up**: `\x1b[5~`
-- **Page Down**: `\x1b[6~`
-- **Regular keys**: Single character (e.g., 'q', 'r', '1'-'5')
+# Page renders only visible elements:
+visible = getattr(component, 'visible', True)
+if not visible:
+    return  # Skip rendering
+```
 
-## Card Themes
+### **State-Driven Navigation**
+```python
+# Change visibility state
+cards[current_index].show()
+cards[other_indices].hide()
 
-1. 🏠 **Personal Information** - Basic personal details
-2. 💼 **Professional Details** - Work experience information  
-3. 🎓 **Education Level** - Educational background
-4. 🌟 **Preferences** - Personal preferences and ratings
-5. 🎯 **Goals & Targets** - Objectives and targets
+# Trigger centralized refresh
+page.refresh()  # Automatic screen clear + reprint
+```
 
-## Requirements
+## 🎯 **Design Benefits**
 
-- Linux/Unix terminal environment
-- Python 3.6+
-- Terminal that supports Page Up/Down key detection
-- `termios` and `tty` modules (standard on Unix systems)
+1. **Separation of Concerns**: Navigation logic separate from display logic
+2. **Consistent Rendering**: All screen updates go through same path
+3. **Universal Patterns**: Same visibility API for all element types
+4. **Flexible Structure**: Assemblies can be in Cards or directly on Page
+5. **Event-Driven**: Changes trigger automatic refresh, no manual screen management
 
-## Troubleshooting
+## 🔧 **Architecture Elements**
 
-**Page Up/Down not working?**
-- Ensure you're using a compatible terminal (most modern terminals support this)
-- Try testing in different terminal applications
-- Verify terminal sends proper escape sequences
+### **Page Management**
+- **Container**: Top-level organization
+- **State**: Central state management with assembly namespacing  
+- **Refresh**: Centralized screen clearing and reprinting
+- **Navigation**: Visibility coordination
 
-**Demo not clearing screen?**
-- Check if `clear` command is available on your system
-- Modify `clear_screen()` function for Windows compatibility
+### **Card Organization**  
+- **Visual grouping**: Related assemblies together
+- **Styling**: Multiple visual styles (minimal, bordered, highlighted)
+- **Visibility**: Can be shown/hidden as units
+
+### **Assembly Logic**
+- **Component groups**: Interactive element collections
+- **Namespacing**: State isolation with `assembly.field` keys
+- **Placement flexibility**: In Cards OR directly on Page
+
+### **Component Interface**
+- **Questionary compatibility**: Full backward compatibility
+- **Enhanced features**: Conditional visibility, validation
+- **Universal visibility**: Same show/hide API as containers
+
+## 🚀 **Next Steps**
+
+This architecture sets the foundation for:
+- **Event system**: Real-time component interactions
+- **State-driven updates**: Automatic visibility based on data
+- **Complex wizards**: Multi-page workflows with proper navigation
+- **Enhanced validation**: Cross-component validation with visual feedback
+
+The universal visibility system and central refresh method provide the core infrastructure for sophisticated TUI applications while maintaining clean separation of concerns.

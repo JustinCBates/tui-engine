@@ -13,6 +13,9 @@ class Page(PageBase):
     """
 
     def run(self) -> Dict[str, Any]:
+        # Initial refresh to display the page
+        self.refresh()
+        
         bridge = QuestionaryBridge(self.state)
         bridge.run(self.components)
         # Return flattened state for convenience
