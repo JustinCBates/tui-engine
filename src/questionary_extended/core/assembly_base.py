@@ -5,13 +5,17 @@ The Assembly class provides interactive component groups with event-driven logic
 conditional behavior, cross-field validation, and state management.
 """
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Union, OrderedDict
+from collections import OrderedDict as OrderedDictClass
+
+from .interfaces import AssemblyInterface, AssemblyChildInterface, PageChildInterface, CardChildInterface
+from .base_classes import AssemblyBase as AssemblyBaseImpl
 
 if TYPE_CHECKING:
     from .page_base import PageBase
 
 
-class AssemblyBase:
+class AssemblyBase(AssemblyBaseImpl, AssemblyInterface):
     """
     Interactive component group with event-driven behavior.
 
@@ -30,14 +34,77 @@ class AssemblyBase:
             name: Assembly namespace for state management
             parent: Parent Page instance
         """
-        self.name = name
+        # Initialize base classes
+        super().__init__()
+        
+        self._name = name
         self.parent_page = parent
-        self.components: List[Any] = []
-        self.visible = True
+        # Note: components are now managed by base class as elements
         # Event handlers may be simple callables or (field, handler) tuples
         self.event_handlers: Dict[
             str, List[Union[Callable[..., Any], Tuple[str, Callable[..., Any]]]]
         ] = {"change": [], "validate": [], "complete": []}
+    
+    # ElementInterface implementation
+    @property
+    def name(self) -> str:
+        """Unique identifier for this assembly."""
+        return self._name
+    
+    @property
+    def element_type(self) -> str:
+        """Type of element (always 'assembly')."""
+        return "assembly"
+    
+    # AssemblyInterface implementation
+    def is_completed(self) -> bool:
+        """Whether all required elements in this assembly are completed."""
+        for element in self.get_elements().values():
+            if hasattr(element, 'is_completed') and callable(getattr(element, 'is_completed')):
+                if not element.is_completed():  # type: ignore
+                    return False
+        return True
+    
+    def is_valid(self) -> bool:
+        """Whether all elements in this assembly have valid state."""
+        for element in self.get_elements().values():
+            if hasattr(element, 'is_valid') and callable(getattr(element, 'is_valid')):
+                if not element.is_valid():  # type: ignore
+                    return False
+        return True
+    
+    def is_interactive(self) -> bool:
+        """Whether this assembly requires user interaction."""
+        for element in self.get_elements().values():
+            if hasattr(element, 'is_interactive') and callable(getattr(element, 'is_interactive')):
+                if element.is_interactive():  # type: ignore
+                    return True
+        return False
+    
+    # Renderable implementation
+    def get_render_lines(self) -> List[str]:
+        """Get the lines this assembly should output."""
+        if not self.visible:
+            return []
+        
+        lines = []
+        
+        # Add assembly header
+        lines.append(f"--- {self.name} ---")
+        
+        # Add elements content
+        for element in self.get_elements().values():
+            if hasattr(element, 'get_render_lines') and callable(getattr(element, 'get_render_lines')):
+                element_lines = element.get_render_lines()  # type: ignore
+                lines.extend(element_lines)
+        
+        return lines
+    
+    # Backwards compatibility property
+    @property
+    def components(self) -> OrderedDict[int, AssemblyChildInterface]:
+        """Get the elements OrderedDict (for backwards compatibility)."""
+        return self.get_elements()  # type: ignore
 
     def text(self, name: str, **kwargs: Any) -> "AssemblyBase":
         """
@@ -50,11 +117,13 @@ class AssemblyBase:
         Returns:
             Self for method chaining
         """
-        # Implementation pending Component system
-        from .component_wrappers import text
-
-        component = text(name, **kwargs)
-        self.components.append(component)
+        # Implementation pending Component system update to interfaces
+        # from .component_wrappers import text
+        # component = text(name, **kwargs)
+        # self.add_element(component)  # type: ignore - TODO: Update component to implement AssemblyChildInterface
+        
+        # Temporary placeholder until components are updated
+        print(f"TODO: Add text component '{name}' to assembly '{self.name}'")
         return self
 
     def select(self, name: str, choices: List[str], **kwargs: Any) -> "AssemblyBase":
@@ -69,11 +138,13 @@ class AssemblyBase:
         Returns:
             Self for method chaining
         """
-        # Implementation pending Component system
-        from .component_wrappers import select
-
-        component = select(name, choices=choices, **kwargs)
-        self.components.append(component)
+        # Implementation pending Component system update to interfaces
+        # from .component_wrappers import select
+        # component = select(name, choices=choices, **kwargs)
+        # self.add_element(component)  # type: ignore - TODO: Update component to implement AssemblyChildInterface
+        
+        # Temporary placeholder until components are updated
+        print(f"TODO: Add select component '{name}' to assembly '{self.name}'")
         return self
 
     def on_change(self, field: str, handler: Callable[..., Any]) -> "AssemblyBase":
@@ -134,11 +205,11 @@ class AssemblyBase:
 
     def show(self) -> None:
         """Make this assembly visible."""
-        self.visible = True
+        super().show()
 
     def hide(self) -> None:
         """Hide this assembly."""
-        self.visible = False
+        super().hide()
 
     def get_value(self, field: str) -> Any:
         """Get value from assembly's local state."""

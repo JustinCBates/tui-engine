@@ -37,16 +37,20 @@ from .core import (
     AssemblyBase,
     Card,
     Component,
-    # convenience wrappers also available
-    # autocomplete and path are available via core.component
+    PageBase,
     PageState,
-    autocomplete,
-    checkbox,
-    confirm,
-    password,
-    path,
-    select,
-    text,
+    # Prompt components (require user input)
+    text_prompt,
+    select_prompt,
+    confirm_prompt,
+    password_prompt,
+    checkbox_prompt,
+    autocomplete_prompt,
+    path_prompt,
+    # Display components (information only)
+    text_display,
+    text_section,
+    text_status,
 )
 
 # Provide a higher-level Page implementation that wires runtime execution.
@@ -94,6 +98,7 @@ from .validators import (
 __all__ = [
     # High-level containers
     "Page",
+    "PageBase",
     "Assembly",
     # Advanced prompts
     "rating",
@@ -118,14 +123,17 @@ __all__ = [
     "format_number",
     "parse_color",
     "render_markdown",
-    # Core wrappers (compatibility)
-    "text",
-    "select",
-    "confirm",
-    "password",
-    "checkbox",
-    "autocomplete",
-    "path",
+    # Core components
+    "text_prompt",
+    "select_prompt", 
+    "confirm_prompt",
+    "password_prompt",
+    "checkbox_prompt",
+    "autocomplete_prompt",
+    "path_prompt",
+    "text_display",
+    "text_section",
+    "text_status",
 ]
 
 

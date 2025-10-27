@@ -14,13 +14,18 @@ from .assembly_base import AssemblyBase
 from .card import Card
 from .component_wrappers import (
     Component,
-    autocomplete,
-    checkbox,
-    confirm,
-    password,
-    path,
-    select,
-    text,
+    # Prompt components (require user input)
+    text_prompt,
+    select_prompt,
+    confirm_prompt,
+    password_prompt,
+    checkbox_prompt,
+    autocomplete_prompt,
+    path_prompt,
+    # Display components (information only)
+    text_display,
+    text_section,
+    text_status,
 )
 from .page_base import PageBase
 from .state import PageState
@@ -31,12 +36,16 @@ __all__ = [
     "AssemblyBase",
     "Component",
     "PageState",
-    # Component convenience functions
-    "text",
-    "select",
-    "confirm",
-    "password",
-    "checkbox",
-    "autocomplete",
-    "path",
+    # Prompt components (require user input)
+    "text_prompt",
+    "select_prompt",
+    "confirm_prompt",
+    "password_prompt",
+    "checkbox_prompt",
+    "autocomplete_prompt",
+    "path_prompt",
+    # Display components (information only)
+    "text_display",
+    "text_section",
+    "text_status",
 ]

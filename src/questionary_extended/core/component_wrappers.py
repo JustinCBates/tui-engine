@@ -67,6 +67,11 @@ class Component:
     def create_questionary_component(self) -> Any:
         """Create the underlying questionary component."""
         
+        # Handle display-only components separately
+        if self.component_type in ["text_display", "text_section", "text_status"]:
+            # These are display-only components, not questionary prompts
+            return self
+        
         # Use DI system for clean, fast, testable resolution
         from src.tui_engine.questionary_factory import get_questionary
         questionary_module = get_questionary()
@@ -104,20 +109,41 @@ class Component:
 
 
 # Convenience wrapper functions matching questionary API
-def text(name: str, message: Optional[str] = None, **kwargs: Any) -> Component:
-    """Create a text input component."""
+def text_prompt(name: str, message: Optional[str] = None, **kwargs: Any) -> Component:
+    """Create a text input component that prompts user for text input."""
     if message is None:
         message = f"{name.replace('_', ' ').title()}:"
     return Component(name, "text", message=message, **kwargs)
 
 
-def select(
+def text_display(content: str, name: Optional[str] = None, **kwargs: Any) -> Component:
+    """Create a display-only text component (like print() but page-controlled)."""
+    if name is None:
+        name = f"display_{id(content)}"  # Generate unique name
+    return Component(name, "text_display", content=content, **kwargs)
+
+
+def text_section(content: str, title: Optional[str] = None, name: Optional[str] = None, **kwargs: Any) -> Component:
+    """Create a multi-line text block component."""
+    if name is None:
+        name = f"section_{id(content)}"
+    return Component(name, "text_section", content=content, title=title, **kwargs)
+
+
+def text_status(content: str, status_type: str = "info", name: Optional[str] = None, **kwargs: Any) -> Component:
+    """Create a status/progress message component."""
+    if name is None:
+        name = f"status_{id(content)}"
+    return Component(name, "text_status", content=content, status_type=status_type, **kwargs)
+
+
+def select_prompt(
     name: str,
     message: Optional[str] = None,
     choices: Optional[List[str]] = None,
     **kwargs: Any,
 ) -> Component:
-    """Create a selection component."""
+    """Create a selection component that prompts user to choose from options."""
     if message is None:
         message = f"Choose {name.replace('_', ' ')}:"
     if choices is None:
@@ -125,27 +151,27 @@ def select(
     return Component(name, "select", message=message, choices=choices, **kwargs)
 
 
-def confirm(name: str, message: Optional[str] = None, **kwargs: Any) -> Component:
-    """Create a confirmation component."""
+def confirm_prompt(name: str, message: Optional[str] = None, **kwargs: Any) -> Component:
+    """Create a confirmation component that prompts user for yes/no."""
     if message is None:
         message = f"Confirm {name.replace('_', ' ')}?"
     return Component(name, "confirm", message=message, **kwargs)
 
 
-def password(name: str, message: Optional[str] = None, **kwargs: Any) -> Component:
-    """Create a password input component."""
+def password_prompt(name: str, message: Optional[str] = None, **kwargs: Any) -> Component:
+    """Create a password input component that prompts user for secure text."""
     if message is None:
         message = f"{name.replace('_', ' ').title()}:"
     return Component(name, "password", message=message, **kwargs)
 
 
-def checkbox(
+def checkbox_prompt(
     name: str,
     message: Optional[str] = None,
     choices: Optional[List[str]] = None,
     **kwargs: Any,
 ) -> Component:
-    """Create a checkbox component."""
+    """Create a checkbox component that prompts user for multiple selections."""
     if message is None:
         message = f"Select {name.replace('_', ' ')}:"
     if choices is None:
@@ -153,13 +179,13 @@ def checkbox(
     return Component(name, "checkbox", message=message, choices=choices, **kwargs)
 
 
-def autocomplete(
+def autocomplete_prompt(
     name: str,
     message: Optional[str] = None,
     choices: Optional[List[str]] = None,
     **kwargs: Any,
 ) -> Component:
-    """Create an autocomplete component."""
+    """Create an autocomplete component that prompts user with suggested options."""
     if message is None:
         message = f"Choose {name.replace('_', ' ')}:"
     if choices is None:
@@ -167,8 +193,8 @@ def autocomplete(
     return Component(name, "autocomplete", message=message, choices=choices, **kwargs)
 
 
-def path(name: str, message: Optional[str] = None, **kwargs: Any) -> Component:
-    """Create a path selection component."""
+def path_prompt(name: str, message: Optional[str] = None, **kwargs: Any) -> Component:
+    """Create a path selection component that prompts user for file/directory path."""
     if message is None:
         message = f"{name.replace('_', ' ').title()}:"
     return Component(name, "path", message=message, **kwargs)
@@ -176,11 +202,16 @@ def path(name: str, message: Optional[str] = None, **kwargs: Any) -> Component:
 
 __all__ = [
     "Component",
-    "text",
-    "select",
-    "confirm",
-    "password",
-    "checkbox",
-    "autocomplete",
-    "path",
+    # Interactive prompt components (require user input)
+    "text_prompt",
+    "select_prompt", 
+    "confirm_prompt",
+    "password_prompt",
+    "checkbox_prompt",
+    "autocomplete_prompt",
+    "path_prompt",
+    # Display components (show information only)
+    "text_display",
+    "text_section",
+    "text_status",
 ]
