@@ -3,12 +3,13 @@ Card class for questionary-extended.
 
 The Card class provides visual grouping of related components with styling options,
 dynamic show/hide capabilities, and responsive layout management.
+Enhanced with universal spatial awareness and event-driven architecture.
 """
 
-from typing import TYPE_CHECKING, Any, List, OrderedDict
+from typing import TYPE_CHECKING, Any, List, OrderedDict, Callable, Optional
 from collections import OrderedDict as OrderedDictClass
 
-from .interfaces import CardInterface, CardChildInterface, PageChildInterface
+from .interfaces import CardInterface, CardChildInterface, PageChildInterface, ElementChangeEvent, SpaceRequirement, BufferDelta
 from .base_classes import CardBase
 from .debug_mode import debug_prefix, is_debug_mode
 
@@ -25,6 +26,7 @@ class Card(CardBase, CardInterface):
     - Dynamic show/hide with smooth transitions
     - Horizontal/vertical layout with responsive fallback
     - Component overflow handling and scrolling
+    - Universal spatial awareness and event-driven architecture
     """
 
     def __init__(self, title: str, parent: "PageBase", style: str = "minimal") -> None:
@@ -42,6 +44,12 @@ class Card(CardBase, CardInterface):
         self.title = title
         self.parent_page = parent
         self.style = style
+        
+        # Spatial awareness and event system
+        self._change_listeners: List[Callable[[ElementChangeEvent], None]] = []
+        self._last_space_requirement: Optional[SpaceRequirement] = None
+        self._content_dirty = True
+        
         # Note: components are now managed by base class as elements
     
     # ElementInterface implementation
@@ -71,6 +79,221 @@ class Card(CardBase, CardInterface):
                 if not element.is_valid():  # type: ignore
                     return False
         return True
+    
+    # =================================================================
+    # SPATIAL AWARENESS IMPLEMENTATION (REQUIRED BY ElementInterface)
+    # =================================================================
+    
+    def calculate_space_requirements(self) -> SpaceRequirement:
+        """Calculate space requirements for this card."""
+        if not self.visible:
+            return SpaceRequirement(min_lines=0, current_lines=0, max_lines=0, preferred_lines=0)
+        
+        # Calculate header lines based on style
+        header_lines = self._calculate_header_lines()
+        
+        # Calculate content lines from child elements
+        content_lines = 0
+        content_min_lines = 0
+        content_max_lines = 0
+        
+        for element in self.get_elements().values():
+            if hasattr(element, 'calculate_space_requirements'):
+                elem_req = element.calculate_space_requirements()  # type: ignore
+                content_lines += elem_req.current_lines
+                content_min_lines += elem_req.min_lines
+                content_max_lines += elem_req.max_lines
+            elif hasattr(element, 'get_render_lines'):
+                elem_lines = len(element.get_render_lines())  # type: ignore
+                content_lines += elem_lines
+                content_min_lines += elem_lines
+                content_max_lines += elem_lines
+        
+        # Add footer lines based on style
+        footer_lines = self._calculate_footer_lines()
+        
+        # Total requirements
+        total_current = header_lines + content_lines + footer_lines
+        total_min = header_lines + content_min_lines + footer_lines
+        total_max = header_lines + content_max_lines + footer_lines
+        
+        requirement = SpaceRequirement(
+            min_lines=max(total_min, 3),  # Cards need at least 3 lines (header + content + footer)
+            current_lines=total_current,
+            max_lines=total_max,
+            preferred_lines=total_current
+        )
+        
+        self._last_space_requirement = requirement
+        return requirement
+    
+    def calculate_buffer_changes(self) -> BufferDelta:
+        """Calculate buffer changes for this card."""
+        if not self._content_dirty and not any(
+            hasattr(elem, 'has_changes') and callable(getattr(elem, 'has_changes')) and elem.has_changes()  # type: ignore
+            for elem in self.get_elements().values()
+        ):
+            # No changes needed
+            return BufferDelta(line_updates=[], space_change=0, clear_lines=[])
+        
+        # Get current content lines
+        current_content = self.get_render_lines()
+        
+        # Calculate space change
+        current_req = self.calculate_space_requirements()
+        space_change = 0
+        if self._last_space_requirement:
+            space_change = current_req.current_lines - self._last_space_requirement.current_lines
+        
+        # Generate line updates
+        line_updates = [(i, line) for i, line in enumerate(current_content)]
+        
+        # Mark as clean
+        self._content_dirty = False
+        for element in self.get_elements().values():
+            if hasattr(element, '_needs_render'):
+                element._needs_render = False  # type: ignore
+        
+        return BufferDelta(
+            line_updates=line_updates,
+            space_change=space_change,
+            clear_lines=[]
+        )
+    
+    def can_compress_to(self, lines: int) -> bool:
+        """Check if card can be compressed to fit in given lines."""
+        req = self.calculate_space_requirements()
+        return req.min_lines <= lines
+    
+    def compress_to_lines(self, lines: int) -> None:
+        """Compress card content to fit in specified lines."""
+        req = self.calculate_space_requirements()
+        if lines < req.min_lines:
+            raise ValueError(f"Cannot compress card '{self.name}' to {lines} lines (minimum: {req.min_lines})")
+        
+        # Mark for re-calculation with compression
+        self._content_dirty = True
+    
+    # =================================================================
+    # EVENT SYSTEM IMPLEMENTATION (REQUIRED BY ElementInterface)
+    # =================================================================
+    
+    def fire_change_event(self, change_type: str, space_delta: int = 0, **metadata: Any) -> None:
+        """Fire change event to notify listeners."""
+        event = ElementChangeEvent(
+            element_name=self.name,
+            element_type=self.element_type,
+            change_type=change_type,
+            space_delta=space_delta,
+            metadata=metadata
+        )
+        
+        for listener in self._change_listeners:
+            try:
+                listener(event)
+            except Exception:
+                # Don't let listener exceptions break the card
+                pass
+    
+    def register_change_listener(self, listener: Callable[[ElementChangeEvent], None]) -> None:
+        """Register listener for change events."""
+        if listener not in self._change_listeners:
+            self._change_listeners.append(listener)
+    
+    # =================================================================
+    # CONTAINER INTERFACE IMPLEMENTATION (REQUIRED)
+    # =================================================================
+    
+    def on_child_changed(self, child_event: ElementChangeEvent) -> None:
+        """
+        Handle change events from child elements.
+        
+        Cards process child changes and propagate upward if needed.
+        """
+        # Mark ourselves as dirty when children change
+        self._content_dirty = True
+        
+        # Propagate event to our listeners (typically the parent Page)
+        for listener in self._change_listeners:
+            try:
+                listener(child_event)
+            except Exception:
+                # Don't let listener exceptions break the card
+                pass
+    
+    def calculate_aggregate_space_requirements(self) -> SpaceRequirement:
+        """
+        Calculate aggregate space requirements from all children.
+        
+        This is the same as calculate_space_requirements for cards.
+        """
+        return self.calculate_space_requirements()
+    
+    def allocate_child_space(self, child_name: str, requirement: SpaceRequirement) -> bool:
+        """
+        Attempt to allocate space to a child element.
+        
+        For cards, we currently use simple vertical stacking,
+        so we accept all child space requests.
+        """
+        # Find the child by name
+        for element in self.get_elements().values():
+            if hasattr(element, 'name') and element.name == child_name:
+                # In simple vertical layout, we can accommodate any child space request
+                return True
+        
+        return False  # Child not found
+    
+    def get_child_render_position(self, child_name: str) -> int:
+        """
+        Get the relative starting line position for a child element.
+        
+        Calculates position based on header and previous children.
+        """
+        current_position = self._calculate_header_lines()
+        
+        for element in self.get_elements().values():
+            if hasattr(element, 'name') and element.name == child_name:
+                return current_position
+            
+            # Add this element's height
+            if hasattr(element, 'get_render_lines') and callable(getattr(element, 'get_render_lines')):
+                element_lines = element.get_render_lines()  # type: ignore
+                current_position += len(element_lines)
+        
+        return current_position  # If not found, return current position
+    
+    # =================================================================
+    # SECTION CHILD INTERFACE IMPLEMENTATION (REQUIRED)
+    # =================================================================
+    
+    def get_name(self) -> str:
+        """Return the unique name of this element (for SectionChildInterface)."""
+        return self.name
+    
+    def get_content(self) -> List[str]:
+        """Return the rendered content lines (for SectionChildInterface)."""
+        return self.get_render_lines()
+    
+    # =================================================================
+    # UTILITY METHODS FOR SPATIAL CALCULATIONS
+    # =================================================================
+    
+    def _calculate_header_lines(self) -> int:
+        """Calculate number of lines needed for header based on style."""
+        if self.style == "bordered":
+            return 1  # Just the top border line
+        elif self.style == "highlighted":
+            return 1  # Title line with stars
+        else:  # minimal
+            return 2  # Title line + separator line
+    
+    def _calculate_footer_lines(self) -> int:
+        """Calculate number of lines needed for footer based on style."""
+        if self.style == "bordered":
+            return 1  # Just the bottom border line
+        else:
+            return 0  # No footer for other styles
     
     # Renderable implementation
     def get_render_lines(self) -> List[str]:
@@ -153,6 +376,11 @@ class Card(CardBase, CardInterface):
                 lines.append(f"  {line}")
         
         return lines
+    
+    def mark_dirty(self) -> None:
+        """Mark this card as needing re-render."""
+        super().mark_dirty()
+        self._content_dirty = True
     
     # Backwards compatibility property
     @property
@@ -268,6 +496,8 @@ class Card(CardBase, CardInterface):
         Returns:
             Assembly instance for method chaining
         """
+        # TODO: AssemblyBase needs to be updated with spatial awareness
+        # For now, this will fail at runtime until AssemblyBase is updated
         from .assembly_base import AssemblyBase
 
         assembly = AssemblyBase(name, self.parent_page)
@@ -275,12 +505,22 @@ class Card(CardBase, CardInterface):
         return assembly
 
     def show(self) -> None:
-        """Make this card visible."""
+        """Make this card visible and notify parent of the change."""
+        was_visible = self.visible
         super().show()
+        
+        # Fire change event if visibility actually changed
+        if not was_visible:
+            self.fire_change_event('visibility', space_delta=0, visible=True)
 
     def hide(self) -> None:
-        """Hide this card."""
+        """Hide this card and notify parent of the change."""
+        was_visible = self.visible
         super().hide()
+        
+        # Fire change event if visibility actually changed  
+        if was_visible:
+            self.fire_change_event('visibility', space_delta=0, visible=False)
 
     def parent(self) -> "PageBase":
         """Return parent Page for navigation."""

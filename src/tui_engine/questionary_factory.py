@@ -209,3 +209,96 @@ __all__ = [
     'clear_questionary_factory',
     'is_questionary_factory_set'
 ]
+
+
+def set_prompt_toolkit_non_fullscreen_factory() -> None:
+    """
+    Install a questionary-like factory that uses prompt_toolkit's
+    PromptSession (non-fullscreen) for prompts. This provides richer
+    line-editing (history, key bindings) but avoids switching to the
+    alternate screen because it does not create a full-screen Application.
+
+    If prompt_toolkit is not available this raises ImportError.
+    """
+    try:
+        from prompt_toolkit import PromptSession
+    except Exception as e:
+        raise ImportError(
+            "prompt_toolkit is required for set_prompt_toolkit_non_fullscreen_factory(). Install with: pip install prompt_toolkit"
+        ) from e
+
+    def _text(message=None, default=None, **kwargs):
+        session = PromptSession()
+        class _P:
+            def ask(self):
+                prompt = (message or '') + ' '
+                try:
+                    if default is None:
+                        return session.prompt(prompt)
+                    return session.prompt(prompt, default=default)
+                except (EOFError, KeyboardInterrupt):
+                    return default
+        return _P()
+
+    def _password(message=None, **kwargs):
+        session = PromptSession()
+        class _P:
+            def ask(self):
+                try:
+                    return session.prompt((message or '') + ' ', is_password=True)
+                except (EOFError, KeyboardInterrupt):
+                    return None
+        return _P()
+
+    def _confirm(message=None, default=False, **kwargs):
+        session = PromptSession()
+        class _P:
+            def ask(self):
+                prompt = (message or '') + (" [Y/n] " if default else " [y/N] ")
+                try:
+                    r = session.prompt(prompt)
+                except (EOFError, KeyboardInterrupt):
+                    return default
+                if not r:
+                    return default
+                return r.strip().lower() in ('y', 'yes')
+        return _P()
+
+    def _select(message=None, choices=None, default=None, **kwargs):
+        session = PromptSession()
+        class _P:
+            def ask(self):
+                if not choices:
+                    return default
+                # Print simple enumerated menu and accept number or exact match
+                print(message or '')
+                for i, c in enumerate(choices, start=1):
+                    print(f"  {i}. {c}")
+                try:
+                    r = session.prompt('Select choice number or value: ')
+                except (EOFError, KeyboardInterrupt):
+                    return default
+                if not r:
+                    return default
+                # try numeric
+                try:
+                    idx = int(r) - 1
+                    if 0 <= idx < len(choices):
+                        return choices[idx]
+                except Exception:
+                    pass
+                # fallback to exact match
+                for c in choices:
+                    if str(c) == r:
+                        return c
+                return default
+        return _P()
+
+    shim = __import__('types').SimpleNamespace(
+        text=_text,
+        password=_password,
+        confirm=_confirm,
+        select=_select,
+    )
+
+    set_questionary_factory(lambda: shim)

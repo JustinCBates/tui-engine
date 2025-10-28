@@ -198,6 +198,17 @@ class ContainerBase(ContainerInterface):
         self._elements[element_id] = element
         self._element_names[element.name] = element_id
         
+        # Register as change listener to receive events from this child
+        if hasattr(element, 'register_change_listener') and hasattr(self, 'on_child_changed'):
+            element.register_change_listener(self.on_child_changed)
+        # Set a parent reference on the child so it can discover its owning
+        # container/page. Use a conservative try/except to avoid breaking
+        # objects that don't accept new attributes.
+        try:
+            setattr(element, '_parent', self)
+        except Exception:
+            pass
+        
         return element_id
     
     def remove_element(self, element_id: int) -> None:

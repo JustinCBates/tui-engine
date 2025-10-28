@@ -6,8 +6,15 @@ maintaining full API compatibility while adding new capabilities.
 """
 
 import uuid
-from typing import Any, Callable, Dict, List, Optional
+import sys
+import time
+import re
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
+from .debug_mode import is_debug_mode
 from .interfaces import RenderableComponent, SpaceRequirement, BufferDelta, ElementChangeEvent
+
+if TYPE_CHECKING:
+    from .form_navigation import SpatialFormNavigator
 
 
 class Component(RenderableComponent):
@@ -20,13 +27,14 @@ class Component(RenderableComponent):
     - Interface compliance with ComponentInterface and Renderable
     """
 
-    def __init__(self, name: str, component_type: str, **kwargs: Any) -> None:
+    def __init__(self, name: str, component_type: str, form_navigator: Optional["SpatialFormNavigator"] = None, **kwargs: Any) -> None:
         """
         Initialize a component wrapper.
 
         Args:
             name: Component name for state management
             component_type: Type of questionary component (text, select, etc.)
+            form_navigator: Optional form navigator for tab navigation support
             **kwargs: Component configuration options
         """
         self._name = name
@@ -38,6 +46,17 @@ class Component(RenderableComponent):
         self._needs_render: bool = True
         self._last_rendered_lines: List[str] = []
         self._change_listeners: List[Callable[[ElementChangeEvent], None]] = []
+        
+        # Form navigation
+        self._form_navigator = form_navigator
+        if form_navigator and self.is_interactive():
+            form_navigator.register_interactive_component(self)
+        
+        # Interactive component state
+        self._is_active: bool = False  # Whether this component is currently active for input
+        self._current_value: Any = kwargs.get("default", "")
+        self._prompt_text: str = kwargs.get("message", f"Enter {name}:")
+        self._prompt_position: Optional[int] = None  # Buffer position for interactive prompt
 
         # Extract questionary-compatible config
         self.questionary_config = {
@@ -62,21 +81,36 @@ class Component(RenderableComponent):
     
     def calculate_space_requirements(self) -> SpaceRequirement:
         """Calculate space requirements for this component."""
-        lines = self.get_render_lines()
-        line_count = len(lines)
+        if not self._visible:
+            return SpaceRequirement(min_lines=0, current_lines=0, max_lines=0, preferred_lines=0)
         
-        # For components, min/current/max/preferred are typically the same
-        # unless it's a multi-line component that could compress
-        if self._component_type == "text_section":
-            # Text sections could potentially compress
+        if self.is_interactive():
+            # Interactive components need space for prompt and input area
+            base_lines = 1  # Prompt line
+            
+            if self._component_type in ["text", "password"]:
+                lines_needed = 1  # Single line input
+            elif self._component_type == "select":
+                lines_needed = 1  # Will expand dynamically if needed
+            elif self._component_type == "confirm":
+                lines_needed = 1
+            elif self._component_type == "checkbox":
+                options = self.config.get("choices", [])
+                lines_needed = min(len(options), 5)  # Max 5 visible options
+            else:
+                lines_needed = 1
+            
+            total_lines = base_lines + lines_needed
             return SpaceRequirement(
-                min_lines=1,  # Could compress to summary
-                current_lines=line_count,
-                max_lines=line_count,
-                preferred_lines=line_count
+                min_lines=base_lines,
+                current_lines=total_lines,
+                max_lines=total_lines + 2,  # Extra space for validation messages
+                preferred_lines=total_lines
             )
         else:
-            # Simple components have fixed size
+            # Display-only components
+            lines = self.get_render_lines()
+            line_count = len(lines)
             return SpaceRequirement(
                 min_lines=line_count,
                 current_lines=line_count,
@@ -242,7 +276,33 @@ class Component(RenderableComponent):
             content = self.config.get("content", "")
             return [f"📄 {content}"] if content else []
         
-        # For interactive components, return placeholder text
+        # For interactive components, render prompt and current state
+        elif self.is_interactive():
+            lines = []
+            
+            # Add the prompt text with activity indicator
+            if self._is_active:
+                lines.append(f"? {self._prompt_text}")
+            else:
+                lines.append(f"  {self._prompt_text}")
+            
+            # Add current value display (if any)
+            if self._current_value:
+                if self._component_type == "password":
+                    lines.append(f"  {'*' * len(str(self._current_value))}")
+                elif self._component_type == "confirm":
+                    lines.append(f"  {'Yes' if self._current_value else 'No'}")
+                else:
+                    lines.append(f"  {self._current_value}")
+            else:
+                if self._component_type == "confirm":
+                    lines.append(f"  [Yes/No]")
+                else:
+                    lines.append(f"  [Enter {self._component_type}]")
+            
+            return lines
+        
+        # Fallback for unknown components
         else:
             return [f"[{self._component_type.upper()}: {self._name}]"]
     
@@ -273,12 +333,201 @@ class Component(RenderableComponent):
         
         self._needs_render = False
         return len(current_lines)
-    
+
     def mark_dirty(self) -> None:
         """Mark this component as needing re-render."""
         self._needs_render = True
 
-    # CardChildInterface and AssemblyChildInterface implementation
+    # =================================================================
+    # INTERACTIVE COMPONENT METHODS
+    # =================================================================
+    
+    def activate_for_input(self, buffer_position: int) -> None:
+        """Activate this component for interactive input at the given buffer position."""
+        self._is_active = True
+        self._prompt_position = buffer_position
+        self.mark_dirty()
+        try:
+            _set_active_interactive_component(self)
+        except Exception:
+            pass
+        
+        # Fire change event to notify parent containers
+        self.fire_change_event("state", metadata={"activated": True, "position": buffer_position})
+    
+    def deactivate(self) -> None:
+        """Deactivate this component."""
+        self._is_active = False
+        self.mark_dirty()
+        
+        # Fire change event
+        self.fire_change_event("state", metadata={"activated": False})
+        try:
+            _clear_active_interactive_component()
+        except Exception:
+            pass
+    
+    def set_value(self, value: Any) -> None:
+        """Set the current value of this component."""
+        old_value = self._current_value
+        self._current_value = value
+        
+        if old_value != value:
+            self.mark_dirty()
+            self.fire_change_event("content", metadata={"old_value": old_value, "new_value": value})
+    
+    def get_value(self) -> Any:
+        """Get the current value of this component."""
+        return self._current_value
+    
+    def render_interactive_prompt(self) -> Any:
+        """
+        Render the actual interactive prompt using questionary.
+        
+        This method should be called by the form navigation system
+        when this component is active.
+        """
+        if not self.is_interactive() or not self._is_active:
+            return self._current_value
+        
+        # Import questionary here to avoid circular dependencies
+        try:
+            import questionary
+            
+            # Create the appropriate questionary prompt
+            if self._component_type == "text":
+                prompt = questionary.text(
+                    message=self._prompt_text,
+                    default=str(self._current_value) if self._current_value else ""
+                )
+            elif self._component_type == "password":
+                prompt = questionary.password(
+                    message=self._prompt_text
+                )
+            elif self._component_type == "confirm":
+                prompt = questionary.confirm(
+                    message=self._prompt_text,
+                    default=bool(self._current_value) if self._current_value else True
+                )
+            elif self._component_type == "select":
+                choices = self.config.get("choices", [])
+                prompt = questionary.select(
+                    message=self._prompt_text,
+                    choices=choices,
+                    default=self._current_value if self._current_value in choices else None
+                )
+            else:
+                # Fallback to text input
+                prompt = questionary.text(
+                    message=self._prompt_text,
+                    default=str(self._current_value) if self._current_value else ""
+                )
+            
+            # Execute the prompt and update value
+            # Wrap stdout/stderr to capture any ANSI sequences prompts may emit
+            orig_stdout = sys.stdout
+            orig_stderr = sys.stderr
+            proxy_out = _AnsiStreamProxy(orig_stdout, 'stdout')
+            proxy_err = _AnsiStreamProxy(orig_stderr, 'stderr')
+            sys.stdout = proxy_out
+            sys.stderr = proxy_err
+            try:
+                result = prompt.ask()
+            finally:
+                # Restore original streams
+                sys.stdout = orig_stdout
+                sys.stderr = orig_stderr
+                # If we captured anything, emit debug info
+                try:
+                    if _prompt_clear_events and is_debug_mode():
+                        for ev in _prompt_clear_events[-5:]:
+                            print(f"DEBUG: Prompt injected ANSI on {ev['stream']}: {ev['matches']}")
+                except Exception:
+                    pass
+            if is_debug_mode():
+                try:
+                    print(f"DEBUG: after prompt.ask(), result={repr(result)}")
+                except Exception:
+                    pass
+            # After the prompt completes, if there's a recorded prompt-clear
+            # timestamp, propagate it to the owning page (if any) so the page
+            # can decide whether to reassert its content.
+            try:
+                from .component_wrappers import get_last_prompt_clear_ts
+                last_ts = get_last_prompt_clear_ts()
+                if last_ts:
+                    # Walk up parent pointers to find owning PageBase
+                    owning = None
+                    try:
+                        parent = getattr(self, '_parent', None)
+                        while parent is not None:
+                            # Prefer duck-typing: if parent exposes mark_prompt_cleared,
+                            # treat it as the owning page. This avoids import/time issues.
+                            if hasattr(parent, 'mark_prompt_cleared'):
+                                owning = parent
+                                break
+                            if is_debug_mode():
+                                try:
+                                    print(f"DEBUG: traversing parent {type(parent)}")
+                                except Exception:
+                                    pass
+                            parent = getattr(parent, '_parent', None)
+                    except Exception:
+                        owning = None
+
+                    if owning is not None:
+                        try:
+                            owning.mark_prompt_cleared(last_ts)
+                            # Immediately request a refresh so the page reasserts
+                            # its content after the prompt returns. This covers
+                            # cases where the prompt wrote directly to the TTY
+                            # and the spatial delta would otherwise be empty.
+                            try:
+                                owning.refresh()
+                            except Exception:
+                                pass
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+            if result is not None:
+                self.set_value(result)
+            
+            return result
+            
+        except ImportError:
+            # Fallback if questionary not available
+            print(f"{self._prompt_text} ", end="")
+            result = input()
+            self.set_value(result)
+            # Propagate prompt-clear timestamp to owning page as above
+            try:
+                from .component_wrappers import get_last_prompt_clear_ts
+                last_ts = get_last_prompt_clear_ts()
+                if last_ts:
+                    owning = None
+                    try:
+                        parent = getattr(self, '_parent', None)
+                        while parent is not None:
+                            if hasattr(parent, 'mark_prompt_cleared'):
+                                owning = parent
+                                break
+                            parent = getattr(parent, '_parent', None)
+                    except Exception:
+                        owning = None
+
+                    if owning is not None:
+                        try:
+                            owning.mark_prompt_cleared(last_ts)
+                            try:
+                                owning.refresh()
+                            except Exception:
+                                pass
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+            return result    # CardChildInterface and AssemblyChildInterface implementation
     def is_completed(self) -> bool:
         """Whether this component has completed its required input/validation."""
         # Display components are always completed
@@ -467,3 +716,124 @@ __all__ = [
     "text_section",
     "text_status",
 ]
+
+# Internal collector for prompt-injected ANSI sequences (e.g., clears, alternate-screen)
+_prompt_clear_events: List[Dict[str, Any]] = []
+
+# Timestamp (float epoch) of the most recent prompt-injected clear event.
+# Updated by the _AnsiStreamProxy when it detects matching sequences.
+_last_prompt_clear_ts: float = 0.0
+
+
+def get_prompt_clear_events() -> List[Dict[str, Any]]:
+    """Return a copy of captured prompt clear events.
+
+    Each event is a dict with keys: timestamp, stream ('stdout'/'stderr'), and matches (list of matched ANSI fragments).
+    """
+    return list(_prompt_clear_events)
+
+
+# Active interactive component (set when a component is activated for input)
+_active_interactive_component = None
+
+
+def _set_active_interactive_component(comp: Any) -> None:
+    global _active_interactive_component
+    _active_interactive_component = comp
+
+
+def _clear_active_interactive_component() -> None:
+    global _active_interactive_component
+    _active_interactive_component = None
+
+
+
+def get_last_prompt_clear_ts() -> float:
+    """Return the epoch timestamp of the last captured prompt clear (0.0 if none)."""
+    return float(_last_prompt_clear_ts)
+
+
+def set_last_prompt_clear_ts(ts: float) -> None:
+    """Set the last prompt clear timestamp (used by tests or external triggers)."""
+    global _last_prompt_clear_ts
+    try:
+        _last_prompt_clear_ts = float(ts)
+    except Exception:
+        _last_prompt_clear_ts = time.time()
+
+
+class _AnsiStreamProxy:
+    """Proxy for stdout/stderr that records ANSI clear-like sequences while forwarding writes.
+
+    This is intentionally lightweight: it forwards all calls to the underlying
+    stream so prompt-toolkit/questionary behaviour is preserved, while also
+    scanning for common clear/alternate-screen ANSI sequences and recording
+    them for diagnostics.
+    """
+    _ansi_re = re.compile(r"\x1b\[[\d;?]*[A-Za-z]")
+
+    def __init__(self, stream, which: str):
+        self._stream = stream
+        self._which = which
+
+    def write(self, data):
+        try:
+            if data and isinstance(data, str):
+                # Look for ANSI CSI sequences that commonly clear or switch screen
+                matches = [m.group(0) for m in self._ansi_re.finditer(data)]
+                filtered = [m for m in matches if any(tok in m for tok in ['2J', 'H', 'K', '?1049'])]
+                if filtered:
+                    ev = {
+                        'timestamp': time.time(),
+                        'stream': self._which,
+                        'matches': filtered,
+                        'sample': data[:200]
+                    }
+                    _prompt_clear_events.append(ev)
+                    # Update last prompt clear timestamp for consumers
+                    try:
+                        global _last_prompt_clear_ts
+                        _last_prompt_clear_ts = ev['timestamp']
+                    except Exception:
+                        pass
+                    # If there's an active interactive component, attempt to
+                    # attribute this clear to its owning page immediately so
+                    # the page can respond without waiting for the prompt
+                    # to finish.
+                    try:
+                        global _active_interactive_component
+                        comp = _active_interactive_component
+                        if comp is not None:
+                            parent = getattr(comp, '_parent', None)
+                            while parent is not None:
+                                if hasattr(parent, 'mark_prompt_cleared'):
+                                    try:
+                                        parent.mark_prompt_cleared(ev['timestamp'])
+                                    except Exception:
+                                        pass
+                                    break
+                                parent = getattr(parent, '_parent', None)
+                    except Exception:
+                        pass
+        except Exception:
+            # Be conservative: never raise from the proxy
+            pass
+
+        return self._stream.write(data)
+
+    def flush(self):
+        try:
+            return self._stream.flush()
+        except Exception:
+            return None
+
+    def isatty(self):
+        try:
+            return self._stream.isatty()
+        except Exception:
+            return False
+
+    # Provide attributes commonly accessed by prompt-toolkit
+    def __getattr__(self, name):
+        return getattr(self._stream, name)
+

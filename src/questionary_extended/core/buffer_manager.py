@@ -120,20 +120,74 @@ class ANSIBufferManager(BufferManager):
             # This should have been handled by reallocate_space
             pass
         
-        # Clear specified lines
-        for relative_line in delta.clear_lines:
-            terminal_line = position.start_line + relative_line + 1  # 1-indexed
-            self._clear_terminal_line(terminal_line)
+        # Track what we've already rendered to avoid duplication
+        if not hasattr(self, '_rendered_content'):
+            self._rendered_content = {}
         
-        # Apply line updates
-        for relative_line, content in delta.line_updates:
-            terminal_line = position.start_line + relative_line + 1  # 1-indexed
-            self._update_terminal_line(terminal_line, content)
+        element_key = f"{position.element_id}_{position.start_line}"
         
-        # Update tracking
+        # Use ANSI positioning to update or clear specific lines. This avoids
+        # appending duplicate content to the terminal and ensures old content
+        # is cleared when elements shrink.
+        if not hasattr(self, '_rendered_content'):
+            self._rendered_content = {}
+
+        # Clear any requested lines first
+        if delta.clear_lines:
+            for rel_line in sorted(delta.clear_lines):
+                abs_line = position.start_line + rel_line
+                # Clear the specific terminal line
+                print(f"\x1b[{abs_line + 1};1H\x1b[2K", end="")
+
         if delta.line_updates:
+            # Sort by line number to update in order
+            sorted_updates = sorted(delta.line_updates, key=lambda x: x[0])
+            new_content = [content for _, content in sorted_updates]
+
+            # Only write if content differs from last render
+            if element_key not in self._rendered_content or self._rendered_content[element_key] != new_content:
+                for rel_line, content in sorted_updates:
+                    abs_line = position.start_line + rel_line
+                    # Position cursor, clear the line, and write the new content
+                    # Use normal print (with newline) to ensure the terminal
+                    # cursor moves to the start of the following line after the write.
+                    print(f"\x1b[{abs_line + 1};1H\x1b[2K{content}")
+                # Remember what we rendered for this element
+                self._rendered_content[element_key] = new_content
+
+            # Update tracking
             max_line_used = max(rel_line for rel_line, _ in delta.line_updates) + 1
             position.last_rendered_lines = max_line_used
+        # Ensure output is flushed so the terminal state is updated promptly
+        try:
+            sys.stdout.flush()
+        except Exception:
+            pass
+    
+    def _position_cursor_at_end(self) -> None:
+        """Position cursor at the end of all rendered content."""
+        if not self._element_positions:
+            # No elements, just move to a safe position
+            print("\x1b[1;1H", end="")  # Move to top-left
+            sys.stdout.flush()
+            return
+            
+        # Find the last line with content
+        max_end_line = 0
+        for pos in self._element_positions.values():
+            if hasattr(pos, 'last_rendered_lines') and pos.last_rendered_lines > 0:
+                content_end = pos.start_line + pos.last_rendered_lines
+                max_end_line = max(max_end_line, content_end)
+        
+        # Safety check - ensure we don't go beyond terminal bounds
+        if max_end_line > self._terminal_height - 2:
+            max_end_line = self._terminal_height - 2
+        
+        # Move cursor to the line after all content
+        target_line = max_end_line + 1
+        if target_line > 0:
+            print(f"\x1b[{target_line};1H", end="")
+            sys.stdout.flush()
     
     def get_element_position(self, element_id: str) -> Optional[ElementPosition]:
         """Get current position information for an element."""

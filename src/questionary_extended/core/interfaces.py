@@ -457,7 +457,7 @@ class AssemblyChildInterface(ElementInterface):
         pass
 
 
-class SectionChildInterface(ABC):
+class SectionChildInterface(ElementInterface):
     """
     Interface for elements that can be contained within a Section.
     
@@ -473,38 +473,46 @@ class SectionChildInterface(ABC):
     # 1. Compile time - through interface implementation
     # 2. Runtime - through isinstance() checks in Section.add_element()
     
+    # Backwards-compatible helpers - ElementInterface already provides
+    # `name` and rendering methods. These exist to help older code that
+    # used Section-specific helpers.
     @abstractmethod
     def get_name(self) -> str:
-        """Return the unique name of this element."""
-        pass
-    
+        """Return the unique name of this element (compat)."""
+        # Default implementation can delegate to `name` property on ElementInterface
+        return getattr(self, 'name')
+
     @abstractmethod
     def get_content(self) -> List[str]:
-        """Return the rendered content lines."""
-        pass
+        """Return the rendered content lines (compat)."""
+        # Default implementation can delegate to get_render_lines()
+        return getattr(self, 'get_render_lines')()
     
     # =================================================================
     # REQUIRED SPATIAL AWARENESS FOR SECTION CHILDREN
     # =================================================================
     
+    # Section children are full Elements (inherit ElementInterface) and
+    # therefore must implement the same spatial contract. We keep the
+    # method names compatible with ElementInterface to avoid ambiguity.
     @abstractmethod
     def calculate_space_requirements(self) -> SpaceRequirement:
         """Calculate space requirements for this section child."""
         pass
-    
+
     @abstractmethod
-    def calculate_buffer_changes(self, target_lines: int) -> BufferDelta:
-        """Calculate buffer changes needed for target line count."""
+    def calculate_buffer_changes(self) -> BufferDelta:
+        """Calculate buffer changes needed for this section child."""
         pass
-    
+
     @abstractmethod
-    def can_compress_to(self, target_lines: int) -> bool:
+    def can_compress_to(self, lines: int) -> bool:
         """Check if element can compress to target line count."""
         pass
-    
+
     @abstractmethod
-    def compress_to_lines(self, target_lines: int) -> List[str]:
-        """Compress element content to specific line count."""
+    def compress_to_lines(self, lines: int) -> None:
+        """Compress element content to specific line count (in-place)."""
         pass
     
     # =================================================================

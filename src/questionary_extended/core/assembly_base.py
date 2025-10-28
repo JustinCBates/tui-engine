@@ -8,7 +8,15 @@ conditional behavior, cross-field validation, and state management.
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Union, OrderedDict
 from collections import OrderedDict as OrderedDictClass
 
-from .interfaces import AssemblyInterface, AssemblyChildInterface, PageChildInterface, CardChildInterface
+from .interfaces import (
+    AssemblyInterface,
+    AssemblyChildInterface,
+    PageChildInterface,
+    CardChildInterface,
+    BufferDelta,
+    SpaceRequirement,
+    ElementChangeEvent,
+)
 from .base_classes import AssemblyBase as AssemblyBaseImpl
 
 if TYPE_CHECKING:
@@ -44,6 +52,8 @@ class AssemblyBase(AssemblyBaseImpl, AssemblyInterface):
         self.event_handlers: Dict[
             str, List[Union[Callable[..., Any], Tuple[str, Callable[..., Any]]]]
         ] = {"change": [], "validate": [], "complete": []}
+        # Change listeners for parent/container event propagation
+        self._change_listeners: List[Callable[[ElementChangeEvent], None]] = []
     
     # ElementInterface implementation
     @property
@@ -222,6 +232,97 @@ class AssemblyBase(AssemblyBaseImpl, AssemblyInterface):
     def parent(self) -> "PageBase":
         """Return parent Page for navigation."""
         return self.parent_page
+
+    # ------------------------------------------------------------------
+    # Implementations for several abstract/container methods so this
+    # AssemblyBase can be instantiated as a concrete, minimal assembly
+    # used by test fixtures and simple pages.
+    # ------------------------------------------------------------------
+    def register_change_listener(self, listener: Callable[[ElementChangeEvent], None]) -> None:
+        """Register a listener for change events from this assembly."""
+        if listener not in self._change_listeners:
+            self._change_listeners.append(listener)
+
+    def fire_change_event(self, change_type: str, space_delta: int = 0, **metadata: Any) -> None:
+        """Fire a change event and notify registered listeners (parent bubbling)."""
+        evt = ElementChangeEvent(self.name, change_type, space_delta, **metadata)
+        for l in list(self._change_listeners):
+            try:
+                l(evt)
+            except Exception:
+                # Don't let listener exceptions break assembly flow
+                pass
+
+    def calculate_space_requirements(self) -> SpaceRequirement:
+        """Calculate simple space requirements based on rendered lines."""
+        lines = self.get_render_lines()
+        count = len(lines)
+        return SpaceRequirement(min_lines=0, current_lines=count, max_lines=count, preferred_lines=count)
+
+    def calculate_buffer_changes(self) -> BufferDelta:
+        """Return a BufferDelta with a full update of current rendered lines."""
+        lines = self.get_render_lines()
+        updates = [(i, line) for i, line in enumerate(lines)]
+        return BufferDelta(line_updates=updates, space_change=0, clear_lines=[])
+
+    def calculate_aggregate_space_requirements(self) -> SpaceRequirement:
+        """Alias for calculate_space_requirements used by containers."""
+        return self.calculate_space_requirements()
+
+    def can_compress_to(self, lines: int) -> bool:
+        """Naive compressability check: allow non-negative targets."""
+        return lines >= 0
+
+    def compress_to_lines(self, lines: int) -> None:
+        """Attempt to compress to the requested line count.
+
+        This is a no-op for the minimal implementation; raise for invalid
+        negative inputs.
+        """
+        if lines < 0:
+            raise ValueError("lines must be >= 0")
+
+    def get_content(self) -> List[str]:
+        """Return rendered content lines (compat shim)."""
+        return self.get_render_lines()
+
+    def get_name(self) -> str:
+        """Return the assembly's name (compat shim)."""
+        return self.name
+
+    def on_child_changed(self, child_event: ElementChangeEvent) -> None:
+        """Handle child change events by marking dirty and bubbling up."""
+        try:
+            # Mark this assembly as requiring re-render
+            self.mark_dirty()
+        except Exception:
+            pass
+
+        # Bubble a simplified event upward
+        try:
+            self.fire_change_event("child_change", space_delta=child_event.space_delta, child=child_event)
+        except Exception:
+            pass
+
+    def allocate_child_space(self, child_name: str, requirement: SpaceRequirement) -> bool:
+        """Attempt to allocate space to a child; minimal implementation just
+        returns True if child exists."""
+        for e in self.get_elements().values():
+            if hasattr(e, 'name') and e.name == child_name:
+                return True
+        return False
+
+    def get_child_render_position(self, child_name: str) -> int:
+        """Compute relative render start for a named child by summing previous
+        children's rendered lines."""
+        pos = 0
+        for e in self.get_elements().values():
+            if hasattr(e, 'name') and e.name == child_name:
+                return pos
+            if hasattr(e, 'get_render_lines') and callable(getattr(e, 'get_render_lines')):
+                pos += len(e.get_render_lines())
+                pos += 1
+        return pos
 
 
 __all__ = ["AssemblyBase"]

@@ -11,10 +11,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, OrderedDict, Set, U
 from collections import OrderedDict as OrderedDictClass
 
 from .state import PageState
-from .interfaces import PageInterface, PageChildInterface, ElementChangeEvent, SpaceRequirement, BufferDelta
+from .interfaces import PageInterface, PageChildInterface, ElementChangeEvent
+from .spatial import SpaceRequirement, BufferDelta, SpatiallyAware, LayoutEngine
 from .base_classes import PageBase as PageBaseImpl
 from .debug_mode import debug_prefix, is_debug_mode
-from .spatial import SpatiallyAware, LayoutEngine
 from .buffer_manager import ANSIBufferManager, FallbackBufferManager
 
 # For backwards compatibility during transition
@@ -40,7 +40,7 @@ class PageBase(PageBaseImpl, PageInterface, SpatiallyAware):
     - Advanced buffer management for flicker-free updates
     """
 
-    def __init__(self, title: str = "", use_spatial_layout: bool = True, **kwargs: Any):
+    def __init__(self, title: str = "", use_spatial_layout: bool = True, header: Optional[Union[str, List[str]]] = None, **kwargs: Any):
         """Initialize a new page.
         
         Args:
@@ -52,16 +52,81 @@ class PageBase(PageBaseImpl, PageInterface, SpatiallyAware):
         super().__init__()
         
         self.title = title
+        # Visibility controls: allow toggling title and header independently
+        self.title_visible = True
+
         self._last_component_lines = 0  # Track only component lines for cursor movement
         self._current_status_id: Optional[int] = None  # Track current status component
-        
+        # Track last prompt-clear handled timestamp to avoid re-asserting
+        # the same prompt clear multiple times.
+        self._last_prompt_clear_handled_ts: float = 0.0
+
         # Spatial layout management
         self.use_spatial_layout = use_spatial_layout
         self._change_listeners: List[Callable[[ElementChangeEvent], None]] = []
+        self._last_rendered_content: List[str] = []  # Track last rendered content
         if use_spatial_layout:
             self._buffer_manager = self._create_buffer_manager()
             self._layout_engine = LayoutEngine()
-            self._sections: Dict[str, "Section"] = {}
+            # Use an ordered dict to ensure title appears before header/body/footer
+            self._sections: Dict[str, "Section"] = OrderedDictClass()
+            # Ensure a reserved title and header section exist (static) and are visible by default
+            try:
+                from .section import Section
+                from .component_wrappers import text_display
+
+                # Create title section and populate with title lines
+                title_section = Section('title', static=True)
+                for line in self._get_title_lines():
+                    title_section.add_element(text_display(line))
+                title_section.show()
+                title_section.mark_dirty()
+                try:
+                    setattr(title_section, '_parent', self)
+                except Exception:
+                    pass
+                self._sections['title'] = title_section
+
+                # Create header section (separate from title)
+                hdr = Section('header', static=True)
+                # If header content was provided to constructor, populate it
+                if header is not None:
+                    if isinstance(header, list):
+                        lines = header
+                    else:
+                        lines = str(header).split('\n')
+                    for line in lines:
+                        hdr.add_element(text_display(line))
+                hdr.show()
+                hdr.mark_dirty()
+                try:
+                    setattr(hdr, '_parent', self)
+                except Exception:
+                    pass
+                self._sections['header'] = hdr
+
+                # Create body section (dynamic) to hold cards/components
+                body = Section('body', static=False)
+                body.show()
+                body.mark_dirty()
+                try:
+                    setattr(body, '_parent', self)
+                except Exception:
+                    pass
+                self._sections['body'] = body
+
+                # Create footer section (static) reserved for end-of-page content
+                footer = Section('footer', static=True)
+                footer.show()
+                footer.mark_dirty()
+                try:
+                    setattr(footer, '_parent', self)
+                except Exception:
+                    pass
+                self._sections['footer'] = footer
+            except Exception:
+                # If Section or component factories cannot be imported for some edge case, leave sections empty
+                self._sections = OrderedDictClass()
         else:
             self._buffer_manager = None
             self._layout_engine = None
@@ -138,39 +203,81 @@ class PageBase(PageBaseImpl, PageInterface, SpatiallyAware):
                 clear_lines=[]
             )
         
-        # Aggregate changes from sections
+        # Calculate changes for spatial layout
         all_line_updates = []
         total_space_change = 0
         all_clear_lines = []
-        
         current_line = 0
         
-        # Handle title
-        if self.title:
-            # Title is typically static, only update if changed
-            title_lines = self._get_title_lines()
-            for i, line in enumerate(title_lines):
-                all_line_updates.append((current_line + i, line))
-            current_line += len(title_lines)
+        # Sections (title, header, body, footer) produce their own deltas.
+        # We rely on the reserved 'title' and 'header' sections existing in
+        # self._sections (created at init) so they are handled below in order.
         
-        # Handle sections
-        for section in self._sections.values():
-            if section.visible:
-                section_delta = section.calculate_buffer_changes()
-                
-                # Offset line updates by current position
-                for rel_line, content in section_delta.line_updates:
-                    all_line_updates.append((current_line + rel_line, content))
-                
-                # Offset clear lines
-                for rel_line in section_delta.clear_lines:
-                    all_clear_lines.append(current_line + rel_line)
-                
-                total_space_change += section_delta.space_change
-                
-                # Move to next section position
-                section_req = section.calculate_space_requirements()
-                current_line += section_req.current_lines
+        # Handle sections if we have section-based layout
+        if self._sections:
+            for section_name, section in self._sections.items():
+                if section.visible:
+                    section_delta = section.calculate_buffer_changes()
+
+                    # Debug: report per-section delta counts
+                    if is_debug_mode():
+                        try:
+                            print(f"DEBUG: Section '{section_name}' -> {len(section_delta.line_updates)} updates, {len(section_delta.clear_lines)} clears, space_change={section_delta.space_change}")
+                        except Exception:
+                            pass
+
+                    # Offset line updates by current position
+                    for rel_line, content in section_delta.line_updates:
+                        all_line_updates.append((current_line + rel_line, content))
+
+                    # Offset clear lines
+                    for rel_line in section_delta.clear_lines:
+                        all_clear_lines.append(current_line + rel_line)
+
+                    total_space_change += section_delta.space_change
+
+                    # Move to next section position
+                    section_req = section.calculate_space_requirements()
+                    current_line += section_req.current_lines
+                    # Page rendering adds a blank spacer line after a section
+                    # when the section has visible content (see `get_render_lines`).
+                    # Ensure our position accounting matches that behavior so
+                    # subsequent sections/components are offset correctly.
+                    try:
+                        if section.get_render_lines():
+                            current_line += 1
+                    except Exception:
+                        # Conservative: if we cannot query render lines, skip spacer
+                        pass
+        else:
+            # Handle direct components (no sections)
+            # Get all component render lines
+            component_lines = []
+            for component in self.components.values():
+                if hasattr(component, 'get_render_lines') and callable(getattr(component, 'get_render_lines')):
+                    child_lines = component.get_render_lines()  # type: ignore
+                    component_lines.extend(child_lines)
+                    if child_lines:  # Add spacing between visible elements
+                        component_lines.append("")
+            
+            # Only add lines that have actually changed
+            if hasattr(self, '_last_rendered_content') and self._last_rendered_content == component_lines:
+                # Content hasn't changed, no line updates needed
+                pass
+            else:
+                # Content has changed, add line updates
+                for i, line in enumerate(component_lines):
+                    all_line_updates.append((current_line + i, line))
+
+                # If previous content existed and was longer, schedule clear lines
+                prev_len = len(self._last_rendered_content) if hasattr(self, '_last_rendered_content') else 0
+                curr_len = len(component_lines)
+                if prev_len > curr_len:
+                    for i in range(curr_len, prev_len):
+                        all_clear_lines.append(current_line + i)
+
+                # Remember what we rendered
+                self._last_rendered_content = component_lines.copy()
         
         return BufferDelta(
             line_updates=all_line_updates,
@@ -190,13 +297,30 @@ class PageBase(PageBaseImpl, PageInterface, SpatiallyAware):
     
     # Section management
     def create_section(self, name: str, static: bool = False, **kwargs: Any) -> "Section":
-        """Create a new section in this page."""
-        if not self.use_spatial_layout:
-            raise ValueError("Sections require spatial layout to be enabled")
-        
+        """Create a new section in this page.
+
+        Sections historically required the spatial layout engine. For
+        compatibility we create and return a Section object regardless of
+        whether spatial layout is enabled. When spatial layout is disabled
+        the Section will behave as a lightweight renderable container (like
+        a Card) and the Page will render its lines using the non-spatial
+        fallback rendering path.
+        """
         from .section import Section
         section = Section(name, static=static, **kwargs)
-        self._sections[name] = section
+        # Ensure our sections dict exists and register the section so callers
+        # can retrieve it via get_section/body_section/etc.
+        try:
+            self._sections[name] = section
+        except Exception:
+            # If _sections isn't available for some reason, create it.
+            self._sections = OrderedDictClass()
+            self._sections[name] = section
+        # Attach parent for potential event propagation
+        try:
+            setattr(section, '_parent', self)
+        except Exception:
+            pass
         return section
     
     def get_section(self, name: str) -> Optional["Section"]:
@@ -225,6 +349,8 @@ class PageBase(PageBaseImpl, PageInterface, SpatiallyAware):
         """Get the title lines for rendering."""
         if not self.title:
             return []
+        if not getattr(self, 'title_visible', True):
+            return []
         
         # Add debug prefix only in debug mode
         if is_debug_mode():
@@ -238,6 +364,142 @@ class PageBase(PageBaseImpl, PageInterface, SpatiallyAware):
             "=" * 60,
             ""
         ]
+
+    # -----------------------------------------------------------------
+    # Title/Header visibility controls
+    # -----------------------------------------------------------------
+    def set_title_visible(self, visible: bool) -> None:
+        """Show or hide the page title. Defaults to True."""
+        # Title is represented by the reserved 'title' section; toggle its visibility
+        if 'title' in self._sections:
+            if bool(visible):
+                try:
+                    self._sections['title'].show()
+                except Exception:
+                    pass
+            else:
+                try:
+                    self._sections['title'].hide()
+                except Exception:
+                    pass
+        else:
+            # Fallback to attribute flag
+            self.title_visible = bool(visible)
+
+    def set_header_visible(self, visible: bool) -> None:
+        """Show or hide the header section (creates it if missing)."""
+        if 'header' not in self._sections:
+            # Lazily create header if not present
+            try:
+                from .section import Section
+                self._sections['header'] = Section('header', static=True)
+            except Exception:
+                return
+        if bool(visible):
+            self._sections['header'].show()
+        else:
+            self._sections['header'].hide()
+
+    def is_title_visible(self) -> bool:
+        """Return whether the title is visible."""
+        if 'title' in self._sections:
+            sec = self._sections.get('title')
+            return bool(sec.visible) if sec is not None else False
+        return bool(getattr(self, 'title_visible', True))
+
+    def is_header_visible(self) -> bool:
+        """Return whether the header section is visible."""
+        sec = self._sections.get('header')
+        return bool(sec.visible) if sec is not None else False
+
+    # -----------------------------------------------------------------
+    # Title / Header update helpers
+    # -----------------------------------------------------------------
+    def update_title(self, new_title: str) -> None:
+        """Update the page title and refresh the reserved title section."""
+        self.title = new_title
+        # Rebuild title section content
+        try:
+            from .component_wrappers import text_display
+            if 'title' not in self._sections:
+                from .section import Section
+                self._sections['title'] = Section('title', static=True)
+
+            title_sec = self._sections['title']
+            # Remove all existing elements
+            for eid in list(title_sec.get_elements().keys()):
+                title_sec.remove_element(eid)
+
+            # Add new title lines
+            for line in self._get_title_lines():
+                title_sec.add_element(text_display(line))
+
+            title_sec.mark_dirty()
+            self.mark_dirty()
+        except Exception:
+            # Fallback: nothing
+            pass
+
+    def update_header(self, content: Union[str, List[str]]) -> None:
+        """Update the header section content. Accepts string or list of lines."""
+        try:
+            from .component_wrappers import text_display
+            if 'header' not in self._sections:
+                from .section import Section
+                self._sections['header'] = Section('header', static=True)
+
+            hdr = self._sections['header']
+            # Normalize content to list of lines
+            lines: List[str]
+            if isinstance(content, list):
+                lines = content
+            else:
+                lines = str(content).split('\n')
+
+            # Clear existing header elements
+            for eid in list(hdr.get_elements().keys()):
+                hdr.remove_element(eid)
+
+            # Add new header lines
+            for line in lines:
+                hdr.add_element(text_display(line))
+
+            hdr.mark_dirty()
+            self.mark_dirty()
+        except Exception:
+            pass
+
+    def show_title(self) -> None:
+        """Show the title section."""
+        if 'title' in self._sections:
+            try:
+                self._sections['title'].show()
+            except Exception:
+                pass
+
+    def hide_title(self) -> None:
+        """Hide the title section."""
+        if 'title' in self._sections:
+            try:
+                self._sections['title'].hide()
+            except Exception:
+                pass
+
+    def show_header(self) -> None:
+        """Show the header section."""
+        if 'header' in self._sections:
+            try:
+                self._sections['header'].show()
+            except Exception:
+                pass
+
+    def hide_header(self) -> None:
+        """Hide the header section."""
+        if 'header' in self._sections:
+            try:
+                self._sections['header'].hide()
+            except Exception:
+                pass
     
     @property
     def components(self) -> OrderedDict[int, PageChildInterface]:
@@ -256,12 +518,21 @@ class PageBase(PageBaseImpl, PageInterface, SpatiallyAware):
         Pages process child changes and can update the display.
         Since pages are top-level, they don't propagate further up.
         """
-        # Mark ourselves for potential re-render
-        if self._buffer_manager:
-            # Could trigger incremental update here
-            pass
-        
-        # Notify our listeners (typically for testing or external monitoring)
+        # Mark ourselves as needing a render; do not perform a synchronous refresh
+        # here to avoid re-entrancy and blocking issues (which can make the
+        # process unresponsive to interrupts). The top-level application loop
+        # or caller should decide when to call `refresh()`.
+        try:
+            self.mark_dirty()
+        except Exception:
+            # If mark_dirty isn't available for some reason, fall back to setting
+            # the internal flag directly.
+            try:
+                self._needs_render = True
+            except Exception:
+                pass
+
+        # Notify any external listeners (for telemetry/tests)
         for listener in self._change_listeners:
             try:
                 listener(child_event)
@@ -414,7 +685,22 @@ class PageBase(PageBaseImpl, PageInterface, SpatiallyAware):
                     if child_lines:  # Add spacing between elements
                         lines.append("")
         else:
-            # Traditional layout - just add child elements
+            # Traditional layout - include any sections created even when
+            # spatial layout is disabled (Sections should behave like
+            # regular renderables/cards in non-spatial mode), then add
+            # direct child elements for backward compatibility.
+            if getattr(self, '_sections', None):
+                for section in self._sections.values():
+                    try:
+                        if section.visible:
+                            section_lines = section.get_render_lines()
+                            lines.extend(section_lines)
+                            if section_lines:
+                                lines.append("")
+                    except Exception:
+                        # If a section misbehaves, skip it to avoid breaking page render
+                        pass
+
             for element in self.get_elements().values():
                 if hasattr(element, 'get_render_lines') and callable(getattr(element, 'get_render_lines')):
                     child_lines = element.get_render_lines()  # type: ignore
@@ -453,6 +739,16 @@ class PageBase(PageBaseImpl, PageInterface, SpatiallyAware):
         from .card import Card
 
         card = Card(title, self, **kwargs)
+        # If we have sections (title/header/body/footer), place cards into body section
+        try:
+            if isinstance(self._sections, dict) and 'body' in self._sections:
+                body_sec = self._sections['body']
+                body_sec.add_element(card)
+                return card
+        except Exception:
+            # Fallback to legacy behavior
+            pass
+
         self._add_child(card)
         return card
 
@@ -510,6 +806,16 @@ class PageBase(PageBaseImpl, PageInterface, SpatiallyAware):
         status_id = self._add_child(comp)
         self._current_status_id = status_id
         return self
+
+    def clear_status(self) -> None:
+        """Clear any current status/progress message from the page."""
+        status_id = getattr(self, '_current_status_id', None)
+        if isinstance(status_id, int):
+            try:
+                self.remove_element(status_id)
+            except Exception:
+                pass
+            self._current_status_id = None
 
     def clear_screen(self) -> None:
         """Clear the terminal screen."""
@@ -675,50 +981,158 @@ class PageBase(PageBaseImpl, PageInterface, SpatiallyAware):
         return lines
 
     def refresh(self) -> None:
-        """Questionary-style incremental refresh - no screen clearing."""
+        """
+        Modern spatial-aware incremental refresh using buffer management.
         
-        # Render header only on first call
-        if self.title and not self._header_rendered:
-            print("=" * 60)
-            if is_debug_mode():
-                print(f"📄 [PAGE] {self.title}")
-            else:
-                print(self.title)
-            print("=" * 60)
-            self._header_rendered = True
-        
-        # Build component lines using proper get_render_lines method
-        component_lines = []
-        for component in self.components.values():
-            if hasattr(component, 'get_render_lines') and callable(getattr(component, 'get_render_lines')):
-                # Use the component's get_render_lines which handles visibility internally
-                child_lines = component.get_render_lines()  # type: ignore
-                component_lines.extend(child_lines)
-                if child_lines:  # Add spacing between visible elements
-                    component_lines.append("")
-        
-        # For incremental refresh mode
-        if hasattr(self, '_safe_incremental') and self._safe_incremental:
-            # Move cursor up to overwrite previous component content
-            if self._last_component_lines > 0:
-                self._move_cursor_up(self._last_component_lines)
-            
-            # Render each component line, clearing it first
-            for line in component_lines:
-                self._clear_line()
-                print(line)
-            
-            # Clear any remaining lines from previous component render
-            lines_to_clear = self._last_component_lines - len(component_lines)
-            for _ in range(lines_to_clear):
-                self._clear_line()
-                print()  # Move to next line to clear it
+        Uses the new universal spatial awareness system for flicker-free updates.
+        """
+        # Use spatial layout if enabled and buffer manager available
+        # When a caller explicitly requests a refresh, treat it as an
+        # authoritative redraw: mark sections dirty so their content is
+        # recomputed and re-applied even if nothing has changed since the
+        # last spatial delta. This fixes cases where the spatial machinery
+        # produced an initial render but subsequent refreshes report no
+        # delta (and therefore do not re-assert the visual state).
+        if hasattr(self, '_sections') and self._sections:
+            for sec in self._sections.values():
+                try:
+                    sec.mark_dirty()
+                except Exception:
+                    pass
+
+        if (self.use_spatial_layout and 
+            hasattr(self, '_buffer_manager') and 
+            self._buffer_manager is not None):
+            self._spatial_refresh()
         else:
-            # Fallback: print content normally (no cursor manipulation)
-            for line in component_lines:
-                print(line)
-                
-        self._last_component_lines = len(component_lines)
+            # If spatial layout is disabled or buffer manager missing,
+            # still attempt to render by calculating buffer changes and
+            # writing them sequentially using the buffer manager fallback.
+            # We avoid calling legacy rendering and instead use the
+            # fallback buffer manager if available.
+            if not hasattr(self, '_buffer_manager') or self._buffer_manager is None:
+                # No buffer manager at all; nothing to do.
+                return
+            # Use calculate_buffer_changes to get the full render and apply
+            page_delta = self.calculate_buffer_changes()
+            # Allocate space if needed
+            try:
+                if not hasattr(self, '_page_position') or not self._page_position:
+                    space_req = self.calculate_space_requirements()
+                    self._page_position = self._buffer_manager.allocate_space(self.name, space_req)
+                self._buffer_manager.apply_buffer_delta(self._page_position, page_delta)
+            except Exception:
+                if is_debug_mode():
+                    print("DEBUG: fallback apply failed in refresh")
+                return
+    
+    def _spatial_refresh(self) -> None:
+        """Spatial-aware refresh using buffer management and event system."""
+        # Spatial refresh should always try to compute and apply buffer
+        # deltas; do not fall back to legacy rendering here.
+        # Ensure we have a buffer manager
+        if not self._buffer_manager:
+            if is_debug_mode():
+                print("DEBUG: Buffer manager not available for spatial refresh")
+            return
+
+        if is_debug_mode():
+            print("DEBUG: Using spatial refresh with buffer management")
+
+        # Calculate what changes are needed
+        page_delta = self.calculate_buffer_changes()
+
+        if is_debug_mode():
+            print(f"DEBUG: Buffer delta - {len(page_delta.line_updates)} line updates, space change: {page_delta.space_change}")
+
+        # If there are no computed content changes but the page still has
+        # visible content, we only force a full reassert/redraw if a prompt
+        # emitted clear-like ANSI sequences since the last time we handled
+        # such an event. This avoids unnecessary redraws while still
+        # recovering after prompt-toolkit/questionary clears the terminal.
+        if not page_delta.has_content_changes() and not page_delta.has_space_change() and not page_delta.clear_lines:
+            try:
+                # Import lazily to avoid circular import at module load
+                from .component_wrappers import get_last_prompt_clear_ts
+
+                last_ts = get_last_prompt_clear_ts()
+                handled_ts = getattr(self, '_last_prompt_clear_handled_ts', 0.0)
+                current_lines = self.get_render_lines()
+                if current_lines and last_ts and last_ts > handled_ts:
+                    if is_debug_mode():
+                        print("DEBUG: No delta detected and prompt clear detected - forcing full redraw of page content")
+                    page_delta = BufferDelta(
+                        line_updates=[(i, line) for i, line in enumerate(current_lines)],
+                        space_change=0,
+                        clear_lines=[]
+                    )
+                    # Mark we've handled this prompt clear
+                    try:
+                        self._last_prompt_clear_handled_ts = float(last_ts)
+                    except Exception:
+                        self._last_prompt_clear_handled_ts = time.time()
+            except Exception:
+                # If anything goes wrong while forcing the redraw, fall back
+                # to the previously computed (empty) delta and continue.
+                pass
+        # Handle space changes first (allocate/reallocate as needed)
+        if page_delta.has_space_change():
+            space_req = self.calculate_space_requirements()
+            if hasattr(self, '_page_position') and self._page_position:
+                # Reallocate existing space
+                self._page_position = self._buffer_manager.reallocate_space(self.name, space_req)
+            else:
+                # Initial allocation
+                self._page_position = self._buffer_manager.allocate_space(self.name, space_req)
+
+        # If we don't yet have a page position, allocate based on current requirements
+        if not hasattr(self, '_page_position') or not self._page_position:
+            try:
+                space_req = self.calculate_space_requirements()
+                self._page_position = self._buffer_manager.allocate_space(self.name, space_req)
+            except Exception:
+                # Allocation failed; nothing further to do
+                return
+
+        # Apply the buffer changes if any
+        if page_delta.has_content_changes() or page_delta.has_space_change() or page_delta.clear_lines:
+            try:
+                self._buffer_manager.apply_buffer_delta(self._page_position, page_delta)
+            except Exception:
+                if is_debug_mode():
+                    print("DEBUG: apply_buffer_delta failed")
+                return
+
+        # Expose a public method for components to notify the page that a
+        # prompt cleared the terminal while this page was active. This allows
+        # the page to avoid reasserting unless it actually needs to.
+    def mark_prompt_cleared(self, ts: float) -> None:
+        """Record that a prompt clear occurred at timestamp `ts` and update
+        the per-page handled timestamp if this is newer.
+        """
+        try:
+            tsf = float(ts)
+        except Exception:
+            tsf = 0.0
+        if tsf and tsf > getattr(self, '_last_prompt_clear_handled_ts', 0.0):
+            try:
+                self._last_prompt_clear_handled_ts = tsf
+            except Exception:
+                pass
+
+        # Position cursor after rendered content
+        try:
+            if hasattr(self._buffer_manager, '_position_cursor_at_end'):
+                try:
+                    self._buffer_manager._position_cursor_at_end()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+    
+    # Legacy printing path has been removed; PageBase is spatial-only.
+    # If necessary, fallback behavior is provided by the buffer manager
+    # implementations (FallbackBufferManager) which print sequentially.
 
     def enable_safe_incremental(self) -> None:
         """Enable incremental refresh mode (only when no external output)."""

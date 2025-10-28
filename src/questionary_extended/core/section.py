@@ -10,13 +10,13 @@ from collections import OrderedDict as OrderedDictClass
 
 from .spatial import SpatiallyAware
 from .interfaces import ElementInterface, PageChildInterface, Renderable, SectionInterface, SectionChildInterface, ElementChangeEvent, SpaceRequirement, BufferDelta
-from .base_classes import RenderableBase, ContainerBase
+from .base_classes import RenderableBase, ContainerBase, RenderableContainerBase
 
 if TYPE_CHECKING:
     from .component_wrappers import Component
 
 
-class Section(RenderableBase, ContainerBase, SpatiallyAware, SectionInterface):
+class Section(RenderableContainerBase, SectionInterface):
     """
     Spatial-aware section container for logical grouping of elements.
     
@@ -37,9 +37,8 @@ class Section(RenderableBase, ContainerBase, SpatiallyAware, SectionInterface):
             static: If True, section content rarely changes (like headers)
             **kwargs: Additional configuration options
         """
-        # Initialize base classes properly
-        RenderableBase.__init__(self)
-        ContainerBase.__init__(self)
+        # Initialize combined container base which wires Renderable + Container
+        super().__init__()
         
         self._name = name
         self.static = static
@@ -142,8 +141,20 @@ class Section(RenderableBase, ContainerBase, SpatiallyAware, SectionInterface):
         # Validate that element can be a child of a section
         if not isinstance(element, SectionChildInterface):
             raise TypeError(f"Element must implement SectionChildInterface, got {type(element)}")
-        
-        return super().add_element(element)  # type: ignore
+        eid = super().add_element(element)  # type: ignore
+        # Mark section as needing re-render when new elements are added
+        try:
+            self.mark_dirty()
+        except Exception:
+            pass
+        return eid
+
+    def _validate_element_type(self, element: ElementInterface) -> None:
+        """Validate that element can be a child of a Section."""
+        if not isinstance(element, SectionChildInterface):
+            raise TypeError(
+                f"Section can only contain SectionChildInterface elements. Got {type(element)} which does not implement SectionChildInterface."
+            )
     
     # SpatiallyAware implementation
     def calculate_space_requirements(self) -> SpaceRequirement:
