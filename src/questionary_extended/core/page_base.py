@@ -3,16 +3,19 @@ Page class for questionary-extended.
 
 The Page class serves as the top-level container for complex multi-component UIs,
 providing state management, navigation, and orchestration of Cards and Assemblies.
+Enhanced with spatial awareness and section-based layout management.
 """
 
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, OrderedDict, Set, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, OrderedDict, Set, Union, Callable
 from collections import OrderedDict as OrderedDictClass
 
 from .state import PageState
-from .interfaces import PageInterface, PageChildInterface
+from .interfaces import PageInterface, PageChildInterface, ElementChangeEvent, SpaceRequirement, BufferDelta
 from .base_classes import PageBase as PageBaseImpl
 from .debug_mode import debug_prefix, is_debug_mode
+from .spatial import SpatiallyAware, LayoutEngine
+from .buffer_manager import ANSIBufferManager, FallbackBufferManager
 
 # For backwards compatibility during transition
 PageChild = PageChildInterface
@@ -20,9 +23,10 @@ PageChild = PageChildInterface
 if TYPE_CHECKING:
     from .assembly_base import AssemblyBase
     from .card import Card
+    from .section import Section
 
 
-class PageBase(PageBaseImpl, PageInterface):
+class PageBase(PageBaseImpl, PageInterface, SpatiallyAware):
     """
     Top-level container for questionary-extended multi-component interfaces.
 
@@ -32,13 +36,16 @@ class PageBase(PageBaseImpl, PageInterface):
     - Progress tracking and navigation
     - Responsive layout and scrolling management
     - Central visibility management with refresh capability
+    - Spatial awareness and section-based layout management
+    - Advanced buffer management for flicker-free updates
     """
 
-    def __init__(self, title: str = "", **kwargs: Any):
+    def __init__(self, title: str = "", use_spatial_layout: bool = True, **kwargs: Any):
         """Initialize a new page.
         
         Args:
             title: Optional page title to display
+            use_spatial_layout: Enable spatial layout management
             **kwargs: Additional page configuration
         """
         # Initialize base classes (provides element management)
@@ -47,12 +54,314 @@ class PageBase(PageBaseImpl, PageInterface):
         self.title = title
         self._last_component_lines = 0  # Track only component lines for cursor movement
         self._current_status_id: Optional[int] = None  # Track current status component
+        
+        # Spatial layout management
+        self.use_spatial_layout = use_spatial_layout
+        self._change_listeners: List[Callable[[ElementChangeEvent], None]] = []
+        if use_spatial_layout:
+            self._buffer_manager = self._create_buffer_manager()
+            self._layout_engine = LayoutEngine()
+            self._sections: Dict[str, "Section"] = {}
+        else:
+            self._buffer_manager = None
+            self._layout_engine = None
+            self._sections = {}
+    
+    def _create_buffer_manager(self):
+        """Create appropriate buffer manager based on environment."""
+        # For now, always use ANSI since we confirmed it works
+        # Could add detection logic here later
+        return ANSIBufferManager()
+    
+    # SpatiallyAware implementation
+    def calculate_space_requirements(self) -> SpaceRequirement:
+        """Calculate space requirements for the entire page."""
+        if not self.use_spatial_layout:
+            # Fallback to line counting
+            lines = self.get_render_lines()
+            line_count = len(lines)
+            return SpaceRequirement(
+                min_lines=line_count,
+                current_lines=line_count,
+                max_lines=line_count,
+                preferred_lines=line_count
+            )
+        
+        # Calculate based on sections
+        total_min = 0
+        total_current = 0
+        total_max = 0
+        total_preferred = 0
+        
+        # Add title lines
+        if self.title:
+            title_lines = 4  # separator + title + separator + spacing
+            total_min += title_lines
+            total_current += title_lines
+            total_max += title_lines
+            total_preferred += title_lines
+        
+        # Add section requirements
+        for section in self._sections.values():
+            if section.visible:
+                req = section.calculate_space_requirements()
+                total_min += req.min_lines
+                total_current += req.current_lines
+                total_max += req.max_lines
+                total_preferred += req.preferred_lines
+        
+        # Add regular elements (fallback)
+        for element in self.get_elements().values():
+            if hasattr(element, 'get_render_lines') and callable(getattr(element, 'get_render_lines')):
+                lines = element.get_render_lines()  # type: ignore
+                line_count = len(lines)
+                total_min += line_count
+                total_current += line_count
+                total_max += line_count
+                total_preferred += line_count
+        
+        return SpaceRequirement(
+            min_lines=total_min,
+            current_lines=total_current,
+            max_lines=total_max,
+            preferred_lines=total_preferred
+        )
+    
+    def calculate_buffer_changes(self) -> BufferDelta:
+        """Calculate buffer changes for the page."""
+        if not self.use_spatial_layout:
+            # Fallback: full refresh
+            lines = self.get_render_lines()
+            return BufferDelta(
+                line_updates=[(i, line) for i, line in enumerate(lines)],
+                space_change=0,
+                clear_lines=[]
+            )
+        
+        # Aggregate changes from sections
+        all_line_updates = []
+        total_space_change = 0
+        all_clear_lines = []
+        
+        current_line = 0
+        
+        # Handle title
+        if self.title:
+            # Title is typically static, only update if changed
+            title_lines = self._get_title_lines()
+            for i, line in enumerate(title_lines):
+                all_line_updates.append((current_line + i, line))
+            current_line += len(title_lines)
+        
+        # Handle sections
+        for section in self._sections.values():
+            if section.visible:
+                section_delta = section.calculate_buffer_changes()
+                
+                # Offset line updates by current position
+                for rel_line, content in section_delta.line_updates:
+                    all_line_updates.append((current_line + rel_line, content))
+                
+                # Offset clear lines
+                for rel_line in section_delta.clear_lines:
+                    all_clear_lines.append(current_line + rel_line)
+                
+                total_space_change += section_delta.space_change
+                
+                # Move to next section position
+                section_req = section.calculate_space_requirements()
+                current_line += section_req.current_lines
+        
+        return BufferDelta(
+            line_updates=all_line_updates,
+            space_change=total_space_change,
+            clear_lines=all_clear_lines
+        )
+    
+    def can_compress_to(self, lines: int) -> bool:
+        """Check if page can be compressed to given lines."""
+        req = self.calculate_space_requirements()
+        return req.min_lines <= lines
+    
+    def compress_to_lines(self, lines: int) -> None:
+        """Compress page content to fit in specified lines."""
+        # Implementation would compress sections as needed
+        pass
+    
+    # Section management
+    def create_section(self, name: str, static: bool = False, **kwargs: Any) -> "Section":
+        """Create a new section in this page."""
+        if not self.use_spatial_layout:
+            raise ValueError("Sections require spatial layout to be enabled")
+        
+        from .section import Section
+        section = Section(name, static=static, **kwargs)
+        self._sections[name] = section
+        return section
+    
+    def get_section(self, name: str) -> Optional["Section"]:
+        """Get a section by name."""
+        return self._sections.get(name)
+    
+    def header_section(self, **kwargs: Any) -> "Section":
+        """Get or create the header section (static by default)."""
+        if "header" not in self._sections:
+            return self.create_section("header", static=True, **kwargs)
+        return self._sections["header"]
+    
+    def body_section(self, **kwargs: Any) -> "Section":
+        """Get or create the body section (dynamic by default)."""
+        if "body" not in self._sections:
+            return self.create_section("body", static=False, **kwargs)
+        return self._sections["body"]
+    
+    def footer_section(self, **kwargs: Any) -> "Section":
+        """Get or create the footer section (static by default)."""
+        if "footer" not in self._sections:
+            return self.create_section("footer", static=True, **kwargs)
+        return self._sections["footer"]
+    
+    def _get_title_lines(self) -> List[str]:
+        """Get the title lines for rendering."""
+        if not self.title:
+            return []
+        
+        # Add debug prefix only in debug mode
+        if is_debug_mode():
+            display_title = f"{debug_prefix('page')}{self.title}"
+        else:
+            display_title = self.title
+            
+        return [
+            "=" * 60,
+            display_title,
+            "=" * 60,
+            ""
+        ]
     
     @property
     def components(self) -> OrderedDict[int, PageChildInterface]:
         """Get the elements OrderedDict (for backwards compatibility)."""
         # Safe cast since PageBase enforces only PageChildInterface elements
         return self.get_elements()  # type: ignore
+    
+    # =================================================================
+    # CONTAINER INTERFACE IMPLEMENTATION (REQUIRED)
+    # =================================================================
+    
+    def on_child_changed(self, child_event: ElementChangeEvent) -> None:
+        """
+        Handle change events from child elements.
+        
+        Pages process child changes and can update the display.
+        Since pages are top-level, they don't propagate further up.
+        """
+        # Mark ourselves for potential re-render
+        if self._buffer_manager:
+            # Could trigger incremental update here
+            pass
+        
+        # Notify our listeners (typically for testing or external monitoring)
+        for listener in self._change_listeners:
+            try:
+                listener(child_event)
+            except Exception:
+                # Don't let listener exceptions break the page
+                pass
+    
+    def calculate_aggregate_space_requirements(self) -> SpaceRequirement:
+        """
+        Calculate aggregate space requirements from all children.
+        
+        This is the same as calculate_space_requirements for pages.
+        """
+        return self.calculate_space_requirements()
+    
+    def allocate_child_space(self, child_name: str, requirement: SpaceRequirement) -> bool:
+        """
+        Attempt to allocate space to a child element.
+        
+        Pages have flexible space allocation for their children.
+        """
+        # Find the child by name
+        for element in self.get_elements().values():
+            if hasattr(element, 'name') and element.name == child_name:
+                # Pages can typically accommodate any reasonable child space request
+                return True
+        
+        # Check sections too
+        for section in self._sections.values():
+            if section.name == child_name:
+                return True
+        
+        return False  # Child not found
+    
+    def get_child_render_position(self, child_name: str) -> int:
+        """
+        Get the relative starting line position for a child element.
+        
+        Calculates position based on title, sections, and elements.
+        """
+        current_position = 0
+        
+        # Add title lines
+        if self.title:
+            current_position += len(self._get_title_lines())
+        
+        # Check sections first
+        section_order = ["header", "body", "footer"]
+        for section_name in section_order:
+            if section_name in self._sections:
+                section = self._sections[section_name]
+                if section.name == child_name:
+                    return current_position
+                
+                if section.visible:
+                    section_req = section.calculate_space_requirements()
+                    current_position += section_req.current_lines
+                    current_position += 1  # Spacing after section
+        
+        # Check regular elements
+        for element in self.get_elements().values():
+            if hasattr(element, 'name') and element.name == child_name:
+                return current_position
+            
+            if hasattr(element, 'get_render_lines') and callable(getattr(element, 'get_render_lines')):
+                element_lines = element.get_render_lines()  # type: ignore
+                current_position += len(element_lines)
+                current_position += 1  # Spacing between elements
+        
+        return current_position  # If not found, return current position
+    
+    # =================================================================
+    # EVENT SYSTEM IMPLEMENTATION (REQUIRED BY ElementInterface)
+    # =================================================================
+    
+    def fire_change_event(self, change_type: str, space_delta: int = 0, **metadata: Any) -> None:
+        """Fire change event to notify listeners."""
+        event = ElementChangeEvent(
+            element_name=self.name,
+            element_type=self.element_type,
+            change_type=change_type,
+            space_delta=space_delta,
+            metadata=metadata
+        )
+        
+        for listener in self._change_listeners:
+            try:
+                listener(event)
+            except Exception:
+                # Don't let listener exceptions break the page
+                pass
+    
+    def register_change_listener(self, listener: Callable[[ElementChangeEvent], None]) -> None:
+        """Register listener for change events."""
+        if listener not in self._change_listeners:
+            self._change_listeners.append(listener)
+
+    # =================================================================
+    # ELEMENT INTERFACE IMPLEMENTATION
+    # =================================================================
     
     # ElementInterface implementation
     @property
@@ -77,24 +386,41 @@ class PageBase(PageBaseImpl, PageInterface):
             return []
         
         lines = []
-        if self.title:
-            # Add debug prefix only in debug mode
-            if is_debug_mode():
-                display_title = f"{debug_prefix('page')}{self.title}"
-            else:
-                display_title = self.title
-            lines.append("=" * 60)
-            lines.append(display_title)
-            lines.append("=" * 60)
-            lines.append("")
         
-        # Add child content lines
-        for element in self.get_elements().values():
-            if hasattr(element, 'get_render_lines') and callable(getattr(element, 'get_render_lines')):
-                child_lines = element.get_render_lines()  # type: ignore
-                lines.extend(child_lines)
-                if child_lines:  # Add spacing between elements
-                    lines.append("")
+        # Add title
+        if self.title:
+            lines.extend(self._get_title_lines())
+        
+        # Handle spatial layout vs traditional layout
+        if self.use_spatial_layout and self._sections:
+            # Render sections in order: header, body, footer (if they exist)
+            section_order = ["header", "body", "footer"]
+            
+            for section_name in section_order:
+                if section_name in self._sections:
+                    section = self._sections[section_name]
+                    if section.visible:
+                        section_lines = section.get_render_lines()
+                        lines.extend(section_lines)
+                        # Add spacing after section if it has content
+                        if section_lines:
+                            lines.append("")
+            
+            # Also add any regular elements for backward compatibility
+            for element in self.get_elements().values():
+                if hasattr(element, 'get_render_lines') and callable(getattr(element, 'get_render_lines')):
+                    child_lines = element.get_render_lines()  # type: ignore
+                    lines.extend(child_lines)
+                    if child_lines:  # Add spacing between elements
+                        lines.append("")
+        else:
+            # Traditional layout - just add child elements
+            for element in self.get_elements().values():
+                if hasattr(element, 'get_render_lines') and callable(getattr(element, 'get_render_lines')):
+                    child_lines = element.get_render_lines()  # type: ignore
+                    lines.extend(child_lines)
+                    if child_lines:  # Add spacing between elements
+                        lines.append("")
         
         return lines
     

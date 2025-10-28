@@ -7,7 +7,7 @@ maintaining full API compatibility while adding new capabilities.
 
 import uuid
 from typing import Any, Callable, Dict, List, Optional
-from .interfaces import RenderableComponent
+from .interfaces import RenderableComponent, SpaceRequirement, BufferDelta, ElementChangeEvent
 
 
 class Component(RenderableComponent):
@@ -37,11 +37,140 @@ class Component(RenderableComponent):
         self._visible: bool = True  # Default visibility
         self._needs_render: bool = True
         self._last_rendered_lines: List[str] = []
+        self._change_listeners: List[Callable[[ElementChangeEvent], None]] = []
 
         # Extract questionary-compatible config
         self.questionary_config = {
             k: v for k, v in kwargs.items() if k not in ["when", "enhanced_validation"]
         }
+
+    # =================================================================
+    # SECTION CHILD INTERFACE METHODS (REQUIRED BY SectionChildInterface)
+    # =================================================================
+    
+    def get_name(self) -> str:
+        """Return the unique name of this element (for SectionChildInterface)."""
+        return self.name
+    
+    def get_content(self) -> List[str]:
+        """Return the rendered content lines (for SectionChildInterface)."""
+        return self.get_render_lines()
+    
+    # =================================================================
+    # SPATIAL AWARENESS METHODS (REQUIRED BY ElementInterface)
+    # =================================================================
+    
+    def calculate_space_requirements(self) -> SpaceRequirement:
+        """Calculate space requirements for this component."""
+        lines = self.get_render_lines()
+        line_count = len(lines)
+        
+        # For components, min/current/max/preferred are typically the same
+        # unless it's a multi-line component that could compress
+        if self._component_type == "text_section":
+            # Text sections could potentially compress
+            return SpaceRequirement(
+                min_lines=1,  # Could compress to summary
+                current_lines=line_count,
+                max_lines=line_count,
+                preferred_lines=line_count
+            )
+        else:
+            # Simple components have fixed size
+            return SpaceRequirement(
+                min_lines=line_count,
+                current_lines=line_count,
+                max_lines=line_count,
+                preferred_lines=line_count
+            )
+    
+    def calculate_buffer_changes(self, target_lines: int) -> BufferDelta:
+        """Calculate buffer changes needed for target line count."""
+        current_lines = self.get_render_lines()
+        current_count = len(current_lines)
+        
+        if target_lines == current_count:
+            # No change needed
+            return BufferDelta(
+                line_updates=[],
+                space_change=0
+            )
+        elif target_lines < current_count:
+            # Need to compress
+            compressed = self.compress_to_lines(target_lines)
+            updates = [(i, line) for i, line in enumerate(compressed)]
+            return BufferDelta(
+                line_updates=updates,
+                space_change=target_lines - current_count
+            )
+        else:
+            # Have more space available - expand if possible
+            updates = [(i, line) for i, line in enumerate(current_lines)]
+            return BufferDelta(
+                line_updates=updates,
+                space_change=0  # We don't expand beyond natural size
+            )
+    
+    def can_compress_to(self, target_lines: int) -> bool:
+        """Check if component can compress to target line count."""
+        if target_lines <= 0:
+            return False
+        
+        space_req = self.calculate_space_requirements()
+        return target_lines >= space_req.min_lines
+    
+    def compress_to_lines(self, target_lines: int) -> List[str]:
+        """Compress component content to specific line count."""
+        current_lines = self.get_render_lines()
+        
+        if target_lines >= len(current_lines):
+            return current_lines
+        
+        if target_lines <= 0:
+            return []
+        
+        if self._component_type == "text_section":
+            # For text sections, show truncated content
+            if target_lines == 1:
+                return [f"📄 {self._name} (truncated)"]
+            else:
+                # Return first lines with ellipsis
+                result = current_lines[:target_lines-1]
+                result.append("...")
+                return result
+        else:
+            # For other components, just truncate
+            return current_lines[:target_lines]
+    
+    # =================================================================
+    # EVENT SYSTEM METHODS (REQUIRED BY ElementInterface)
+    # =================================================================
+    
+    def fire_change_event(self, change_type: str, space_delta: int = 0, **metadata: Any) -> None:
+        """Fire change event to notify listeners."""
+        event = ElementChangeEvent(
+            element_name=self.name,
+            element_type=self.element_type,
+            change_type=change_type,
+            space_delta=space_delta,
+            metadata=metadata
+        )
+        
+        for listener in self._change_listeners:
+            try:
+                listener(event)
+            except Exception:
+                # Don't let listener exceptions break the component
+                pass
+    
+    def register_change_listener(self, listener: Callable[[ElementChangeEvent], None]) -> None:
+        """Register listener for change events."""
+        if listener not in self._change_listeners:
+            self._change_listeners.append(listener)
+
+    # =================================================================
+    # ELEMENT INTERFACE IMPLEMENTATION
+    # =================================================================
 
     # ElementInterface implementation
     @property
