@@ -10,6 +10,7 @@ from collections import OrderedDict as OrderedDictClass
 
 from .interfaces import CardInterface, CardChildInterface, PageChildInterface
 from .base_classes import CardBase
+from .debug_mode import debug_prefix, is_debug_mode
 
 if TYPE_CHECKING:
     from .page_base import PageBase
@@ -79,25 +80,77 @@ class Card(CardBase, CardInterface):
         
         lines = []
         
-        # Add card header based on style
-        if self.style == "bordered":
-            lines.append(f"┌─ {self.title} ──")
-        elif self.style == "highlighted":
-            lines.append(f"*** {self.title} ***")
-        else:  # minimal or default
-            lines.append(f"• {self.title}")
-        
-        # Add elements content
+        # Collect content first to determine border width
+        content_lines = []
         for element in self.get_elements().values():
             if hasattr(element, 'get_render_lines') and callable(getattr(element, 'get_render_lines')):
                 element_lines = element.get_render_lines()  # type: ignore
-                # Indent card content
-                indented_lines = [f"  {line}" for line in element_lines]
-                lines.extend(indented_lines)
+                content_lines.extend(element_lines)
         
-        # Add card footer for bordered style
-        if self.style == "bordered" and lines:
-            lines.append("└─────────────")
+        # Calculate border width based on content and title
+        title_length = len(self.title) if self.title else 0
+        content_max_length = max((len(line) for line in content_lines), default=0)
+        border_width = max(title_length + 6, content_max_length + 4, 20)  # Minimum 20 chars
+        
+        # Add card header based on style
+        if self.style == "bordered":
+            # Add debug prefix to title in debug mode
+            if is_debug_mode():
+                display_title = f"{debug_prefix('card')}{self.title}"
+            else:
+                display_title = self.title
+            
+            # Create top border with title
+            title_padding = border_width - len(display_title) - 4  # Account for ┌ ┐ and spaces around title
+            left_padding = title_padding // 2
+            right_padding = title_padding - left_padding
+            top_border = f"┌{'─' * left_padding} {display_title} {'─' * right_padding}┐"
+            lines.append(top_border)
+            
+            # Calculate inner content width to match the top border total length
+            # Top border structure: ┌ + dashes + space + title + space + dashes + ┐
+            # Side border structure: │ + space + content + space + │
+            # So inner content width = top_border_length - 4 (for │ + space + space + │)
+            top_border_length = len(top_border)
+            inner_content_width = top_border_length - 4
+            
+            # Add content with side borders
+            if content_lines:
+                for line in content_lines:
+                    # Pad content line to fit exactly within border
+                    content_padded = line.ljust(inner_content_width)
+                    lines.append(f"│ {content_padded} │")
+            else:
+                # Empty content area
+                empty_line = " " * inner_content_width
+                lines.append(f"│ {empty_line} │")
+            
+            # Add bottom border - must match the top border width exactly
+            # Bottom border structure: └ + dashes + ┘
+            bottom_dashes = "─" * (top_border_length - 2)
+            bottom_border = f"└{bottom_dashes}┘"
+            lines.append(bottom_border)
+            
+        elif self.style == "highlighted":
+            if is_debug_mode():
+                display_title = f"{debug_prefix('card')}{self.title}"
+            else:
+                display_title = self.title
+            lines.append(f"*** {display_title} ***")
+            # Add indented content for highlighted style
+            for line in content_lines:
+                lines.append(f"    {line}")
+                
+        else:  # minimal or default
+            if is_debug_mode():
+                display_title = f"{debug_prefix('card')}{self.title}"
+            else:
+                display_title = f"🎴 [CARD] {self.title}"
+            lines.append(display_title)
+            lines.append("-" * 50)
+            # Add indented content for minimal style
+            for line in content_lines:
+                lines.append(f"  {line}")
         
         return lines
     

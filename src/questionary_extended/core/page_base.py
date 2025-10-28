@@ -6,12 +6,13 @@ providing state management, navigation, and orchestration of Cards and Assemblie
 """
 
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, OrderedDict, Set, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, OrderedDict, Set, Union
 from collections import OrderedDict as OrderedDictClass
 
 from .state import PageState
 from .interfaces import PageInterface, PageChildInterface
 from .base_classes import PageBase as PageBaseImpl
+from .debug_mode import debug_prefix, is_debug_mode
 
 # For backwards compatibility during transition
 PageChild = PageChildInterface
@@ -45,6 +46,7 @@ class PageBase(PageBaseImpl, PageInterface):
         
         self.title = title
         self._last_component_lines = 0  # Track only component lines for cursor movement
+        self._current_status_id: Optional[int] = None  # Track current status component
     
     @property
     def components(self) -> OrderedDict[int, PageChildInterface]:
@@ -76,7 +78,14 @@ class PageBase(PageBaseImpl, PageInterface):
         
         lines = []
         if self.title:
-            lines.append(f"=== {self.title} ===")
+            # Add debug prefix only in debug mode
+            if is_debug_mode():
+                display_title = f"{debug_prefix('page')}{self.title}"
+            else:
+                display_title = self.title
+            lines.append("=" * 60)
+            lines.append(display_title)
+            lines.append("=" * 60)
             lines.append("")
         
         # Add child content lines
@@ -153,7 +162,7 @@ class PageBase(PageBaseImpl, PageInterface):
         return self
 
     def text_status(self, content: str, status_type: str = "info", **kwargs: Any) -> "PageBase":
-        """Add a status/progress message component to the page.
+        """Add or replace a status/progress message component on the page.
 
         Args:
             content: Status message to display
@@ -165,8 +174,15 @@ class PageBase(PageBaseImpl, PageInterface):
         """
         from .component_wrappers import text_status
 
+        # Remove previous status component if it exists
+        if self._current_status_id is not None:
+            self.remove_element(self._current_status_id)
+            self._current_status_id = None
+
+        # Add new status component
         comp = text_status(content, status_type=status_type, **kwargs)
-        self._add_child(comp)
+        status_id = self._add_child(comp)
+        self._current_status_id = status_id
         return self
 
     def clear_screen(self) -> None:
@@ -338,15 +354,22 @@ class PageBase(PageBaseImpl, PageInterface):
         # Render header only on first call
         if self.title and not self._header_rendered:
             print("=" * 60)
-            print(f"📄 [PAGE] {self.title}")
+            if is_debug_mode():
+                print(f"📄 [PAGE] {self.title}")
+            else:
+                print(self.title)
             print("=" * 60)
             self._header_rendered = True
         
-        # Build component lines
+        # Build component lines using proper get_render_lines method
         component_lines = []
         for component in self.components.values():
-            if getattr(component, 'visible', True):
-                component_lines.extend(self._get_component_lines(component))
+            if hasattr(component, 'get_render_lines') and callable(getattr(component, 'get_render_lines')):
+                # Use the component's get_render_lines which handles visibility internally
+                child_lines = component.get_render_lines()  # type: ignore
+                component_lines.extend(child_lines)
+                if child_lines:  # Add spacing between visible elements
+                    component_lines.append("")
         
         # For incremental refresh mode
         if hasattr(self, '_safe_incremental') and self._safe_incremental:

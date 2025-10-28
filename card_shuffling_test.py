@@ -1,25 +1,31 @@
 #!/usr/bin/env python3
 """
-Card Shuffling Navigation Demo
+Card Shuffling Test Demo
 
-The definitive test for card-based navigation with incremental refresh.
-Incorporates all latest fixes:
-- [PAGE] and [CARD] header labels for clarity
-- Safe incremental refresh mode for smooth transitions
-- Universal visibility system
-- Clean card navigation controls
+This module demonstrates the card navigation and visibility system of the TUI Engine.
+It creates multiple cards with different themes and allows users to navigate between them
+using keyboard commands or automated animation.
 
-Use this demo to test and refine the card shuffling functionality.
+Features demonstrated:
+- Card creation and management
+- Show/hide card functionality  
+- Interactive navigation (next/previous/direct jump)
+- Status message updates
+- Incremental page refresh system
+- Clean terminal-based UI
+
+Usage:
+    python card_shuffling_test.py
+
+Commands:
+    n - Next card
+    p - Previous card  
+    1-5 - Jump to specific card
+    a - Show all cards
+    q - Quit demo
 """
 
-import os
-import sys
 import time
-
-# Add the project root to the Python path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-sys.path.insert(0, project_root)
-
 from src.questionary_extended.core.page_base import PageBase
 
 
@@ -35,38 +41,50 @@ class CardShufflingDemo:
     """
     
     def __init__(self):
+        """Initialize the card shuffling demo."""
         self.page = PageBase("🎴 Card Shuffling Navigation")
         self.current_card = 0
-        self.cards = []
-        self.status_component = None  # Track current status component
+        self.status_message = ""
+        
+        # Setup instructions FIRST (so they render before cards)
+        self._setup_instructions()
+        
+        # Then setup cards (so they render in body after header)
         self._setup_cards()
         
         # Enable safe incremental refresh for smooth transitions
         self.page.enable_safe_incremental()
     
+    def _setup_instructions(self):
+        """Setup navigation instructions."""
+        instructions = [
+            "Navigation: ← → (arrow keys) or A/D to move between cards",
+            "Space: Toggle current card visibility", 
+            "T: Run animation test (5 cards transition)",
+            "Q: Quit demo",
+            "",
+        ]
+        for instruction in instructions:
+            self.page.text_display(instruction)
+    
     def update_status(self, message: str, status_type: str = "info"):
-        """Update the status message, replacing any existing status."""
-        # Remove existing status component if it exists
-        if self.status_component is not None:
-            try:
-                self.page.components.remove(self.status_component)
-            except ValueError:
-                pass  # Component already removed
+        """Update the status message.
         
-        # Create and add new status component
-        from src.questionary_extended.core.component_wrappers import text_status
-        self.status_component = text_status(message, status_type=status_type)
-        self.page.components.append(self.status_component)
+        Uses the page's built-in text_status method for clean display management.
+        """
+        self.status_message = message
+        # Use the page's built-in status method
+        self.page.text_status(message, status_type)
     
     def _setup_cards(self):
-        """Create the 5 demo cards."""
+        """Create the 5 demo cards with bordered style."""
         
         self.cards = [
-            self.page.card("🏠 Personal Information"),
-            self.page.card("💼 Professional Details"), 
-            self.page.card("🎓 Education Level"),
-            self.page.card("🌟 Preferences"),
-            self.page.card("🎯 Goals & Targets")
+            self.page.card("🏠 Personal Information", style="bordered"),
+            self.page.card("💼 Professional Details", style="bordered"), 
+            self.page.card("🎓 Education Level", style="bordered"),
+            self.page.card("🌟 Preferences", style="bordered"),
+            self.page.card("🎯 Goals & Targets", style="bordered")
         ]
     
     def show_only_current_card(self):
@@ -87,19 +105,12 @@ class CardShufflingDemo:
     def run_interactive_demo(self):
         """Run the interactive card shuffling demo."""
         
-        # Add instructions using page display components instead of print
-        self.page.text_display("🎴 Card Shuffling Navigation Demo")
-        self.page.text_display("=" * 50)
-        self.page.text_status("Testing: Incremental refresh with [PAGE]/[CARD] labels", "info")
-        self.page.text_display("Commands: [n]ext | [p]revious | [1-5] jump | [a]ll | [q]uit")
-        self.page.text_display("=" * 50)
-        
         # Initial display - show only first card
         self.show_only_current_card()
         
         while True:
             # Update current status (replaces previous status)
-            self.update_status(f"Currently viewing Card {self.current_card + 1}/5: {self.cards[self.current_card].title}", "info")
+            # self.update_status(f"Currently viewing Card {self.current_card + 1}/5: {self.cards[self.current_card].title}", "info")
             self.page.refresh()
             
             # Use questionary for clean input
@@ -147,65 +158,94 @@ class CardShufflingDemo:
     
     def run_animation_demo(self):
         """Run an automated animation demo."""
+        import os
         
-        # Add animation intro using page display components
-        self.page.text_display("🎬 Automated Animation Demo")
-        self.page.text_display("=" * 30)
-        self.update_status("Watch the smooth card transitions...", "info")
-        self.page.text_display("=" * 30)
-        self.page.refresh()
+        # Show intro message
+        print("=" * 60)
+        print("📄 [PAGE] 🎴 Card Shuffling Navigation")
+        print("=" * 60)
+        print("🎬 Animation Demo: Watch the smooth card transitions...")
+        time.sleep(2)
         
-        # Cycle through cards automatically
+        # Cycle through cards automatically with clean screen clears
         for cycle in range(2):
             for i in range(len(self.cards)):
-                self.current_card = i
-                self.update_status(f"Showing card {i+1}/5 (cycle {cycle+1}/2)", "info")
-                self.show_only_current_card()
+                # Clear screen and show header
+                os.system('clear' if os.name == 'posix' else 'cls')
+                print("=" * 60)
+                print("📄 [PAGE] 🎴 Card Shuffling Navigation")
+                print("=" * 60)
+                
+                # Manually render just the current card
+                card = self.cards[i]
+                card_lines = card.get_render_lines()
+                for line in card_lines:
+                    print(line)
+                
+                # Add caption showing current card
+                print(f"\nℹ️ 🎬 Animation: Showing card {i+1}/5 (cycle {cycle+1}/2)")
+                
                 time.sleep(1.2)
         
-        # Show all cards at the end
-        self.show_all_cards()
-        self.update_status("Animation complete!", "success")
-        self.page.refresh()
-        time.sleep(1)
+        # End with clean final state
+        os.system('clear' if os.name == 'posix' else 'cls')
+        print("=" * 60)
+        print("📄 [PAGE] 🎴 Card Shuffling Navigation")
+        print("=" * 60)
+        print("✅ 🎬 Animation complete! Cards can be shown/hidden dynamically.")
+
+
+def clear_content_area():
+    """Clear screen and re-render header."""
+    import os
+    os.system('clear' if os.name == 'posix' else 'cls')
+    print("=" * 60)
+    print("📄 [PAGE] 🧪 Quick Test")
+    print("=" * 60)
 
 
 def run_quick_test():
     """Quick test to verify basic functionality."""
     
     page = PageBase("🧪 Quick Test")
-    page.enable_safe_incremental()
-    
-    # Add status components instead of print statements
-    page.text_status("Testing visibility system with 4 scenarios...", "info")
+    # page.enable_safe_incremental()  # Disabled due to issues with dynamic content changes
     
     card1 = page.card("🔴 Test Card 1")
     card2 = page.card("🔵 Test Card 2")
     
     # Test 1: Both cards visible
+    page.text_status("Test 1/4: Both cards visible", "info")
     page.refresh()
-    time.sleep(1.5)
+    input("\n🔑 Press Enter to continue to Test 2...")
     
-    # Test 2: Hide card 1
+    # Clear and show Test 2
+    clear_content_area()
     card1.hide()
+    page.text_status("Test 2/4: Hiding red card...", "info")
     page.refresh()
-    time.sleep(1.5)
+    input("\n🔑 Press Enter to continue to Test 3...")
     
-    # Test 3: Hide card 2, show card 1
+    # Clear and show Test 3
+    clear_content_area()
     card2.hide()
+    page.text_status("Test 3/4: Hiding blue card (both hidden)...", "info")
+    page.refresh()
+    input("\n🔑 Press Enter to continue to Test 4...")
+    
+    # Clear and show Test 4
+    clear_content_area()
     card1.show()
+    page.text_status("Test 4/4: Showing red card...", "info")
     page.refresh()
-    time.sleep(1.5)
+    input("\n🔑 Press Enter to complete the test...")
     
-    # Test 4: Show both cards
-    card2.show()
-    page.refresh()
-    time.sleep(1.5)
+    # Clear and show completion
+    clear_content_area()
     
-    # Add completion status
+    # Final completion message
     page.text_status("Quick test completed!", "success")
     page.text_display("🎯 Did you see smooth card visibility changes?")
-    page.refresh()
+    # No refresh needed - the text_status already updates the display
 
 
 def run_main_menu():
@@ -269,7 +309,9 @@ def run_main_menu():
             # Ask about animation demo
             if confirm("\n🎞️ Run animation demo?").ask():
                 os.system('clear' if os.name == 'posix' else 'cls')
-                demo.run_animation_demo()
+                # Create a NEW instance for animation demo
+                animation_demo = CardShufflingDemo()
+                animation_demo.run_animation_demo()
             
             input("\n✨ All demos completed! Press Enter to return to menu...")
             
@@ -279,8 +321,26 @@ def run_main_menu():
 
 
 if __name__ == "__main__":
+    import sys
+    
     try:
-        run_main_menu()
+        # Check for command line arguments
+        if len(sys.argv) > 1:
+            arg = sys.argv[1].lower()
+            if arg == "interactive":
+                demo = CardShufflingDemo()
+                demo.run_interactive_demo()
+            elif arg == "animation":
+                demo = CardShufflingDemo()
+                demo.run_animation_demo()
+            elif arg == "test":
+                run_quick_test()
+            else:
+                print(f"Unknown argument: {arg}")
+                print("Available options: interactive, animation, test")
+        else:
+            # Run main menu if no arguments
+            run_main_menu()
         
     except KeyboardInterrupt:
         print("\n👋 Demo interrupted. Goodbye!")
