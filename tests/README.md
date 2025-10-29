@@ -38,15 +38,17 @@ tree (which can pull heavy third-party dependencies or trigger side effects).
 
 ## Examples
 
-Load `src/questionary_extended/utils.py` as a standalone module and use it in a
+
+Load `src/tui_engine/utils.py` as a standalone module and use it in a
 test:
 
 ```python
 from tests.helpers.test_helpers import load_module_from_path, _find_repo_root
 
+
 repo_root = _find_repo_root()
-utils_path = str(repo_root / "src" / "questionary_extended" / "utils.py")
-mod = load_module_from_path("questionary_extended._file_utils", utils_path)
+utils_path = str(repo_root / "src" / "tui_engine" / "utils.py")
+mod = load_module_from_path("tui_engine._file_utils", utils_path)
 
 # Now call functions defined in the file
 assert hasattr(mod, "format_number")
@@ -57,7 +59,8 @@ Skip a test when a file is intentionally excluded from coverage:
 ```python
 from tests.helpers.test_helpers import skip_if_coverage_excluded
 
-skip_if_coverage_excluded("src/questionary_extended/prompts.py")
+# skip_if_coverage_excluded("src/tui_engine/prompts.py")
+skip_if_coverage_excluded("src/tui_engine/prompts.py")
 # test body will be skipped if prompts.py contains COVERAGE_EXCLUDE
 ```
 
@@ -89,4 +92,4 @@ Also see `docs/TESTING_IMPORTS.md` for the repository-wide policy on how to
 mock `questionary` and how production code should resolve the dependency.
 Prefer the `tests/conftest_questionary.setup_questionary_mocks()` helper in
 tests — it inserts a fake into `sys.modules` and sets the runtime cache used
-by modules that call `questionary_extended._runtime.get_questionary()`.
+by modules that call the runtime connector.

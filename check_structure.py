@@ -39,14 +39,14 @@ def check_directory_structure():
 
     # Source structure
     src_files = [
-        (root / "src" / "questionary_extended" / "__init__.py", "Package init"),
-        (root / "src" / "questionary_extended" / "py.typed", "Type annotations marker"),
-        (root / "src" / "questionary_extended" / "prompts.py", "Core prompts"),
-        (root / "src" / "questionary_extended" / "components.py", "UI components"),
-        (root / "src" / "questionary_extended" / "validators.py", "Input validators"),
-        (root / "src" / "questionary_extended" / "styles.py", "Theming system"),
-        (root / "src" / "questionary_extended" / "utils.py", "Utility functions"),
-        (root / "src" / "questionary_extended" / "cli.py", "CLI interface"),
+    (root / "src" / "tui_engine" / "__init__.py", "Package init"),
+    (root / "src" / "tui_engine" / "py.typed", "Type annotations marker"),
+    (root / "src" / "tui_engine" / "prompts.py", "Core prompts"),
+    (root / "src" / "tui_engine" / "components.py", "UI components"),
+    (root / "src" / "tui_engine" / "validators.py", "Input validators"),
+    (root / "src" / "tui_engine" / "styles.py", "Theming system"),
+    (root / "src" / "tui_engine" / "utils.py", "Utility functions"),
+    (root / "src" / "tui_engine" / "cli.py", "CLI interface"),
     ]
 
     # Test structure

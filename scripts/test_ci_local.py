@@ -57,7 +57,7 @@ def test_workflow():
 
     # Run tests
     run_command(
-        f'"{sys.executable}" -m pytest --cov=questionary_extended --cov-report=xml --cov-report=term-missing --cov-report=html',
+        f'"{sys.executable}" -m pytest --cov=src/tui_engine --cov-report=xml --cov-report=term-missing --cov-report=html',
         "Running tests with coverage",
     )
 
@@ -151,7 +151,7 @@ def performance_workflow():
     import_test = """
 import time
 start = time.perf_counter()
-import questionary_extended
+import tui_engine
 end = time.perf_counter()
 print(f"Import time: {(end - start) * 1000:.2f}ms")
 """

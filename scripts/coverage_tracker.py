@@ -36,7 +36,8 @@ def analyze_coverage_gaps(coverage_data: Dict) -> List[Dict]:
     gaps = []
 
     for file_path, file_data in files.items():
-        if not file_path.startswith("src/questionary_extended"):
+        # Only consider files within the new core package
+        if not file_path.startswith("src/tui_engine"):
             continue
 
         coverage_percent = file_data["summary"]["percent_covered"]
@@ -68,11 +69,11 @@ def track_coverage_history():
     entry = {
         "timestamp": datetime.datetime.now().isoformat(),
         "total_coverage": coverage_data["totals"]["percent_covered"],
-        "files_count": len(
+                "files_count": len(
             [
                 f
                 for f in coverage_data["files"]
-                if f.startswith("src/questionary_extended")
+                if f.startswith("src/tui_engine")
             ]
         ),
         "commit_hash": get_git_hash(),

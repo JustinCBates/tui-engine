@@ -1,0 +1,525 @@
+"""PTKAdapter skeleton for Phase A/B.
+
+This module provides a minimal ApplicationWrapper that will use prompt_toolkit
+if available, but falls back to a headless/dummy implementation for CI and
+headless unit tests. The PTKAdapter.build_layout() currently returns a
+lightweight layout summary (a nested dict) that describes the domain tree.
+Phase B will extend build_layout to produce prompt-toolkit containers.
+"""
+from typing import Any, Optional, Dict, List
+import asyncio
+from tui_engine.focus import FocusRegistry
+from tui_engine.ptk_widget_factory import map_element_to_widget
+
+
+class ApplicationWrapper:
+    """Small wrapper around prompt-toolkit Application; falls back to a dummy.
+
+    API intentionally minimal: run(), stop(), invalidate(), create_background_task().
+    """
+
+    def __init__(self, app: Optional[Any] = None):
+        # app may be a real prompt_toolkit Application or None
+        self._app = app
+        # background loop used when no running event loop is present
+        self._bg_loop = None
+        self._bg_thread = None
+        # expose a public hook so tests can inject a real_app without touching
+        # private attributes
+        self._real_app = None
+
+    def run(self, *args, **kwargs):
+        if self._app is not None:
+            try:
+                return self._app.run(*args, **kwargs)
+            except Exception:
+                return None
+        # headless no-op
+        return None
+
+    def stop(self):
+        if self._app is not None:
+            return self._app.exit()
+
+    def invalidate(self):
+        if self._app is not None:
+            try:
+                self._app.invalidate()
+            except Exception:
+                pass
+        # headless: no-op
+
+    def create_background_task(self, coro):
+        # If there's a running loop in this thread, schedule on it.
+        try:
+            loop = asyncio.get_running_loop()
+            return loop.create_task(coro)
+        except RuntimeError:
+            # No running loop in this thread; ensure a background loop is running
+            try:
+                return asyncio.run_coroutine_threadsafe(coro, self._ensure_background_loop())
+            except Exception:
+                # As a final fallback try to start a temporary loop to run the coro
+                loop2 = asyncio.new_event_loop()
+                try:
+                    return loop2.run_until_complete(coro)
+                finally:
+                    try:
+                        loop2.close()
+                    except Exception:
+                        pass
+
+    def _ensure_background_loop(self):
+        """Start a background event loop in a thread and return it."""
+        if self._bg_loop is not None:
+            return self._bg_loop
+
+        import threading
+
+        loop = asyncio.new_event_loop()
+        self._bg_loop = loop
+
+        def _run():
+            try:
+                asyncio.set_event_loop(loop)
+                loop.run_forever()
+            except Exception:
+                pass
+
+        t = threading.Thread(target=_run, daemon=True)
+        t.start()
+        self._bg_thread = t
+        return loop
+
+    def register_application(self, container, key_bindings=None, full_screen: bool = False):
+        """If prompt_toolkit is available, create a real Application instance.
+
+        This is a best-effort method: it constructs a prompt_toolkit Application
+        using the provided container and key_bindings. If prompt_toolkit is not
+        available, this is a no-op.
+        """
+        try:
+            from prompt_toolkit.application import Application
+            from prompt_toolkit.layout import Layout
+
+            app = Application(layout=Layout(container), full_screen=full_screen, key_bindings=key_bindings)
+            self._app = app
+            self._real_app = app
+            self._key_bindings = key_bindings
+            self._container = container
+            return True
+        except Exception:
+            return False
+
+    def register_keybinding(self, key: str, handler, filter=None):
+        """Register a keybinding if prompt_toolkit is available; otherwise no-op.
+
+        The handler signature is `handler(event)` following prompt_toolkit.
+        """
+        # If a key_bindings object has been injected, use it (DI-friendly)
+        if hasattr(self, "_key_bindings") and self._key_bindings is not None:
+            kb = self._key_bindings
+        else:
+            try:
+                from prompt_toolkit.key_binding import KeyBindings
+                kb = KeyBindings()
+                self._key_bindings = kb
+            except Exception:
+                return False
+
+        if filter is not None:
+            kb.add(key, filter=filter)(handler)
+        else:
+            kb.add(key)(handler)
+
+        # If we already have a constructed Application, try updating it.
+        try:
+            if hasattr(self, "_real_app") and self._real_app is not None:
+                # Reconstructing the application with new key_bindings is safer;
+                # if the application exposes a public API to add bindings in-place
+                # we would prefer that. For now we attach to the stored key_bindings
+                # and rely on consumers to call register_application again if needed.
+                pass
+        except Exception:
+            pass
+        return True
+
+    def set_real_app(self, app: Any) -> None:
+        """Dependency-injection helper: set the real prompt-toolkit Application
+        instance that the wrapper should use. This avoids tests touching
+        underscore attributes directly.
+        """
+        self._real_app = app
+        self._app = app
+
+    def set_key_bindings(self, kb: Any) -> None:
+        """Dependency-injection helper to set a key_bindings object for tests
+        to drive register_keybinding without importing prompt-toolkit.
+        """
+        self._key_bindings = kb
+
+    def register_ctrlc(self, handler):
+        """Best-effort register a Ctrl-C handler.
+
+        If prompt-toolkit is available this registers a keybinding for Ctrl-C.
+        Otherwise this method is a no-op to avoid changing process signal
+        handlers in library code during tests.
+        """
+        try:
+            # prompt-toolkit common binding name is 'c-c'
+            return self.register_keybinding('c-c', handler)
+        except Exception:
+            return False
+
+
+class PTKAdapter:
+    """Adapter that maps domain tree -> representation used by prompt-toolkit.
+
+    For now `build_layout` returns a nested dict describing the structure so
+    tests can assert on it without needing a terminal or prompt_toolkit.
+    """
+
+    def __init__(self, page: Any, page_state: Any, events: Any, app: Optional[ApplicationWrapper] = None):
+        self.page = page
+        self.page_state = page_state
+        self.events = events
+        self.app = app or ApplicationWrapper()
+        self.cached_visibility: Dict[str, bool] = {}
+        self.dependency_map: Dict[str, set] = {}
+        # focus registry tracks focusable element paths and traverses them
+        self.focus_registry = FocusRegistry()
+        self._invalidate_scheduled = False
+        # attempt to wire default focus keybindings (best-effort)
+        try:
+            self._setup_focus_keybindings()
+        except Exception:
+            # ignore failures in headless/no-ptk environments
+            pass
+        # mapping from element.path -> real prompt-toolkit widget (when created)
+        self._path_to_widget = {}
+        # mapping from element.path -> callable that will sync widget -> element
+        # typically the callable is the widget._tui_sync attached by the
+        # widget factory. Stored so adapter can call sync on accept/focus-change.
+        self._path_to_sync = {}
+
+    def build_layout(self, root: Any) -> Dict[str, Any]:
+        """Return a headless layout summary (nested dict) for the given root element.
+
+        The returned structure is intentionally small and stable for tests:
+        { 'type': 'container'|'leaf', 'name': str, 'variant': str, 'children': [...] }
+        """
+
+        def walk(node: Any) -> Dict[str, Any]:
+            # detect container by presence of 'children' attribute
+            if hasattr(node, 'children'):
+                children = []
+                for c in getattr(node, 'children', []):
+                    if not getattr(c, 'visible', True):
+                        continue
+                    # register focusable children in the registry for traversal
+                    if getattr(c, 'focusable', False):
+                        try:
+                            self.focus_registry.register(c)
+                        except Exception:
+                            pass
+                    children.append(walk(c))
+                return {
+                    'type': 'container',
+                    'name': getattr(node, 'name', ''),
+                    'variant': getattr(node, 'variant', ''),
+                    'children': children,
+                }
+            else:
+                # register leaf if focusable
+                if getattr(node, 'focusable', False):
+                    try:
+                        self.focus_registry.register(node)
+                    except Exception:
+                        pass
+                return {
+                    'type': 'leaf',
+                    'name': getattr(node, 'name', ''),
+                    'variant': getattr(node, 'variant', ''),
+                }
+
+        return walk(root)
+
+    def wrap_with_visibility(self, container: Any, path: str):
+        # Phase B: return a ConditionalContainer bound to cached_visibility[path]
+        return container
+
+    def register_dependencies(self, path: str, keys):
+        for k in keys:
+            self.dependency_map.setdefault(k, set()).add(path)
+
+    def handle_state_change(self, changed_keys: List[str]):
+        # Phase B will recompute affected visibility and call mount/unmount hooks
+        affected = set()
+        for k in changed_keys:
+            affected.update(self.dependency_map.get(k, ()))
+        return list(affected)
+
+    def _schedule_invalidate(self):
+        if not self._invalidate_scheduled:
+            self._invalidate_scheduled = True
+            # coalesce to next loop tick
+            async def _do():
+                await asyncio.sleep(0)
+                self._invalidate_scheduled = False
+                try:
+                    self.app.invalidate()
+                except Exception:
+                    pass
+            try:
+                self.app.create_background_task(_do())
+            except Exception:
+                # no loop available — call invalidate synchronously
+                try:
+                    self.app.invalidate()
+                except Exception:
+                    pass
+    def _setup_focus_keybindings(self):
+        """Register Tab and Shift-Tab to move focus via the FocusRegistry.
+
+        This is a best-effort helper: if ApplicationWrapper can't register
+        keybindings (no prompt_toolkit available), it silently does nothing.
+        """
+
+        def _on_tab(event=None):
+            try:
+                # sync the currently-focused widget before moving focus
+                self._sync_focused_widget()
+            except Exception:
+                pass
+            try:
+                self.focus_registry.focus_next()
+            except Exception:
+                pass
+            try:
+                self.app.invalidate()
+            except Exception:
+                pass
+
+        def _on_shift_tab(event=None):
+            try:
+                # sync before moving focus back
+                self._sync_focused_widget()
+            except Exception:
+                pass
+            try:
+                self.focus_registry.focus_prev()
+            except Exception:
+                pass
+            try:
+                self.app.invalidate()
+            except Exception:
+                pass
+
+        # try common key names; register_keybinding is best-effort
+        try:
+            self.app.register_keybinding('tab', _on_tab)
+        except Exception:
+            pass
+        try:
+            # common representation for Shift+Tab in prompt_toolkit
+            self.app.register_keybinding('s-tab', _on_shift_tab)
+        except Exception:
+            # fallback name
+            try:
+                self.app.register_keybinding('shift+tab', _on_shift_tab)
+            except Exception:
+                pass
+        # Also register an 'enter' (accept) binding to trigger sync for the
+        # current focused widget. This is best-effort and will no-op in
+        # headless environments.
+        try:
+            def _on_enter(event=None):
+                try:
+                    self._sync_focused_widget()
+                except Exception:
+                    pass
+            self.app.register_keybinding('enter', _on_enter)
+        except Exception:
+            pass
+
+    def _sync_focused_widget(self):
+        """Call the registered _tui_sync callable for the currently-focused element, if any."""
+        try:
+            focused = self.focus_registry.get_focused()
+            if not focused:
+                return
+            sync = self._path_to_sync.get(focused)
+            if sync is None:
+                # No registered sync callable for this path
+                return
+            try:
+                # Some sync callables will update the element directly. Others
+                # may return a value which we should write back to the domain
+                # element. Support both behaviors for robustness.
+                ret = sync()
+                if ret is not None:
+                    # find the element in the page tree and write the value
+                    elem = self._find_element_by_path(focused)
+                    if elem is not None:
+                        try:
+                            if hasattr(elem, 'set_value'):
+                                elem.set_value(ret)
+                            else:
+                                setattr(elem, '_value', ret)
+                            try:
+                                elem.mark_dirty()
+                            except Exception:
+                                pass
+                            # optional on_change handler
+                            try:
+                                handler = getattr(elem, 'on_change', None)
+                                if callable(handler):
+                                    handler(ret)
+                            except Exception:
+                                pass
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+    def _find_element_by_path(self, path: str):
+        """Walk the page tree to find the element with the given dotted path."""
+        try:
+            root = self.page
+            if root is None or path is None:
+                return None
+
+            # fast path: root has path matching
+            if getattr(root, 'path', None) == path:
+                return root
+
+            def walk(node):
+                if getattr(node, 'path', None) == path:
+                    return node
+                if hasattr(node, 'children'):
+                    for c in getattr(node, 'children', []):
+                        res = walk(c)
+                        if res is not None:
+                            return res
+                return None
+
+            return walk(root)
+        except Exception:
+            return None
+
+    def register_widget_mapping(self, path: str, widget: Any) -> None:
+        """Record mapping between domain element path and a real PTK widget.
+
+        This allows the adapter to transfer keyboard focus from the FocusRegistry
+        to the prompt-toolkit layout when available.
+        """
+        if path is None or widget is None:
+            return
+        try:
+            self._path_to_widget[path] = widget
+        except Exception:
+            pass
+
+    def _apply_focus_to_ptk(self):
+        """If a real Application exists and we have a widget mapped for the
+        currently-focused element path, focus that widget in the PTK layout.
+        """
+        try:
+            focused = self.focus_registry.get_focused()
+            if not focused:
+                return
+            widget = self._path_to_widget.get(focused)
+            if widget is None:
+                return
+            # If ApplicationWrapper has a real app, try to set focus
+            if hasattr(self.app, "_real_app") and getattr(self.app, "_real_app") is not None:
+                try:
+                    app = getattr(self.app, "_real_app")
+                    # Some prompt-toolkit apps provide layout.focus(widget)
+                    if hasattr(app, "layout") and hasattr(app.layout, "focus"):
+                        app.layout.focus(widget)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    def build_real_layout(self, root: Any):
+        """Attempt to build a real prompt-toolkit layout from the domain tree.
+
+        Returns the root prompt-toolkit container when successful, or None if
+        prompt-toolkit is not available. This is best-effort and will not raise
+        if prompt-toolkit is absent.
+        """
+        try:
+            from prompt_toolkit.layout.containers import HSplit, VSplit, Window
+            from prompt_toolkit.layout.controls import FormattedTextControl
+        except Exception:
+            return None
+
+        def build(node: Any):
+            # container
+            if hasattr(node, 'children'):
+                widgets = []
+                for c in getattr(node, 'children', []):
+                    if not getattr(c, 'visible', True):
+                        continue
+                    w = build(c)
+                    if w is not None:
+                        widgets.append(w)
+                if getattr(node, 'layout_hint', 'vertical') == 'horizontal':
+                    return VSplit(widgets)
+                return HSplit(widgets)
+
+            # leaf
+            desc = map_element_to_widget(node)
+            w = desc.get('ptk_widget')
+            if w is None:
+                text = desc.get('text') or desc.get('value') or desc.get('label') or ''
+                w = Window(content=FormattedTextControl(text))
+
+            # register mapping from element path to widget for focus transfer
+            try:
+                path = getattr(node, 'path', None)
+                if path is not None:
+                    self.register_widget_mapping(path, w)
+                    # If the widget exposes a _tui_sync callable, record it so
+                    # the adapter can invoke it on accept or when focus
+                    # changes. Also call it once to ensure initial widget ->
+                    # element state synchronization.
+                    try:
+                        if hasattr(w, '_tui_sync'):
+                            self._path_to_sync[path] = getattr(w, '_tui_sync')
+                            try:
+                                w._tui_sync()
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            return w
+
+        root_container = build(root)
+
+        # register Application with prompt-toolkit if possible
+        try:
+            keyb = getattr(self.app, '_key_bindings', None)
+            self.app.register_application(root_container, key_bindings=keyb, full_screen=True)
+        except Exception:
+            pass
+
+        # register Ctrl-C to stop the app (best-effort)
+        try:
+            self.app.register_ctrlc(lambda event=None: self.app.stop())
+        except Exception:
+            pass
+
+        # apply focus mapping to real app if available
+        try:
+            self._apply_focus_to_ptk()
+        except Exception:
+            pass
+
+        return root_container

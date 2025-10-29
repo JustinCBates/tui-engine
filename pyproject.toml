@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "questionary-extended"
+name = "tui-engine"
 version = "0.1.0"
 description = "Advanced extensions for the questionary CLI prompt library"
 readme = "README.md"
@@ -36,6 +36,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
+    # keep questionary as a runtime dependency if consumers use it directly
     "questionary>=2.0.1",
     "prompt-toolkit>=3.0.43",
     "rich>=13.7.0",
@@ -101,7 +102,7 @@ Documentation = "https://justincbates.github.io/tui-engine"
 Changelog = "https://github.com/JustinCBates/tui-engine/blob/main/CHANGELOG.md"
 
 [project.scripts]
-qext = "questionary_extended.cli:main"
+qext = "tui_engine.cli:main"
 
 # Tool configurations
 
@@ -128,7 +129,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["questionary_extended"]
+known-first-party = ["tui_engine"]
 
 [tool.black]
 line-length = 88
@@ -152,7 +153,7 @@ extend-exclude = '''
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["questionary_extended"]
+known_first_party = ["tui_engine"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -172,7 +173,7 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 # A+ Grade: Enforce 85% coverage minimum with comprehensive reporting
-addopts = "--cov=src --cov-report=html --cov-report=term-missing --cov-report=json --cov-fail-under=85 --tb=short"
+addopts = "--cov=src/tui_engine --cov-report=html --cov-report=term-missing --cov-report=json --cov-fail-under=85 --tb=short"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
@@ -181,7 +182,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src/questionary_extended"]
+source = ["src/tui_engine"]
 omit = [
     "*/tests/*", 
     "*/test_*.py",

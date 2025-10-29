@@ -142,7 +142,7 @@ pre-commit run --all-files
 ruff check src/ tests/
 black --check src/ tests/
 mypy src/
-pytest --cov=questionary_extended
+pytest --cov=src/tui_engine
 bandit -r src/
 safety check
 ```

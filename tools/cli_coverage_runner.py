@@ -1,4 +1,4 @@
-"""Non-interactive runner to exercise questionary_extended.cli for coverage.
+"""Non-interactive runner to exercise tui_engine.cli for coverage.
 
 This script patches the interactive prompt functions used by the CLI so the
 module's functions can be executed without user interaction. It's intended to
@@ -111,7 +111,11 @@ def _call_command(obj, *args, **kwargs):
 
 
 def main():
-    mod = importlib.import_module("questionary_extended.cli")
+    try:
+        mod = importlib.import_module("tui_engine.cli")
+    except Exception:
+        print("tui_engine.cli not importable; skipping cli coverage runner")
+        return
     _patch_module(mod)
 
     # Call the primary commands to execute their bodies
@@ -182,7 +186,7 @@ def main():
         sys.modules["questionary"] = fake_q
         # run module as __main__; ignore errors
         try:
-            runpy.run_module("questionary_extended.cli", run_name="__main__")
+            runpy.run_module("tui_engine.cli", run_name="__main__")
         except Exception:
             pass
     finally:

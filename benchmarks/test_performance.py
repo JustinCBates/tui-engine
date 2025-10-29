@@ -1,12 +1,12 @@
 """
-Performance benchmarks for questionary-extended.
+Performance benchmarks for tui-engine.
 
 Run with: pytest benchmarks/ --benchmark-json=benchmark-results.json
 """
 
 import pytest
 
-from questionary_extended import (
+from tui_engine import (
     EmailValidator,
     NumberValidator,
     enhanced_text,
@@ -87,7 +87,7 @@ class TestProgressTrackerPerformance:
         """Benchmark progress tracker update performance."""
 
         def progress_updates():
-            from questionary_extended import ProgressTracker
+            from tui_engine import ProgressTracker
 
             tracker = ProgressTracker("Benchmark Test", total_steps=100)
             with tracker:
@@ -143,7 +143,7 @@ class TestMemoryUsage:
         try:
             trackers = []
             for i in range(100):
-                from questionary_extended import ProgressTracker
+                from tui_engine import ProgressTracker
 
                 tracker = ProgressTracker(f"Test {i}", total_steps=10)
                 with tracker:

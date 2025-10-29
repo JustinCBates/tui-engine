@@ -1,1 +1,1 @@
-"""Tests for questionary_extended package."""
+"""Tests for tui_engine package."""

@@ -43,7 +43,7 @@ If you want different behavior (always upload logs, or change the artifact reten
 
 If you need changes to the logging format (structured fields, different redaction policy, or alternative storage), open an issue or a PR with proposed changes.
 
-# Questionary Extended
+# TUI Engine
 
 [![CI/CD Pipeline](https://github.com/JustinCBates/tui-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/JustinCBates/tui-engine/actions/workflows/ci.yml)
 [![Publish to PyPI](https://github.com/JustinCBates/tui-engine/actions/workflows/publish.yml/badge.svg)](https://github.com/JustinCBates/tui-engine/actions/workflows/publish.yml)
@@ -56,9 +56,9 @@ If you need changes to the logging format (structured fields, different redactio
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-🚀 **Advanced extensions for the questionary CLI prompt library**
+# TUI Engine is a headless-first terminal UI toolkit and adapter layer.
 
-Questionary Extended builds upon the excellent [questionary](https://github.com/tmbo/questionary) library to provide advanced input types, enhanced UI components, workflow management, and data integration features for building sophisticated command-line interfaces.
+TUI Engine provides a lightweight domain model for terminal UI elements and an optional prompt-toolkit renderer. It focuses on testability (headless descriptors), DI-friendly adapters, and a clean renderer adapter surface.
 
 ## ✨ Features
 
@@ -105,22 +105,21 @@ Questionary Extended builds upon the excellent [questionary](https://github.com/
 ### Installation
 
 ```bash
-pip install questionary-extended
+pip install tui-engine
 ```
 
 ### Basic Usage
 
 ```python
-import questionary_extended as qe
+import tui_engine as te
 
-# Advanced numeric input with validation
-age = qe.number(
-    "What's your age?",
-    min_value=0,
-    max_value=150,
-    step=1,
-    allow_float=False
-).ask()
+# Create a simple Page and render headless lines
+from tui_engine import Page
+
+p = Page("Demo")
+p.container('header','header').text('title','Demo Title')
+for line in p.root.get_render_lines():
+    print(line)
 
 # Date picker with smart validation
 birthday = qe.date(

@@ -1,0 +1,5 @@
+[PAGE] root
+  [HEADER] header
+    Adapter Title
+  [SECTION] body
+    Snapshot intro

@@ -4,7 +4,7 @@ include CHANGELOG.md
 include CONTRIBUTING.md
 include SECURITY.md
 include pyproject.toml
-recursive-include src/questionary_extended *.py
+recursive-include src/tui_engine *.py
 recursive-include tests *.py
 recursive-include examples *.py
 recursive-exclude * __pycache__

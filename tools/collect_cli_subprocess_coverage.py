@@ -1,7 +1,7 @@
 """Run the CLI module in a subprocess under coverage and combine the data.
 
 This helper is intended to be run from the repo root. It will:
-- run `coverage run --parallel-mode -m questionary_extended.cli` in a subprocess
+- run `coverage run --parallel-mode -m tui_engine.cli` in a subprocess
   (using the virtualenv python in the repo when available),
 - then run `coverage combine` and `coverage html` to merge with existing
   coverage data and regenerate the htmlcov report.
@@ -34,7 +34,7 @@ else:
 
 print("Running CLI in subprocess under coverage...")
 # Use parallel-mode so data files don't clobber pytest's coverage run
-run_cmd = cov_cmd + ["run", "--parallel-mode", "-m", "questionary_extended.cli"]
+run_cmd = cov_cmd + ["run", "--parallel-mode", "-m", "tui_engine.cli"]
 print(" ", " ".join(run_cmd))
 try:
     subprocess.check_call(run_cmd, cwd=REPO_ROOT)
