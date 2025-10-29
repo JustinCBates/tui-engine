@@ -296,6 +296,11 @@ class PTKAdapter:
             except Exception:
                 pass
             try:
+                # Apply the focus to the real prompt-toolkit layout (if any)
+                self._apply_focus_to_ptk()
+            except Exception:
+                pass
+            try:
                 self.app.invalidate()
             except Exception:
                 pass
@@ -308,6 +313,11 @@ class PTKAdapter:
                 pass
             try:
                 self.focus_registry.focus_prev()
+            except Exception:
+                pass
+            try:
+                # Apply focus to PTK layout after registry change
+                self._apply_focus_to_ptk()
             except Exception:
                 pass
             try:
@@ -329,16 +339,53 @@ class PTKAdapter:
                 self.app.register_keybinding('shift+tab', _on_shift_tab)
             except Exception:
                 pass
+        # As a fallback for environments where Tab is consumed by widgets
+        # (for example TextArea), register alternate bindings that are less
+        # likely to be intercepted: Ctrl-N / Ctrl-P for next/prev, and
+        # Ctrl-M as an additional Enter/accept binding. These are registered
+        # best-effort and won't break headless environments.
+        try:
+            self.app.register_keybinding('c-n', _on_tab)
+        except Exception:
+            pass
+        try:
+            self.app.register_keybinding('c-p', _on_shift_tab)
+        except Exception:
+            pass
+        # 'enter'/_on_enter registration is handled below; register additional
+        # alternate bindings afterwards where _on_enter is in scope.
         # Also register an 'enter' (accept) binding to trigger sync for the
         # current focused widget. This is best-effort and will no-op in
         # headless environments.
         try:
             def _on_enter(event=None):
                 try:
+                    # Sync widget value first
                     self._sync_focused_widget()
                 except Exception:
                     pass
+                try:
+                    # If the currently-focused element has an `on_click` handler,
+                    # call it (useful for buttons). This bridges keyboard Enter
+                    # to element-level actions.
+                    focused = self.focus_registry.get_focused()
+                    if focused:
+                        elem = self._find_element_by_path(focused)
+                        if elem is not None:
+                            handler = getattr(elem, 'on_click', None)
+                            if callable(handler):
+                                try:
+                                    handler()
+                                except Exception:
+                                    pass
+                except Exception:
+                    pass
             self.app.register_keybinding('enter', _on_enter)
+            # Also register Ctrl-M as an alternate Enter/accept binding
+            try:
+                self.app.register_keybinding('c-m', _on_enter)
+            except Exception:
+                pass
         except Exception:
             pass
 
