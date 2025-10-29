@@ -14,6 +14,37 @@ except Exception:
     TextArea = None  # type: ignore
     _PTK_AVAILABLE = False
 
+try:
+    # Import the TextInputAdapter wrapper so the factory can return a
+    # consistent wrapper instance when prompt-toolkit is available.
+    from tui_engine.widgets.text_input_adapter import TextInputAdapter  # type: ignore
+except Exception:
+    TextInputAdapter = None  # type: ignore
+
+try:
+    # Import ButtonAdapter wrapper if present
+    from tui_engine.widgets.button_adapter import ButtonAdapter  # type: ignore
+except Exception:
+    ButtonAdapter = None  # type: ignore
+
+try:
+    from tui_engine.widgets.radio_list_adapter import RadioListAdapter  # type: ignore
+except Exception:
+    RadioListAdapter = None  # type: ignore
+
+try:
+    from tui_engine.widgets.checkbox_list_adapter import CheckboxListAdapter  # type: ignore
+except Exception:
+    CheckboxListAdapter = None  # type: ignore
+
+# Compatibility shims: prefer using our shim helpers which will return a real
+# prompt-toolkit widget when available, or a tiny fallback otherwise.
+try:
+    from tui_engine.compat import maybe_checkboxlist, maybe_radiolist  # type: ignore
+except Exception:
+    maybe_checkboxlist = None  # type: ignore
+    maybe_radiolist = None  # type: ignore
+
 
 def _sync_widget_to_element(widget: Any, element: Any, variant: str) -> None:
     """Best-effort sync from a real prompt-toolkit widget into the domain element.
@@ -101,24 +132,71 @@ def map_element_to_widget(element: Any) -> Dict[str, Any]:
 
         if _PTK_AVAILABLE and Button is not None:
             try:
-                handler = None
-                if hasattr(element, 'on_click') and callable(getattr(element, 'on_click')):
-                    def _handler():
+                # Create raw button without binding so we can wrap it with
+                # the adapter and then attach an adapter-aware handler.
+                raw = Button(text=str(name), handler=None)
+
+                # Try to create an adapter wrapper around the raw widget
+                adapter = None
+                try:
+                    if ButtonAdapter is not None:
+                        adapter = ButtonAdapter(raw, element)
+                except Exception:
+                    adapter = None
+
+                # Apply runtime contract attributes to the underlying widget
+                try:
+                    setattr(raw, "_tui_path", path)
+                except Exception:
+                    pass
+                try:
+                    setattr(raw, "_tui_focusable", True)
+                except Exception:
+                    pass
+
+                # If element exposes an on_click, wire the raw handler to call
+                # adapter.click() (or element.on_click as a fallback).
+                try:
+                    if hasattr(element, 'on_click') and callable(getattr(element, 'on_click')):
+                        def _handler():
+                            try:
+                                if adapter is not None:
+                                    adapter.click()
+                                else:
+                                    try:
+                                        element.on_click()
+                                    except Exception:
+                                        pass
+                            except Exception:
+                                pass
+
                         try:
-                            element.on_click()
+                            setattr(raw, 'handler', _handler)
                         except Exception:
-                            pass
-                    handler = _handler
-                w = Button(text=str(name), handler=handler)
-                try:
-                    setattr(w, "_tui_path", path)
+                            # If attribute is read-only, attempt to wrap via
+                            # existing attribute names; ignore failures
+                            try:
+                                orig = getattr(raw, 'handler', None)
+                                def _wrap(*a, __orig=orig, **kw):
+                                    try:
+                                        if callable(__orig):
+                                            __orig(*a, **kw)
+                                    finally:
+                                        try:
+                                            _handler()
+                                        except Exception:
+                                            pass
+                                try:
+                                    setattr(raw, 'handler', _wrap)
+                                except Exception:
+                                    pass
+                            except Exception:
+                                pass
+
                 except Exception:
                     pass
-                try:
-                    setattr(w, "_tui_focusable", True)
-                except Exception:
-                    pass
-                desc["ptk_widget"] = w
+
+                desc["ptk_widget"] = adapter or raw
             except Exception:
                 desc["ptk_widget"] = None
         else:
@@ -129,18 +207,29 @@ def map_element_to_widget(element: Any) -> Dict[str, Any]:
     if variant == "input":
         value = getattr(element, "_value", None)
         desc.update({"type": "input", "value": value})
-        if _PTK_AVAILABLE and TextArea is not None:
+        # If prompt-toolkit is available and our adapter wrapper imported,
+        # construct a TextArea and wrap it with TextInputAdapter so the
+        # adapter surface is consistent for PTK-backed inputs.
+        if _PTK_AVAILABLE and TextArea is not None and TextInputAdapter is not None:
             try:
-                w = TextArea(text=str(value) if value is not None else "")
+                raw = TextArea(text=str(value) if value is not None else "")
+                # Create the wrapper around the real widget
                 try:
-                    setattr(w, "_tui_path", path)
+                    adapter = TextInputAdapter(raw)
+                except Exception:
+                    adapter = None
+
+                # Apply runtime contract attributes to the underlying widget
+                try:
+                    setattr(raw, "_tui_path", path)
                 except Exception:
                     pass
                 try:
-                    setattr(w, "_tui_focusable", True)
+                    setattr(raw, "_tui_focusable", True)
                 except Exception:
                     pass
-                desc["ptk_widget"] = w
+
+                desc["ptk_widget"] = adapter
             except Exception:
                 desc["ptk_widget"] = None
         else:
@@ -186,9 +275,27 @@ def map_element_to_widget(element: Any) -> Dict[str, Any]:
                 # remain stable.
                 if variant in ('select', 'radio'):
                     try:
-                        from prompt_toolkit.widgets import RadioList
+                        # Use shim helper which will return a real RadioList when
+                        # prompt-toolkit supports it, or a small fallback object.
+                        if maybe_radiolist is not None:
+                            raw = maybe_radiolist(norm)
+                        else:
+                            from prompt_toolkit.widgets import RadioList
+                            raw = RadioList(norm)
 
-                        w = RadioList(norm)
+                        # If the shim returned a fallback (it sets __ptk_repr__),
+                        # don't attempt to wrap it with an adapter that expects a
+                        # real prompt-toolkit widget — just use the fallback as-is.
+                        if hasattr(raw, "__ptk_repr__"):
+                            w = raw
+                        else:
+                            if RadioListAdapter is not None:
+                                try:
+                                    w = RadioListAdapter(raw, element)
+                                except Exception:
+                                    w = raw
+                            else:
+                                w = raw
                     except Exception:
                         from prompt_toolkit.layout.controls import FormattedTextControl
                         from prompt_toolkit.layout.containers import Window
@@ -200,9 +307,24 @@ def map_element_to_widget(element: Any) -> Dict[str, Any]:
                     # distribution. Not all versions expose it, so fall back
                     # to a simple Window representation when missing.
                     try:
-                        from prompt_toolkit.widgets import CheckboxList
+                        # Use shim helper for CheckboxList to handle PTK
+                        # distributions that don't export CheckboxList.
+                        if maybe_checkboxlist is not None:
+                            raw = maybe_checkboxlist(norm)
+                        else:
+                            from prompt_toolkit.widgets import CheckboxList
+                            raw = CheckboxList(norm)
 
-                        w = CheckboxList(norm)
+                        if hasattr(raw, "__ptk_repr__"):
+                            w = raw
+                        else:
+                            if CheckboxListAdapter is not None:
+                                try:
+                                    w = CheckboxListAdapter(raw, element)
+                                except Exception:
+                                    w = raw
+                            else:
+                                w = raw
                     except Exception:
                         from prompt_toolkit.layout.controls import FormattedTextControl
                         from prompt_toolkit.layout.containers import Window

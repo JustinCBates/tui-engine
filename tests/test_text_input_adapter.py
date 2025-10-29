@@ -3,40 +3,51 @@ import pytest
 from tui_engine.widgets.text_input_adapter import TextInputAdapter
 
 
-class FakeWidget:
-    def __init__(self, text=""):
-        self.text = text
+class _FakeWidget:
+    def __init__(self, initial: str = ""):
+        self.text = initial
+        self.focused = False
+
+    def focus(self):
+        self.focused = True
+
+    def __repr__(self):
+        return f"_FakeWidget(text={self.text!r})"
 
 
-def test_text_input_adapter_with_fake_widget():
-    fake = FakeWidget(text="hello")
-    adapter = TextInputAdapter(element=None, widget=fake)
+def test_fake_widget_get_set_and_sync():
+    w = _FakeWidget("hello")
+    adapter = TextInputAdapter(w)
 
-    # adapter should read initial text via _tui_sync
-    assert adapter._tui_sync() == "hello"
     assert adapter.get_value() == "hello"
 
-    # set value should update underlying widget and get_value
-    adapter.set_value('world')
-    assert fake.text == 'world'
-    assert adapter.get_value() == 'world'
+    adapter.set_value("world")
+    assert w.text == "world"
+
+    # sync should copy current widget text to _last_synced
+    adapter._tui_sync()
+    assert adapter._last_synced == "world"
+
+    # focus should call underlying focus
+    assert not w.focused
+    adapter.focus()
+    assert w.focused
 
 
-@pytest.mark.skipif(not hasattr(__import__('builtins'), '__name__') and True, reason="PTK optional test")
-def test_text_input_adapter_with_real_textarea_if_available():
-    # If prompt-toolkit is available this should construct a TextArea and operate
+def test_textarea_integration_if_available():
     try:
-        from tui_engine.widgets.text_input_adapter import _PTK_AVAILABLE
+        from prompt_toolkit.widgets import TextArea
     except Exception:
-        pytest.skip("adapter module missing")
+        pytest.skip("prompt_toolkit not available")
 
-    if not _PTK_AVAILABLE:
-        pytest.skip("prompt-toolkit not installed")
+    ta = TextArea(text="ptk")
+    adapter = TextInputAdapter(ta)
 
-    # construct adapter without a widget; it will create a real TextArea
-    adapter = TextInputAdapter(element=None, widget=None)
-    # set a value and ensure reading it back works
-    adapter.set_value('real')
-    val = adapter.get_value()
-    assert val is not None
-    assert 'real' in str(val)
+    assert adapter.get_value() == "ptk"
+
+    adapter.set_value("changed")
+    # Some TextArea implementations expose .text directly; buffer.text is also common
+    assert adapter.get_value() in ("changed", "changed\n", "changed\r\n")
+
+    adapter._tui_sync()
+    assert adapter._last_synced != ""

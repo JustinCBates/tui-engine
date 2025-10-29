@@ -1,6 +1,15 @@
-from typing import Protocol, Any, Optional, Sequence, Tuple
+"""Widget Protocol definitions for tui_engine wrappers.
+
+This file defines the minimal Protocol surface used by the PTK adapters.
+Wrappers should implement these protocols; adapters rely on `_tui_sync`
+and `focus` to coordinate widget <> element state.
+"""
+from __future__ import annotations
+
+from typing import Any, Optional, Protocol, runtime_checkable, Sequence, Tuple
 
 
+@runtime_checkable
 class TuiWidgetProtocol(Protocol):
     """Minimal runtime contract for TUI widget wrappers.
 
@@ -17,6 +26,7 @@ class TuiWidgetProtocol(Protocol):
     def _tui_sync(self) -> Optional[Any]: ...
 
 
+@runtime_checkable
 class ValueWidgetProtocol(TuiWidgetProtocol, Protocol):
     """Widgets that carry a single value (e.g. text inputs).
 
@@ -30,6 +40,7 @@ class ValueWidgetProtocol(TuiWidgetProtocol, Protocol):
     def set_value(self, value: Any) -> None: ...
 
 
+@runtime_checkable
 class ChoiceWidgetProtocol(TuiWidgetProtocol, Protocol):
     """Widgets that expose options and selection(s).
 
@@ -44,6 +55,7 @@ class ChoiceWidgetProtocol(TuiWidgetProtocol, Protocol):
     def set_selected(self, sel: Any) -> None: ...
 
 
+@runtime_checkable
 class ActionWidgetProtocol(TuiWidgetProtocol, Protocol):
     """Widgets that represent actions (buttons).
 

@@ -1,3 +1,116 @@
+PTK widget adapters and testing
+================================
+
+This document explains the wrapper Protocols, adapter responsibilities, and example test patterns for prompt-toolkit adapters in this repository.
+
+Overview
+--------
+
+We follow a headless-first design: domain elements produce stable headless descriptors suitable for unit tests. When prompt-toolkit is available at runtime we create real widgets and, where beneficial, wrap them in thin adapter objects that implement the `TuiWidgetProtocol` family. Wrappers give us a stable surface for adapters, focus/sync logic, and easier unit testing.
+
+Core Protocols
+--------------
+
+The Protocols are defined in `src/tui_engine/widgets/protocols.py` and include:
+
+- `TuiWidgetProtocol` — minimal runtime contract: `_tui_path: Optional[str]`, `_tui_focusable: bool`, `focus()` and `_tui_sync()`.
+- `ValueWidgetProtocol` — for single-value widgets (text inputs): `get_value()` and `set_value()`.
+- `ChoiceWidgetProtocol` — for option lists (radio/checkbox): `options` and `get_selected()`/`set_selected()`.
+- `ActionWidgetProtocol` — for action-like widgets (buttons): `click()`.
+
+Adapter responsibilities
+------------------------
+
+Adapters (wrappers) should:
+
+- Expose the minimal Protocol surface above so `PTKAdapter` and other runtime helpers can call `focus()` and `_tui_sync()` without probing raw widget internals.
+- Offer a `.ptk_widget` property (or return the raw widget from the adapter) so the prompt-toolkit layout gets the raw widget for mounting and focusing.
+- Keep `_tui_sync()` cheap and idempotent — it should push widget state back into the domain element or return the current value for the adapter to persist.
+- Avoid complex side-effects; prefer to call domain handlers (e.g., `element.on_change`) rather than mutating global state.
+
+Factory and runtime contracts
+-----------------------------
+
+When creating real widgets the factory (`ptk_widget_factory.map_element_to_widget`) will set runtime tags when possible:
+
+- `_tui_path` — path to the domain element (useful for diagnostics and testing)
+- `_tui_focusable` — whether the widget should be focused
+- `_tui_sync` — a callable that, when called, will synchronize the real widget state back to the domain element. For adapters this is often implemented on the adapter and/or the underlying raw widget.
+
+Testing patterns
+----------------
+
+1) Headless unit tests (preferred)
+
+   - Call the headless `map_element_to_widget()` with a synthetic element and assert the returned descriptor shape (type, options, value, selected).
+   - Use the headless `Page.render()` and `ContainerElement.get_render_lines()` to snapshot rendered output.
+
+2) Adapter unit tests (fast, deterministic)
+
+   - Create a small fake raw widget implementing the few attributes used by the adapter (e.g., a fake `TextArea` with `.text` and `.focus()`).
+   - Instantiate the adapter with the fake widget and assert `get_value()`, `set_value()`, `focus()`, and `_tui_sync()` behaviors.
+
+   Example (text input):
+
+   ```python
+   fake = type('F', (), {'text': 'x', 'focus': lambda self: setattr(self, '_f', True)})()
+   adapter = TextInputAdapter(fake)
+   assert adapter.get_value() == 'x'
+   adapter.set_value('y')
+   assert fake.text == 'y'
+   adapter._tui_sync()
+   assert adapter._last_synced.startswith('y')
+   ```
+
+3) Guarded integration tests (optional in CI)
+
+   - These tests run only when prompt-toolkit is installed.
+   - They create real widgets via `map_element_to_widget()` and verify that calling the real widget's handler or `_tui_sync()` updates the domain element.
+
+   Example guard in pytest:
+
+   ```python
+   try:
+       from prompt_toolkit.widgets import TextArea
+   except Exception:
+       pytest.skip('prompt-toolkit not available')
+   ```
+
+Adapter examples
+----------------
+
+- TextInputAdapter (in `src/tui_engine/widgets/text_input_adapter.py`): wraps a `TextArea` or fallback and implements `get_value()`/`set_value()` and `_tui_sync()` that updates `_last_synced`.
+- RadioListAdapter / CheckboxListAdapter: wrap RadioList/CheckboxList variants and normalize selected values to lists or scalars.
+- ButtonAdapter: exposes `click()` that triggers the raw widget handler and/or `element.on_click`.
+
+Migration notes and compat
+-------------------------
+
+- Some prompt-toolkit distributions differ in available widgets (`CheckboxList` may be missing). Factory code attempts to detect availability and fall back to textual `Window` representations.
+- To keep consumer code stable prefer using the wrapper Protocol surface instead of probing raw widget attributes.
+
+FAQ / Troubleshooting
+---------------------
+
+- Q: My guarded integration tests fail in CI but pass locally.
+  - A: Ensure the CI job installs prompt-toolkit or mark the job to skip when it's missing. Consider running the guarded tests in a separate CI matrix entry.
+
+- Q: `_tui_sync()` didn't update my element.
+  - A: Check whether `_tui_sync()` exists on the adapter or raw widget; `PTKAdapter` prefers adapter `_tui_sync()` if provided. Also confirm the factory attached `_tui_sync` to the raw widget for non-wrapped widgets.
+
+Appendix: quick snippets
+-----------------------
+
+- How to assert a factory returns an adapter or raw widget with `_tui_path`:
+
+```python
+desc = map_element_to_widget(elem)
+w = desc['ptk_widget']
+assert w is not None
+assert hasattr(w, '_tui_path') or hasattr(getattr(w, 'ptk_widget', None), '_tui_path')
+```
+
+End.
 PTK widget descriptors and runtime contracts
 
 This document describes the shape of the headless descriptors returned by

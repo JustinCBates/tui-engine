@@ -439,7 +439,20 @@ class PTKAdapter:
                     app = getattr(self.app, "_real_app")
                     # Some prompt-toolkit apps provide layout.focus(widget)
                     if hasattr(app, "layout") and hasattr(app.layout, "focus"):
-                        app.layout.focus(widget)
+                        # If widget is a wrapper (implements .ptk_widget), unwrap
+                        try:
+                            raw_widget = getattr(widget, 'ptk_widget', widget)
+                        except Exception:
+                            raw_widget = widget
+                        try:
+                            app.layout.focus(raw_widget)
+                        except Exception:
+                            # As a fallback, try calling focus() on the wrapper
+                            try:
+                                if hasattr(widget, 'focus') and callable(getattr(widget, 'focus')):
+                                    widget.focus()
+                            except Exception:
+                                pass
                 except Exception:
                     pass
         except Exception:
@@ -479,27 +492,47 @@ class PTKAdapter:
                 text = desc.get('text') or desc.get('value') or desc.get('label') or ''
                 w = Window(content=FormattedTextControl(text))
 
+            # If the factory returned an adapter/wrapper, the actual prompt-
+            # toolkit widget to insert into the layout is the wrapper's
+            # `.ptk_widget` attribute. Use layout_w for building the layout
+            # while preserving `w` (the wrapper) for mapping/sync tasks.
+            try:
+                layout_w = getattr(w, 'ptk_widget', w)
+            except Exception:
+                layout_w = w
+
             # register mapping from element path to widget for focus transfer
             try:
                 path = getattr(node, 'path', None)
                 if path is not None:
+                    # register the wrapper (if present) so adapter can later
+                    # call its sync or focus methods. The layout uses
+                    # `layout_w` which is the real PTK widget.
                     self.register_widget_mapping(path, w)
                     # If the widget exposes a _tui_sync callable, record it so
                     # the adapter can invoke it on accept or when focus
                     # changes. Also call it once to ensure initial widget ->
                     # element state synchronization.
                     try:
+                        # Prefer wrapper _tui_sync if present, otherwise
+                        # check the real layout widget for a sync helper.
+                        sync_candidate = None
                         if hasattr(w, '_tui_sync'):
-                            self._path_to_sync[path] = getattr(w, '_tui_sync')
+                            sync_candidate = getattr(w, '_tui_sync')
+                        elif hasattr(layout_w, '_tui_sync'):
+                            sync_candidate = getattr(layout_w, '_tui_sync')
+
+                        if sync_candidate is not None:
+                            self._path_to_sync[path] = sync_candidate
                             try:
-                                w._tui_sync()
+                                sync_candidate()
                             except Exception:
                                 pass
                     except Exception:
                         pass
             except Exception:
                 pass
-            return w
+            return layout_w
 
         root_container = build(root)
 

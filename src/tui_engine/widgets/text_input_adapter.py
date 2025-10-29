@@ -1,4 +1,14 @@
+"""Text input wrapper implementing ValueWidgetProtocol.
+
+This adapter wraps either a real prompt-toolkit TextArea-like object or a
+very small fake object used in tests. It provides the minimal contract
+expected by the PTKAdapter: focus(), _tui_sync(), get_value(), set_value().
+"""
+from __future__ import annotations
+
 from typing import Any, Optional
+
+from .protocols import ValueWidgetProtocol
 
 try:
     from prompt_toolkit.widgets import TextArea  # type: ignore
@@ -8,117 +18,96 @@ except Exception:
     _PTK_AVAILABLE = False
 
 
-class TextInputAdapter:
-    """Adapter/wrapper for single-line/multi-line text input widgets.
+class TextInputAdapter(ValueWidgetProtocol):
+    """Wrapper for text inputs.
 
-    Implements a small interface similar to ValueWidgetProtocol.
-    This wrapper abstracts differences between real prompt-toolkit widgets and
-    lightweight fakes used in tests.
+    Args:
+        widget: The real widget to wrap (e.g., prompt_toolkit.widgets.TextArea)
+                or a simple object with a `text` attribute. If None, a
+                simple in-memory fallback is used.
     """
 
-    def __init__(self, element: Optional[Any] = None, widget: Optional[Any] = None):
-        self.element = element
-        # If a widget is provided, use it. Otherwise, create a TextArea when PTK
-        # is available. If neither is available, create a simple fake object.
-        if widget is not None:
-            self.widget = widget
+    def __init__(self, widget: Optional[Any] = None) -> None:
+        # If a widget is None, create a minimal fallback object with `.text`.
+        if widget is None:
+            class _Fallback:
+                def __init__(self, text: str = ""):
+                    self.text = text
+
+                def focus(self):
+                    # No-op, but present for tests
+                    return None
+
+                def __repr__(self):
+                    return f"<_Fallback text={self.text!r}>"
+
+            self._widget = _Fallback("")
         else:
-            if _PTK_AVAILABLE and TextArea is not None:
-                initial = None
-                try:
-                    initial = getattr(element, 'get_value', None) and element.get_value()
-                except Exception:
-                    initial = None
-                self.widget = TextArea(text=str(initial) if initial is not None else "")
-            else:
-                class _Fake:
-                    def __init__(self, text=""):
-                        self.text = text
+            self._widget = widget
 
-                initial = None
-                try:
-                    initial = getattr(element, 'get_value', None) and element.get_value()
-                except Exception:
-                    initial = None
-                self.widget = _Fake(text=str(initial) if initial is not None else "")
-
-        # runtime contract attributes
-        try:
-            setattr(self.widget, '_tui_path', getattr(element, 'path', None))
-        except Exception:
-            pass
-        try:
-            setattr(self.widget, '_tui_focusable', True)
-        except Exception:
-            pass
-
-    # Expose the underlying PTK widget for adapter compatibility
-    @property
-    def ptk_widget(self):
-        return self.widget
+        # last synced value (useful in tests and for adapter-driven sync)
+        self._last_synced: str = ""
 
     def focus(self) -> None:
-        # If the wrapped widget has a focus method or similar, call it.
+        w = self._widget
+        if w is None:
+            return
+        if hasattr(w, "focus") and callable(getattr(w, "focus")):
+            try:
+                w.focus()
+            except Exception:
+                return
+
+    def _tui_sync(self) -> None:
+        # Pull the current widget value into _last_synced.
+        self._last_synced = self.get_value() or ""
+
+    def get_value(self) -> str:
+        w = self._widget
+        if w is None:
+            return ""
+        # Common prompt-toolkit TextArea exposes .text
+        if hasattr(w, "text"):
+            val = getattr(w, "text")
+            return "" if val is None else str(val)
+        # Some widget-like objects use .buffer.text
+        if hasattr(w, "buffer") and hasattr(w.buffer, "text"):
+            val = getattr(w.buffer, "text")
+            return "" if val is None else str(val)
         try:
-            if hasattr(self.widget, 'focus'):
-                self.widget.focus()
+            return str(w)
         except Exception:
-            pass
+            return ""
 
-    def _tui_sync(self) -> Optional[Any]:
-        """Read widget content and return it. Adapter may apply returned value.
+    def set_value(self, value: str) -> None:
+        w = self._widget
+        if w is None:
+            return
+        if hasattr(w, "text"):
+            try:
+                setattr(w, "text", value)
+                return
+            except Exception:
+                pass
+        if hasattr(w, "buffer") and hasattr(w.buffer, "text"):
+            try:
+                setattr(w.buffer, "text", value)
+                return
+            except Exception:
+                pass
+        try:
+            setattr(w, "value", value)
+        except Exception:
+            return
 
-        The method is intentionally simple: it reads common attribute names like
-        `text` (TextArea) and returns the string value.
+    def __repr__(self) -> str:  # pragma: no cover - trivial
+        return f"<TextInputAdapter widget={self._widget!r}>"
+
+    @property
+    def ptk_widget(self) -> Any:
+        """Return the underlying prompt-toolkit widget (if any).
+
+        PTKAdapter expects a `.ptk_widget` or a raw widget so it can mount
+        and focus the real UI control. Exposing this keeps adapters thin.
         """
-        try:
-            # prompt-toolkit TextArea uses `.text`
-            if hasattr(self.widget, 'text'):
-                return getattr(self.widget, 'text')
-            # some widgets may expose `.get_text()` or `.content`
-            if hasattr(self.widget, 'get_text') and callable(getattr(self.widget, 'get_text')):
-                return getattr(self.widget, 'get_text')()
-            if hasattr(self.widget, 'content'):
-                return str(getattr(self.widget, 'content'))
-        except Exception:
-            pass
-        return None
-
-    def get_value(self) -> Any:
-        try:
-            v = self._tui_sync()
-            if v is None and self.element is not None:
-                try:
-                    return self.element.get_value()
-                except Exception:
-                    return None
-            return v
-        except Exception:
-            return None
-
-    def set_value(self, value: Any) -> None:
-        try:
-            if hasattr(self.widget, 'text'):
-                try:
-                    setattr(self.widget, 'text', str(value) if value is not None else "")
-                except Exception:
-                    # TextArea.text may be a property; try calling a setter if present
-                    try:
-                        self.widget.text = str(value) if value is not None else ""
-                    except Exception:
-                        pass
-            # Also write to element if present
-            if self.element is not None:
-                try:
-                    if hasattr(self.element, 'set_value'):
-                        self.element.set_value(value)
-                    else:
-                        setattr(self.element, '_value', value)
-                        try:
-                            self.element.mark_dirty()
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
-        except Exception:
-            pass
+        return self._widget
