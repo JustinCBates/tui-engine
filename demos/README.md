@@ -1,3 +1,81 @@
+Demo environment and run instructions
+=================================
+
+This folder contains interactive demo scripts that exercise the `tui-engine` package.
+To make the demos easy to run for end-consumers we provide a small helper that
+creates a Python virtual environment and installs the package and its runtime
+dependencies.
+
+Quick start
+-----------
+
+1. Create a demo virtual environment and install runtime dependencies:
+
+```bash
+cd demos
+./setup_env.sh
+```
+
+2. Activate the virtual environment in your shell:
+
+```bash
+source .venv/bin/activate
+```
+
+3. Run an interactive demo (these require a real terminal / TTY):
+
+```bash
+python ../demos/demo_form.py
+```
+
+Notes
+-----
+
+- The `setup_env.sh` script creates a venv at `demos/.venv` by default and installs
+  the package in editable mode (`pip install -e .`) so you can iterate on the
+  code while using the demos.
+- If you want development extras (linters, test deps, etc) run:
+
+```bash
+./setup_env.sh --dev
+```
+
+- If you prefer a different location for the virtual environment:
+
+```bash
+./setup_env.sh --venv ../.env
+source ../.env/bin/activate
+```
+
+- To force recreation of the venv (useful to recover from a broken venv):
+
+```bash
+./setup_env.sh --recreate
+```
+
+TTY and prompt-toolkit
+----------------------
+
+Many of the demos use `prompt-toolkit` and expect to run in an interactive terminal.
+If you run them in an environment without a real TTY (for example, some CI systems
+or inside certain editors' limited consoles) the demo may fail. Use a normal terminal
+or run inside a compatible emulator (e.g. GNOME Terminal, xterm, Alacritty, iTerm2,
+or Windows WSL/PowerShell when appropriate).
+
+When things go wrong
+--------------------
+
+- Make sure you have Python 3.8+ available as `python3` on PATH.
+- If `setup_env.sh` fails, try removing the venv and re-running with `--recreate`.
+- If you need to run tests or linters, use `./setup_env.sh --dev` and then run
+  your tools from the activated venv (e.g. `pytest`, `ruff`, `mypy`).
+
+More
+----
+
+See the project `pyproject.toml` for declared runtime dependencies and "optional"
+extras. The demos are lightweight and should work once `prompt-toolkit` and the
+dependencies listed in `pyproject.toml` are installed into the venv.
 TUI Engine demos
 ================
 

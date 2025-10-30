@@ -5,6 +5,8 @@ Provides a simple numeric console menu to pick and run demos found in the
 callable which will be imported and executed.
 """
 import importlib
+import os
+import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
@@ -70,6 +72,33 @@ def choose_demo() -> Optional[str]:
 
 
 def run() -> None:
+    # If package imports fail, attempt to prepare a demo venv automatically
+    # and re-exec this script under the venv's Python so demos run in the
+    # isolated environment. This makes `python main_menu.py` a simple onboarding
+    # experience for end users.
+    try:
+        import tui_engine  # type: ignore
+    except Exception:
+        # Try to find and run the setup helper
+        setup_script = Path(__file__).resolve().parent / "setup_env.sh"
+        if setup_script.exists():
+            print("tui_engine not importable; running demos/setup_env.sh to prepare environment...")
+            try:
+                subprocess.check_call(["bash", str(setup_script)])
+            except Exception as e:
+                print(f"Failed to run setup script: {e}")
+                print("Please run './demos/setup_env.sh' manually and then re-run this script.")
+                return
+
+            # If setup created a venv at demos/.venv, re-exec under that python
+            venv_py = Path(__file__).resolve().parent / ".venv" / "bin" / "python"
+            if venv_py.exists():
+                print(f"Restarting under venv python: {venv_py}")
+                os.execv(str(venv_py), [str(venv_py)] + sys.argv)
+            else:
+                print("Virtualenv not detected after setup. Activate the venv and re-run this script.")
+                return
+
     _ensure_demos_package()
     show_menu()
     sel = choose_demo()
