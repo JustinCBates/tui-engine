@@ -14,8 +14,19 @@ def text(name: str, value: str = "") -> Element:
     return Element(name, variant="text", value=value)
 
 
-def input(name: str, value: str = "") -> Element:
-    return Element(name, variant="input", value=value, focusable=True)
+def input(name: str, value: str = "", on_enter: Optional[Callable[..., Any]] = None, *, enter_moves_focus: Optional[bool] = None) -> Element:
+    e = Element(name, variant="input", value=value, focusable=True)
+    if on_enter is not None:
+        try:
+            e.on_enter = on_enter
+        except Exception:
+            e.metadata['on_enter'] = on_enter
+    if enter_moves_focus is not None:
+        try:
+            e.metadata['enter_moves_focus'] = bool(enter_moves_focus)
+        except Exception:
+            pass
+    return e
 
 
 def button(label: str, on_click: Optional[Callable[..., Any]] = None) -> Element:

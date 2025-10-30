@@ -373,6 +373,31 @@ class PTKAdapter:
                     if focused:
                         elem = self._find_element_by_path(focused)
                         if elem is not None:
+                            # If the element provides an explicit `on_enter` hook,
+                            # call it and let the consumer control behavior.
+                            ent = getattr(elem, 'on_enter', None)
+                            if callable(ent):
+                                try:
+                                    ent()
+                                    return
+                                except Exception:
+                                    pass
+
+                            # Consumer can request Enter to move focus by setting
+                            # metadata['enter_moves_focus'] = True or via factory.
+                            try:
+                                emf = getattr(elem, 'metadata', {}).get('enter_moves_focus', False)
+                                if emf:
+                                    try:
+                                        self.focus_registry.focus_next()
+                                        self._apply_focus_to_ptk()
+                                        return
+                                    except Exception:
+                                        pass
+                            except Exception:
+                                pass
+
+                            # Fallback to on_click for button-like elements
                             handler = getattr(elem, 'on_click', None)
                             if callable(handler):
                                 try:
@@ -513,6 +538,18 @@ class PTKAdapter:
         prompt-toolkit is not available. This is best-effort and will not raise
         if prompt-toolkit is absent.
         """
+        # Ensure the FocusRegistry is populated the same way the headless
+        # layout builder would. This registers focusable elements so key
+        # traversal (Tab/Shift-Tab) works even when we build the real
+        # prompt-toolkit layout only.
+        # Populate headless focus registry first so focusable elements are
+        # registered before constructing the real prompt-toolkit layout.
+        try:
+            self.build_layout(root)
+        except Exception:
+            # best-effort: ignore failures but continue to attempt real build
+            pass
+
         try:
             from prompt_toolkit.layout.containers import HSplit, VSplit, Window
             from prompt_toolkit.layout.controls import FormattedTextControl
@@ -582,6 +619,11 @@ class PTKAdapter:
             return layout_w
 
         root_container = build(root)
+
+        # Do not force the root to expand vertically here. Keep the natural
+        # size so each input renders as a single line unless individual
+        # widgets request more space. This avoids occupying the whole terminal
+        # height and keeps the layout compact.
 
         # register Application with prompt-toolkit if possible
         try:

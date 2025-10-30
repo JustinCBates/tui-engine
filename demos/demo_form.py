@@ -38,11 +38,11 @@ def run_demo() -> None:
     form = p.container("user_form")
 
     # Inputs with defaults
-    name = widgets.input("name", value="Alice")
+    name = widgets.input("name", value="Alice", enter_moves_focus=True)
     form.add(name)
-    email = widgets.input("email", value="alice@example.com")
+    email = widgets.input("email", value="alice@example.com", enter_moves_focus=True)
     form.add(email)
-    age = widgets.input("age", value="30")
+    age = widgets.input("age", value="30", enter_moves_focus=True)
     form.add(age)
 
     # Instructions shown to the user (also rendered in the PTK UI)
@@ -149,6 +149,7 @@ def run_demo() -> None:
     # a Linux terminal with prompt-toolkit installed.
     print("Launching interactive PTK form — use Tab to move focus, Enter to accept.")
     print(INSTRUCTIONS)
+    import pdb; pdb.set_trace()
     adapter.app.run()
 
 

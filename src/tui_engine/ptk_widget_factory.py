@@ -265,7 +265,14 @@ def map_element_to_widget(element: IElement | Any) -> Dict[str, Any]:
         # adapter surface is consistent for PTK-backed inputs.
         if _PTK_AVAILABLE and TextArea is not None and TextInputAdapter is not None:
             try:
-                raw_input: TuiWidgetProtocol | Any = TextArea(text=str(value) if value is not None else "")
+                # Use a single-line TextArea so the input behaves like a
+                # standard form field (Enter accepts/moves focus instead of
+                # inserting a newline). Disable wrapping to keep it compact.
+                raw_input: TuiWidgetProtocol | Any = TextArea(
+                    text=str(value) if value is not None else "",
+                    multiline=False,
+                    wrap_lines=False,
+                )
 
                 # Create the wrapper around the real widget
                 adapter_input: TuiWidgetProtocol | Any = None

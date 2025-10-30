@@ -2,6 +2,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug demo main_menu",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/demos/main_menu.py",
+            "cwd": "${workspaceFolder}/demos",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",

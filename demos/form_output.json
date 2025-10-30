@@ -1,0 +1,9 @@
+{
+  "root.user_form.name": "Alice",
+  "root.user_form.email": "alice@example.com",
+  "root.user_form.age": "30",
+  "root.user_form.instructions": "Navigation: Tab / Shift+Tab to move between fields.\nEnter to accept / activate a button. Space to toggle checkboxes.\nArrow keys to move in lists. Ctrl-C to cancel/quit.\nWhen running non-interactively the demo will fall back to console prompts.",
+  "root.user_form.topics": null,
+  "root.user_form.Submit": null,
+  "root.user_form.Cancel": null
+}

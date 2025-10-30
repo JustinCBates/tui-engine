@@ -6,11 +6,15 @@ from .interfaces import IElement
 class Element(IElement):
     validators: list[Any]
     on_click: Any | None
+    on_enter: Any | None
     def __init__(self, name: str, variant: str = "text", *, focusable: bool = False, value: Optional[str] = None) -> None:
         super().__init__(name, variant=variant)
         self.focusable = focusable
         self._value = value
         self.validators = []
+        # Optional user-provided handlers/hooks
+        self.on_click = None
+        self.on_enter = None
 
     def get_value(self) -> Optional[str]:
         return self._value

@@ -12,7 +12,10 @@ set -euo pipefail
 #   ./setup_env.sh --recreate # remove existing venv and create fresh one
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-VENV_DIR="$(pwd)/.venv"
+# Default venv location is next to this script (demos/.venv). Users may
+# override with --venv to place it elsewhere.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+VENV_DIR="${SCRIPT_DIR}/.venv"
 RECREATE=0
 INSTALL_DEV=0
 
