@@ -6,17 +6,19 @@ available or a simple fake object for tests. Exposes `.ptk_widget`, focus,
 """
 from __future__ import annotations
 
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, Sequence
 
 from .protocols import ChoiceWidgetProtocol
 
 
 class CheckboxListAdapter(ChoiceWidgetProtocol):
     # runtime contract attributes
-    _tui_path: Optional[str] = None
+    _tui_path: str | None = None
     _tui_focusable: bool = True
+    # expose options attribute to satisfy ChoiceWidgetProtocol
+    options: Sequence[tuple[Any, str]] = ()
 
-    def __init__(self, widget: Optional[Any] = None, element: Optional[Any] = None):
+    def __init__(self, widget: Any | None = None, element: Any | None = None):
         self._widget = widget
         self.element = element
 
@@ -24,13 +26,13 @@ class CheckboxListAdapter(ChoiceWidgetProtocol):
         w = self._widget
         if w is None:
             return
-        if hasattr(w, "focus") and callable(getattr(w, "focus")):
+        if hasattr(w, "focus") and callable(w.focus):
             try:
                 w.focus()
             except Exception:
                 pass
 
-    def _tui_sync(self) -> Optional[List[Any]]:
+    def _tui_sync(self) -> list[Any] | None:
         """Return a list of selected values from the underlying widget."""
         w = self._widget
         if w is None:
@@ -38,11 +40,11 @@ class CheckboxListAdapter(ChoiceWidgetProtocol):
         try:
             # common names: checked_values, current_values, selected
             if hasattr(w, "checked_values"):
-                return list(getattr(w, "checked_values"))
+                return list(w.checked_values)
             if hasattr(w, "current_values"):
-                return list(getattr(w, "current_values"))
+                return list(w.current_values)
             if hasattr(w, "selected"):
-                v = getattr(w, "selected")
+                v = w.selected
                 try:
                     return list(v)
                 except Exception:
@@ -71,19 +73,19 @@ class CheckboxListAdapter(ChoiceWidgetProtocol):
         try:
             if hasattr(w, "checked_values"):
                 try:
-                    setattr(w, "checked_values", vals)
+                    w.checked_values = vals
                     return
                 except Exception:
                     pass
             if hasattr(w, "current_values"):
                 try:
-                    setattr(w, "current_values", vals)
+                    w.current_values = vals
                     return
                 except Exception:
                     pass
             if hasattr(w, "selected"):
                 try:
-                    setattr(w, "selected", set(vals))
+                    w.selected = set(vals)
                     return
                 except Exception:
                     pass

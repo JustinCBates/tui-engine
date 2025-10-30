@@ -4,18 +4,18 @@ from tui_engine.widgets.text_input_adapter import TextInputAdapter
 
 
 class _FakeWidget:
-    def __init__(self, initial: str = ""):
+    def __init__(self, initial: str = "") -> None:
         self.text = initial
         self.focused = False
 
-    def focus(self):
+    def focus(self) -> None:
         self.focused = True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"_FakeWidget(text={self.text!r})"
 
 
-def test_fake_widget_get_set_and_sync():
+def test_fake_widget_get_set_and_sync() -> None:
     w = _FakeWidget("hello")
     adapter = TextInputAdapter(w)
 
@@ -34,7 +34,7 @@ def test_fake_widget_get_set_and_sync():
     assert w.focused
 
 
-def test_textarea_integration_if_available():
+def test_textarea_integration_if_available() -> None:
     try:
         from prompt_toolkit.widgets import TextArea
     except Exception:

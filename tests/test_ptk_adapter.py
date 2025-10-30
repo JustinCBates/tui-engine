@@ -1,12 +1,14 @@
-from src.tui_engine.page import Page
-from src.tui_engine.ptk_adapter import PTKAdapter
+import tui_engine.factories as widgets
+from tui_engine.page import Page
+from tui_engine.ptk_adapter import PTKAdapter
 
 
-def test_ptk_adapter_build_layout():
+def test_ptk_adapter_build_layout() -> None:
     p = Page("Adapter Smoke")
-    p.container('header','header').text('title','Adapter Title')
+    hdr = p.container('header','header')
+    hdr.add(widgets.text('title','Adapter Title'))
     body = p.container('body','section')
-    body.text('intro','Adapter intro')
+    body.add(widgets.text('intro','Adapter intro'))
 
     adapter = PTKAdapter(page=p, page_state=p.page_state, events=p.events)
     summary = adapter.build_layout(p.root)

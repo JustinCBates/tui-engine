@@ -1,9 +1,10 @@
 import sys
-from tui_engine.container import Element
+
+from tui_engine.element import Element
 from tui_engine.ptk_widget_factory import map_element_to_widget
 
 
-def test_map_button_element_to_descriptor():
+def test_map_button_element_to_descriptor() -> None:
     btn = Element("OK", variant="button", focusable=True)
     desc = map_element_to_widget(btn)
     assert desc["type"] == "button"
@@ -13,7 +14,7 @@ def test_map_button_element_to_descriptor():
     assert desc["ptk_widget"] is None or True
 
 
-def test_map_input_element_to_descriptor():
+def test_map_input_element_to_descriptor() -> None:
     inp = Element("name", variant="input", focusable=True, value="abc")
     desc = map_element_to_widget(inp)
     assert desc["type"] == "input"

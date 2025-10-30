@@ -9,6 +9,11 @@ python -m demos.main_menu
 
 This will run the interactive main menu that lets you pick and run demos.
 
+Requirements and behaviour
+- The demos assume `prompt-toolkit` is installed in the environment.
+- The demos require a real TTY (Linux terminal). They will fail fast if a
+    prompt-toolkit full-screen layout cannot be constructed.
+
 Convenience: you can also run the script directly from the `demos/` directory
 with `python ./main_menu.py`. The `main_menu.py` script contains a small
 helper that inserts the project root into `sys.path` so imports still work

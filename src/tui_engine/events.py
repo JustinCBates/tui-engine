@@ -1,7 +1,8 @@
-from typing import Callable, Dict, List, Any
+from typing import Any, Callable, Dict, List, Tuple
+
 
 class EventBus:
-    def __init__(self):
+    def __init__(self) -> None:
         self._subs: Dict[str, List[Callable[[Any], None]]] = {}
 
     def publish(self, topic: str, payload: Any = None) -> None:
@@ -12,11 +13,11 @@ class EventBus:
                 # swallow exceptions for now; adapter may log
                 pass
 
-    def subscribe(self, topic: str, handler: Callable[[Any], None]):
+    def subscribe(self, topic: str, handler: Callable[[Any], None]) -> Tuple[str, Callable[[Any], None]]:
         self._subs.setdefault(topic, []).append(handler)
         return (topic, handler)
 
-    def unsubscribe(self, token):
+    def unsubscribe(self, token: Tuple[str, Callable[[Any], None]]) -> None:
         topic, handler = token
         if topic in self._subs and handler in self._subs[topic]:
             self._subs[topic].remove(handler)

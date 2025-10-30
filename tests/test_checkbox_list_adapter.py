@@ -4,14 +4,14 @@ from tui_engine.widgets.checkbox_list_adapter import CheckboxListAdapter
 
 
 class _FakeCheckboxList:
-    def __init__(self, checked=None):
+    def __init__(self, checked: list[str] | None = None) -> None:
         self.checked_values = list(checked) if checked is not None else []
 
-    def focus(self):
+    def focus(self) -> None:
         self._focused = True
 
 
-def test_fake_checkbox_get_set_and_sync():
+def test_fake_checkbox_get_set_and_sync() -> None:
     fake = _FakeCheckboxList(checked=['a'])
     adapter = CheckboxListAdapter(fake)
 
@@ -24,7 +24,7 @@ def test_fake_checkbox_get_set_and_sync():
     assert isinstance(synced, list)
 
 
-def test_prompt_toolkit_checkbox_if_available():
+def test_prompt_toolkit_checkbox_if_available() -> None:
     try:
         from prompt_toolkit.widgets import CheckboxList
     except Exception:

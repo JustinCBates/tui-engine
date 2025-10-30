@@ -112,12 +112,14 @@ pip install tui-engine
 
 ```python
 import tui_engine as te
+import tui_engine.factories as widgets
 
 # Create a simple Page and render headless lines
 from tui_engine import Page
 
 p = Page("Demo")
-p.container('header','header').text('title','Demo Title')
+header = p.container('header', 'header')
+header.add(widgets.text('title', 'Demo Title'))
 for line in p.root.get_render_lines():
     print(line)
 

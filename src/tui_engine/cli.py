@@ -9,28 +9,28 @@ from __future__ import annotations
 import sys
 
 
-def demo():
+def demo() -> None:
     """Run a lightweight demo (no interactive prompts)."""
     print("TUI Engine demo: headless run")
 
 
-def form_builder():
+def form_builder() -> None:
     print("TUI Engine form builder (no-op)")
 
 
-def themes():
+def themes() -> None:
     print("TUI Engine themes list (no-op)")
 
 
-def wizard_demo(times: int = 1):
+def wizard_demo(times: int = 1) -> None:
     print(f"TUI Engine wizard demo x{times}")
 
 
-def quick(ptype: str):
+def quick(ptype: str) -> None:
     print(f"Quick demo for {ptype}")
 
 
-def main():
+def main() -> None:
     """Simple main entry used by packaging scripts.
 
     This intentionally does not require third-party interactive libs.

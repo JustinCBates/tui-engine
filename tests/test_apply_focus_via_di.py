@@ -1,28 +1,32 @@
 """DI-driven test verifying that PTKAdapter applies focus into a real app
 using dependency injection only (no monkeypatching)."""
+from typing import Any
+
 from tui_engine.container import ContainerElement
-from tui_engine.ptk_adapter import PTKAdapter, ApplicationWrapper
-from tui_engine.container import Element
+from tui_engine.element import Element
+from tui_engine.ptk_adapter import ApplicationWrapper, PTKAdapter
 
 
 class FakeLayout:
-    def __init__(self):
-        self.focus_called_with = None
+    def __init__(self) -> None:
+        self.focus_called_with: Any = None
 
-    def focus(self, widget):
+    def focus(self, widget: Any) -> None:
         self.focus_called_with = widget
 
 
 class FakeApp:
-    def __init__(self):
+    def __init__(self) -> None:
         self.layout = FakeLayout()
 
 
-def test_apply_focus_to_ptk_via_injection():
+def test_apply_focus_to_ptk_via_injection() -> None:
     # Build domain tree with one focusable element
     root = ContainerElement('root')
     c = root.child('body')
-    btn = c.button('ok')
+    import tui_engine.factories as widgets
+    btn = widgets.button('ok')
+    c.add(btn)
 
     # Create adapter with an ApplicationWrapper that has a fake real app injected
     fake_app = FakeApp()

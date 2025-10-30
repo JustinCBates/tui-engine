@@ -6,7 +6,7 @@ expected by the PTKAdapter: focus(), _tui_sync(), get_value(), set_value().
 """
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from .protocols import ValueWidgetProtocol
 
@@ -19,6 +19,9 @@ except Exception:
 
 
 class TextInputAdapter(ValueWidgetProtocol):
+    # runtime contract attributes required by TuiWidgetProtocol
+    _tui_path: str | None = None
+    _tui_focusable: bool = True
     """Wrapper for text inputs.
 
     Args:
@@ -27,18 +30,29 @@ class TextInputAdapter(ValueWidgetProtocol):
                 simple in-memory fallback is used.
     """
 
-    def __init__(self, widget: Optional[Any] = None) -> None:
+    def __init__(self, widget: Any | None = None) -> None:
         # If a widget is None, create a minimal fallback object with `.text`.
         if widget is None:
             class _Fallback:
-                def __init__(self, text: str = ""):
+                def __init__(self, text: str = "") -> None:
                     self.text = text
+                    # Provide a buffer attribute to satisfy attribute checks
+                    # and provide a `.text` property used by some adapters.
+                    class _Buf:
+                        text: str
 
-                def focus(self):
+                        def __init__(self, text: str = "") -> None:
+                            self.text = text
+
+                    self.buffer = _Buf(text)
+                    # Provide a .value attribute to satisfy callers and type checkers
+                    self.value = text
+
+                def focus(self) -> None:
                     # No-op, but present for tests
                     return None
 
-                def __repr__(self):
+                def __repr__(self) -> str:
                     return f"<_Fallback text={self.text!r}>"
 
             self._widget = _Fallback("")
@@ -52,7 +66,7 @@ class TextInputAdapter(ValueWidgetProtocol):
         w = self._widget
         if w is None:
             return
-        if hasattr(w, "focus") and callable(getattr(w, "focus")):
+        if hasattr(w, "focus") and callable(w.focus):
             try:
                 w.focus()
             except Exception:
@@ -68,11 +82,11 @@ class TextInputAdapter(ValueWidgetProtocol):
             return ""
         # Common prompt-toolkit TextArea exposes .text
         if hasattr(w, "text"):
-            val = getattr(w, "text")
+            val = w.text
             return "" if val is None else str(val)
         # Some widget-like objects use .buffer.text
         if hasattr(w, "buffer") and hasattr(w.buffer, "text"):
-            val = getattr(w.buffer, "text")
+            val = w.buffer.text
             return "" if val is None else str(val)
         try:
             return str(w)
@@ -85,18 +99,18 @@ class TextInputAdapter(ValueWidgetProtocol):
             return
         if hasattr(w, "text"):
             try:
-                setattr(w, "text", value)
+                w.text = value
                 return
             except Exception:
                 pass
         if hasattr(w, "buffer") and hasattr(w.buffer, "text"):
             try:
-                setattr(w.buffer, "text", value)
+                w.buffer.text = value
                 return
             except Exception:
                 pass
         try:
-            setattr(w, "value", value)
+            w.value = value
         except Exception:
             return
 

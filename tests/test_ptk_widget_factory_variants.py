@@ -2,7 +2,7 @@ from tui_engine.container import ContainerElement
 from tui_engine.ptk_widget_factory import map_element_to_widget
 
 
-def make_options():
+def make_options() -> list[tuple[str, str]]:
     return [
         ("a", "Alpha"),
         ("b", "Bravo"),
@@ -10,9 +10,9 @@ def make_options():
     ]
 
 
-def test_select_descriptor_contains_options_and_selected():
+def test_select_descriptor_contains_options_and_selected() -> None:
     root = ContainerElement('root')
-    el = root.child('sel')
+    _el = root.child('sel')
     # make a leaf element to carry variant
     leaf = ContainerElement('leaf')
     # attach metadata for options
@@ -26,7 +26,7 @@ def test_select_descriptor_contains_options_and_selected():
     assert desc['selected'] == 'b'
 
 
-def test_radio_descriptor_normalized():
+def test_radio_descriptor_normalized() -> None:
     leaf = ContainerElement('r')
     leaf.variant = 'radio'
     leaf.metadata['options'] = ['x', 'y']
@@ -35,7 +35,7 @@ def test_radio_descriptor_normalized():
     assert desc['options'][0][0] == 'x'
 
 
-def test_checkbox_list_selected_as_set():
+def test_checkbox_list_selected_as_set() -> None:
     leaf = ContainerElement('cb')
     leaf.variant = 'checkbox_list'
     leaf.metadata['options'] = ['one', 'two']

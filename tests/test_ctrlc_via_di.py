@@ -1,24 +1,26 @@
 """DI-driven test verifying ApplicationWrapper.register_ctrlc using injected
 key_bindings (no monkeypatching).
 """
+from typing import Any, Callable
+
 from tui_engine.ptk_adapter import ApplicationWrapper
 
 
 class FakeKeyBindings:
-    def __init__(self):
+    def __init__(self) -> None:
         # store handlers by key
-        self.handlers = {}
+        self.handlers: dict[str, Callable[..., Any]] = {}
 
-    def add(self, key, filter=None):
+    def add(self, key: str, filter: Any = None) -> Callable[[Any], Any]:
         # returns a decorator that captures handler
-        def _decor(fn):
+        def _decor(fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
             self.handlers[key] = fn
             return fn
 
         return _decor
 
 
-def test_register_ctrlc_records_handler_via_injection():
+def test_register_ctrlc_records_handler_via_injection() -> None:
     fake_kb = FakeKeyBindings()
     wrapper = ApplicationWrapper()
     # Inject the fake key_bindings object
@@ -27,7 +29,7 @@ def test_register_ctrlc_records_handler_via_injection():
     # Register a ctrl-c handler
     called = {}
 
-    def handler(ev=None):
+    def handler(ev: Any = None) -> None:
         called['ok'] = True
 
     ok = wrapper.register_ctrlc(handler)

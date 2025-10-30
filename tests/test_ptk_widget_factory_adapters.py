@@ -1,9 +1,10 @@
 import pytest
+from typing import Any
 
 from tui_engine import ptk_widget_factory
 
 
-def _mk_elem(variant: str, name: str = "x", value=None, options=None):
+def _mk_elem(variant: str, name: str = "x", value: Any = None, options: Any = None) -> Any:
     e = type("E", (), {})()
     e.name = name
     e.variant = variant
@@ -15,7 +16,7 @@ def _mk_elem(variant: str, name: str = "x", value=None, options=None):
     return e
 
 
-def test_factory_returns_adapters_when_available():
+def test_factory_returns_adapters_when_available() -> None:
     # Require prompt-toolkit for these runtime widgets; if not installed skip
     try:
         import prompt_toolkit  # noqa: F401

@@ -19,7 +19,7 @@ def check_file_exists(file_path: Path, description: str) -> bool:
         return False
 
 
-def check_directory_structure():
+def check_directory_structure() -> bool:
     """Check the package directory structure follows best practices."""
     root = Path(__file__).parent
     print(f"📦 Checking package structure for: {root.name}")
@@ -112,7 +112,7 @@ def check_directory_structure():
     return existing == total
 
 
-def show_package_info():
+def show_package_info() -> None:
     """Show package information."""
     try:
         import tomllib
@@ -150,7 +150,7 @@ def show_package_info():
         print(f"  ... and {len(dependencies) - 5} more")
 
 
-def main():
+def main() -> None:
     """Main function."""
     print("🚀 Questionary Extended - Package Structure Checker")
     print("=" * 60)

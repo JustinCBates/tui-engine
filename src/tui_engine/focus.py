@@ -15,18 +15,18 @@ will integrate with prompt-toolkit key bindings and Application.invalidate().
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import List, Optional
+from typing import Optional, Any, Iterable, Set, Iterator
 
 
 class FocusRegistry:
-    def __init__(self):
+    def __init__(self) -> None:
         # ordered list of focusable ids (strings: element.path)
-        self._order: List[str] = []
-        self._focused: Optional[str] = None
+        self._order: list[str] = []
+        self._focused: str | None = None
         # If set, traversal is limited to entries in this set
-        self._trap_set: Optional[set] = None
+        self._trap_set: Optional[Set[str]] = None
 
-    def register(self, element) -> None:
+    def register(self, element: Any) -> None:
         pid = getattr(element, "path", None)
         if pid is None:
             return
@@ -36,7 +36,7 @@ class FocusRegistry:
         if self._focused is None:
             self._focused = pid
 
-    def unregister(self, element) -> None:
+    def unregister(self, element: Any) -> None:
         pid = getattr(element, "path", None)
         if pid is None:
             return
@@ -45,7 +45,7 @@ class FocusRegistry:
         if self._focused == pid:
             self._focused = self._order[0] if self._order else None
 
-    def set_focused(self, element_or_path) -> Optional[str]:
+    def set_focused(self, element_or_path: Any | str) -> Optional[str]:
         pid = element_or_path if isinstance(element_or_path, str) else getattr(element_or_path, "path", None)
         if pid is None:
             return None
@@ -56,15 +56,15 @@ class FocusRegistry:
         self._focused = pid
         return self._focused
 
-    def get_focused(self) -> Optional[str]:
+    def get_focused(self) -> str | None:
         return self._focused
 
-    def _effective_order(self) -> List[str]:
+    def _effective_order(self) -> list[str]:
         if self._trap_set is None:
             return list(self._order)
         return [p for p in self._order if p in self._trap_set]
 
-    def focus_next(self) -> Optional[str]:
+    def focus_next(self) -> str | None:
         eff = self._effective_order()
         if not eff:
             return None
@@ -76,7 +76,7 @@ class FocusRegistry:
         self._focused = eff[idx]
         return self._focused
 
-    def focus_prev(self) -> Optional[str]:
+    def focus_prev(self) -> str | None:
         eff = self._effective_order()
         if not eff:
             return None
@@ -89,7 +89,7 @@ class FocusRegistry:
         return self._focused
 
     @contextmanager
-    def modal_trap(self, element_paths):
+    def modal_trap(self, element_paths: Iterable[str]) -> Iterator[None]:
         """Temporarily restrict traversal to provided element_paths (iterable of ids).
 
         Usage:

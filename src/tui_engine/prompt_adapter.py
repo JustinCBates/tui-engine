@@ -1,12 +1,13 @@
 """Small PromptSession adapter to allow legacy blocking prompts without a full Application."""
 
-from typing import Any
+from typing import Any, Optional
+
 
 class PromptSessionAdapter:
-    def __init__(self, session_factory=None):
+    def __init__(self, session_factory: Optional[Any] = None) -> None:
         self._factory = session_factory
 
-    def prompt(self, *args, **kwargs) -> Any:
+    def prompt(self, *args: Any, **kwargs: Any) -> Any:
         # Lazy import to avoid hard dependency during headless tests
         if self._factory is not None:
             session = self._factory()

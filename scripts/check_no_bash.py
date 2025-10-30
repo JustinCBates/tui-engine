@@ -8,6 +8,7 @@ arguments and fails if it finds obvious bash-only idioms such as heredocs
 import re
 import sys
 from pathlib import Path
+from typing import List
 
 PATTERNS = [
     (re.compile(r"<<\s*['\"]?\w+['\"]?"), "heredoc '<<' found"),
@@ -16,16 +17,16 @@ PATTERNS = [
 ]
 
 
-def scan_file(path: Path):
+def scan_file(path: Path) -> List[str]:
     text = path.read_text(encoding="utf8", errors="ignore")
-    findings = []
+    findings: List[str] = []
     for pat, msg in PATTERNS:
         if pat.search(text):
             findings.append(msg)
     return findings
 
 
-def main(argv):
+def main(argv: List[str]) -> int:
     if not argv:
         print("Usage: check_no_bash.py <file> [files...]")
         return 0

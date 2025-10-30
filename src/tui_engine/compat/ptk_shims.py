@@ -3,9 +3,10 @@
 These provide minimal fallback implementations when certain PTK widgets are missing.
 They are intentionally tiny and only implement the API surface the adapters/factory use.
 """
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Tuple, Any
 
-def maybe_checkboxlist(values: Iterable[Tuple[str, str]]):
+
+def maybe_checkboxlist(values: Iterable[Tuple[str, str]]) -> Any:
     """Return a real prompt-toolkit CheckboxList if available, otherwise a small fallback.
 
     The `values` argument is the same shape used by prompt-toolkit: an iterable of (value, label).
@@ -22,22 +23,22 @@ def maybe_checkboxlist(values: Iterable[Tuple[str, str]]):
 
             def __init__(self, vals: Iterable[Tuple[str, str]]):
                 self.values: List[Tuple[str, str]] = list(vals)
-                self.selected = set()
+                self.selected: set[str] = set()
 
-            def get_selected_values(self):
+            def get_selected_values(self) -> List[str]:
                 return [v for v, _ in self.values if v in self.selected]
 
-            def set_selected_values(self, items: Iterable[str]):
+            def set_selected_values(self, items: Iterable[str]) -> None:
                 self.selected = set(items)
 
             # small helper adapters expect a textual repr for debugging
-            def __repr__(self):
+            def __repr__(self) -> str:
                 return f"<FallbackCheckboxList values={len(self.values)} selected={len(self.selected)}>"
 
         return _FallbackCheckboxList(values)
 
 
-def maybe_radiolist(values: Iterable[Tuple[str, str]]):
+def maybe_radiolist(values: Iterable[Tuple[str, str]]) -> Any:
     """Return a real prompt-toolkit RadioList if available, otherwise a small fallback.
 
     The fallback implements `.values` and `.current_value`.
@@ -54,13 +55,13 @@ def maybe_radiolist(values: Iterable[Tuple[str, str]]):
                 self.values: List[Tuple[str, str]] = list(vals)
                 self.current_value = None
 
-            def get_selected(self):
+            def get_selected(self) -> Any:
                 return self.current_value
 
-            def set_selected(self, value):
+            def set_selected(self, value: Any) -> None:
                 self.current_value = value
 
-            def __repr__(self):
+            def __repr__(self) -> str:
                 return f"<FallbackRadioList values={len(self.values)} current={self.current_value}>"
 
         return _FallbackRadioList(values)

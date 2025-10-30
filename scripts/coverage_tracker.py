@@ -11,10 +11,10 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 
-def get_current_coverage() -> Dict:
+def get_current_coverage() -> Dict[str, Any]:
     """Get current coverage statistics."""
     try:
         # Run coverage report and capture output
@@ -30,7 +30,7 @@ def get_current_coverage() -> Dict:
         return {}
 
 
-def analyze_coverage_gaps(coverage_data: Dict) -> List[Dict]:
+def analyze_coverage_gaps(coverage_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Analyze coverage gaps and identify priority areas."""
     files = coverage_data.get("files", {})
     gaps = []
@@ -58,7 +58,7 @@ def analyze_coverage_gaps(coverage_data: Dict) -> List[Dict]:
     return gaps
 
 
-def track_coverage_history():
+def track_coverage_history() -> None:
     """Track coverage over time."""
     coverage_data = get_current_coverage()
     if not coverage_data:
@@ -163,7 +163,7 @@ def check_new_code_coverage(files: List[str]) -> bool:
         return True
 
 
-def generate_coverage_report():
+def generate_coverage_report() -> None:
     """Generate a comprehensive coverage report."""
     coverage_data = get_current_coverage()
     if not coverage_data:
@@ -204,7 +204,7 @@ def generate_coverage_report():
         print("  • Consider property-based testing for edge cases")
 
 
-def main():
+def main() -> None:
     """Main entry point."""
     import argparse
 

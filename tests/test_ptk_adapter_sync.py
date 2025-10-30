@@ -1,27 +1,36 @@
+from typing import Optional
+
+import tui_engine.factories as widgets
 from tui_engine.container import ContainerElement
-from tui_engine.ptk_widget_factory import map_element_to_widget
 from tui_engine.ptk_adapter import PTKAdapter
+from tui_engine.ptk_widget_factory import map_element_to_widget
 
 
 class FakeWidget:
-    def __init__(self, current_value=None):
-        self.current_value = current_value
-        self._tui_path = None
+    def __init__(self, current_value: Optional[str] = None) -> None:
+        self.current_value: Optional[str] = current_value
+        # allow assigning a string path later in tests
+        self._tui_path: Optional[str] = None
         self._tui_focusable = True
 
-    def _tui_sync(self):
+    def _tui_sync(self) -> Optional[str]:
         # simulate that sync uses current_value
-        return getattr(self, 'current_value', None)
+        return getattr(self, "current_value", None)
 
 
-def test_adapter_calls_tui_sync_and_updates_element():
+def test_adapter_calls_tui_sync_and_updates_element() -> None:
     root = ContainerElement('root')
-    leaf = root.text('leaf', value='orig')
+    leaf = widgets.text('leaf', value='orig')
+    root.add(leaf)
     # create a fake widget via factory descriptor
     desc = map_element_to_widget(leaf)
     # replace ptk_widget with our fake that exposes current_value
     fake = FakeWidget(current_value='newval')
-    fake._tui_path = leaf.path
+    try:
+        fake._tui_path = leaf.path
+    except Exception:
+        # Some fake widget shapes may not allow arbitrary attributes; ignore
+        pass
     desc['ptk_widget'] = fake
 
     # Create adapter and register mapping as build_real_layout would

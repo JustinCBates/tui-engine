@@ -16,9 +16,10 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 
-def run_command(cmd, description="", continue_on_error=False):
+def run_command(cmd: str, description: str = "", continue_on_error: bool = False) -> bool:
     """Run a command and handle errors."""
     print(f"\n🔄 {description}")
     print(f"Running: {cmd}")
@@ -38,7 +39,7 @@ def run_command(cmd, description="", continue_on_error=False):
     return result.returncode == 0
 
 
-def test_workflow():
+def test_workflow() -> None:
     """Run the test workflow locally."""
     print("\n🧪 === TEST WORKFLOW ===")
 
@@ -62,7 +63,7 @@ def test_workflow():
     )
 
 
-def lint_workflow():
+def lint_workflow() -> None:
     """Run the lint workflow locally."""
     print("\n🔍 === LINT WORKFLOW ===")
 
@@ -83,7 +84,7 @@ def lint_workflow():
     )
 
 
-def security_workflow():
+def security_workflow() -> None:
     """Run the security workflow locally."""
     print("\n🛡️  === SECURITY WORKFLOW ===")
 
@@ -110,7 +111,7 @@ def security_workflow():
     )
 
 
-def build_workflow():
+def build_workflow() -> None:
     """Run the build workflow locally."""
     print("\n🏗️  === BUILD WORKFLOW ===")
 
@@ -131,7 +132,7 @@ def build_workflow():
     run_command("twine check dist/*", "Checking package with twine")
 
 
-def performance_workflow():
+def performance_workflow() -> None:
     """Run performance tests locally."""
     print("\n⚡ === PERFORMANCE WORKFLOW ===")
 
@@ -171,7 +172,7 @@ print(f"Import time: {(end - start) * 1000:.2f}ms")
     )
 
 
-def main():
+def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Local CI/CD Testing")
     parser.add_argument(

@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 
-def run_command(cmd, check=True, capture_output=False):
+def run_command(cmd: str, check: bool = True, capture_output: bool = False) -> subprocess.CompletedProcess:
     """Run a shell command and return CompletedProcess."""
     print(f"Running: {cmd}")
     return subprocess.run(
@@ -21,7 +21,7 @@ def run_command(cmd, check=True, capture_output=False):
     )
 
 
-def get_git_branch():
+def get_git_branch() -> str:
     """Return current git branch name or empty string on error."""
     try:
         result = run_command("git branch --show-current", capture_output=True)
@@ -30,7 +30,7 @@ def get_git_branch():
         return ""
 
 
-def update_pyproject_for_build():
+def update_pyproject_for_build() -> None:
     """Trim development dependency groups from pyproject.toml in-place.
 
     This is a best-effort operation: if the file is missing or contains
@@ -67,7 +67,7 @@ def update_pyproject_for_build():
     print("Updated pyproject.toml for production (best-effort)")
 
 
-def prepare_build_branch():
+def prepare_build_branch() -> None:
     """Create/update a `build` branch from `develop` and remove dev files.
 
     This function performs non-destructive, reversible operations where
@@ -122,7 +122,7 @@ def prepare_build_branch():
     run_command("git checkout develop", check=False)
 
 
-def main():
+def main() -> None:
     if len(sys.argv) > 1 and sys.argv[1] in ("-h", "--help"):
         print(__doc__)
         return

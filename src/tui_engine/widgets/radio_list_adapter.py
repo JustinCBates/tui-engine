@@ -8,17 +8,19 @@ insertion while providing `get_selected`, `set_selected`, `focus` and
 """
 from __future__ import annotations
 
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, Sequence
 
 from .protocols import ChoiceWidgetProtocol
 
 
 class RadioListAdapter(ChoiceWidgetProtocol):
     # runtime contract attributes (may be set by factory on underlying widget)
-    _tui_path: Optional[str] = None
+    _tui_path: str | None = None
     _tui_focusable: bool = True
+    # expose options attribute to satisfy ChoiceWidgetProtocol
+    options: Sequence[tuple[Any, str]] = ()
 
-    def __init__(self, widget: Optional[Any] = None, element: Optional[Any] = None):
+    def __init__(self, widget: Any | None = None, element: Any | None = None):
         self._widget = widget
         self.element = element
 
@@ -26,13 +28,13 @@ class RadioListAdapter(ChoiceWidgetProtocol):
         w = self._widget
         if w is None:
             return
-        if hasattr(w, "focus") and callable(getattr(w, "focus")):
+        if hasattr(w, "focus") and callable(w.focus):
             try:
                 w.focus()
             except Exception:
                 pass
 
-    def _tui_sync(self) -> Optional[Any]:
+    def _tui_sync(self) -> Any | None:
         """Read the selected value from the wrapped widget and return it.
 
         For RadioList single-select semantics, return the raw selected value.
@@ -44,12 +46,12 @@ class RadioListAdapter(ChoiceWidgetProtocol):
         try:
             # common attribute name for RadioList
             if hasattr(w, "current_value"):
-                return getattr(w, "current_value")
+                return w.current_value
             # some variants expose `selected` or `value`
             if hasattr(w, "selected"):
-                return getattr(w, "selected")
+                return w.selected
             if hasattr(w, "value"):
-                return getattr(w, "value")
+                return w.value
         except Exception:
             pass
         return None
@@ -62,7 +64,9 @@ class RadioListAdapter(ChoiceWidgetProtocol):
 
     def set_selected(self, selected: Iterable[Any]) -> None:
         # Accept either an iterable or a single value; use the first element
-        val = None
+        from typing import Any
+
+        val: Any = None
         try:
             # if it's a string or single value, treat it as scalar
             if isinstance(selected, (str, bytes)):
@@ -80,13 +84,13 @@ class RadioListAdapter(ChoiceWidgetProtocol):
             return
         try:
             if hasattr(w, "current_value"):
-                setattr(w, "current_value", val)
+                w.current_value = val
                 return
             if hasattr(w, "selected"):
-                setattr(w, "selected", val)
+                w.selected = val
                 return
             if hasattr(w, "value"):
-                setattr(w, "value", val)
+                w.value = val
                 return
         except Exception:
             pass

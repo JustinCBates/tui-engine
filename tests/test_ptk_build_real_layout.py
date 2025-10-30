@@ -1,21 +1,24 @@
 import importlib
+from typing import Any
 
-from tui_engine.container import ContainerElement, Element
-from tui_engine.ptk_adapter import PTKAdapter, ApplicationWrapper
+import tui_engine.factories as widgets
+from tui_engine.container import ContainerElement
+from tui_engine.element import Element
+from tui_engine.ptk_adapter import ApplicationWrapper, PTKAdapter
 
 
-def make_sample_tree():
+def make_sample_tree() -> Any:
     root = ContainerElement("root")
     header = root.child("header")
-    header.button("ok")
-    header.button("cancel")
+    header.add(widgets.button("ok"))
+    header.add(widgets.button("cancel"))
     body = root.child("body")
-    body.input("name", value="x")
-    body.input("email", value="y")
+    body.add(widgets.input("name", value="x"))
+    body.add(widgets.input("email", value="y"))
     return root
 
 
-def test_build_real_layout_best_effort():
+def test_build_real_layout_best_effort() -> None:
     root = make_sample_tree()
     adapter = PTKAdapter(root, None, None, app=ApplicationWrapper())
     res = adapter.build_real_layout(root)

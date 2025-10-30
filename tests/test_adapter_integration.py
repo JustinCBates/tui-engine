@@ -1,19 +1,33 @@
 import pytest
+from typing import Any
+
+# Try to import PTK symbols; if unavailable we keep None values and the
+# module-level variables typed as Any so type-checker won't complain about
+# reassignments used in tests to guard runtime availability.
+_Window: Any
+_Button: Any
+_RadioList: Any
+_TextArea: Any
 
 try:
-    from prompt_toolkit.widgets import TextArea, Button, RadioList
-    from prompt_toolkit.layout.containers import Window
+    from prompt_toolkit.layout.containers import Window as _Window
+    from prompt_toolkit.widgets import Button as _Button, RadioList as _RadioList, TextArea as _TextArea
 except Exception:  # pragma: no cover - skip on systems without PTK
-    TextArea = None
-    Button = None
-    RadioList = None
-    Window = None
+    _Window = None
+    _Button = None
+    _RadioList = None
+    _TextArea = None
+
+TextArea: Any = _TextArea
+Button: Any = _Button
+RadioList: Any = _RadioList
+Window: Any = _Window
 
 from tui_engine import ptk_widget_factory
 
 
 @pytest.mark.skipif(TextArea is None, reason="prompt-toolkit not installed")
-def test_textarea_adapter_sync_on_accept():
+def test_textarea_adapter_sync_on_accept() -> None:
     # Create a fake element that will receive updates
     el = type("E", (), {})()
     el.name = "inp"
@@ -53,14 +67,14 @@ def test_textarea_adapter_sync_on_accept():
 
 
 @pytest.mark.skipif(Button is None, reason="prompt-toolkit not installed")
-def test_button_adapter_click_triggers_element_on_click():
+def test_button_adapter_click_triggers_element_on_click() -> None:
     el = type("E", (), {})()
     el.name = "btn"
     el.variant = "button"
     el.path = "/btn"
     called = {"ok": False}
 
-    def on_click():
+    def on_click() -> None:
         called["ok"] = True
 
     el.on_click = on_click
@@ -85,7 +99,7 @@ def test_button_adapter_click_triggers_element_on_click():
 
 
 @pytest.mark.skipif(RadioList is None, reason="prompt-toolkit not installed")
-def test_radiolist_adapter_syncs_selection():
+def test_radiolist_adapter_syncs_selection() -> None:
     opts = [("a", "A"), ("b", "B")]
     el = type("E", (), {})()
     el.name = "r"

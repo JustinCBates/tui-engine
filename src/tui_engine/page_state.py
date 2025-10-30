@@ -1,8 +1,9 @@
 import threading
 from typing import Any, Dict
 
+
 class PageState:
-    def __init__(self):
+    def __init__(self) -> None:
         self._values: Dict[str, Any] = {}
         self._meta: Dict[str, Any] = {}
         self._lock = threading.Lock()

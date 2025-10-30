@@ -6,7 +6,7 @@ and `focus` to coordinate widget <> element state.
 """
 from __future__ import annotations
 
-from typing import Any, Optional, Protocol, runtime_checkable, Sequence, Tuple
+from typing import Any, Protocol, Sequence, runtime_checkable
 
 
 @runtime_checkable
@@ -18,12 +18,12 @@ class TuiWidgetProtocol(Protocol):
     domain or returns a value that the adapter will apply.
     """
 
-    _tui_path: Optional[str]
+    _tui_path: str | None
     _tui_focusable: bool
 
     def focus(self) -> None: ...
 
-    def _tui_sync(self) -> Optional[Any]: ...
+    def _tui_sync(self) -> Any | None: ...
 
 
 @runtime_checkable
@@ -48,7 +48,7 @@ class ChoiceWidgetProtocol(TuiWidgetProtocol, Protocol):
         options: Sequence[Tuple[value, label]]
     """
 
-    options: Sequence[Tuple[Any, str]]
+    options: Sequence[tuple[Any, str]]
 
     def get_selected(self) -> Any: ...
 

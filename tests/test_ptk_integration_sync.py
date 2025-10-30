@@ -11,8 +11,8 @@ from tui_engine.ptk_adapter import PTKAdapter
 
 
 @pytest.mark.skipif(not _PTK_AVAILABLE, reason="prompt-toolkit not available")
-def test_build_real_layout_and_syncs_checkbox_list():
-    from tui_engine.container import Element
+def test_build_real_layout_and_syncs_checkbox_list() -> None:
+    from tui_engine.element import Element
 
     root = ContainerElement('root')
     # create a real Element (leaf) and add it to root so build_real_layout will

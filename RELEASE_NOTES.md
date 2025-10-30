@@ -21,9 +21,19 @@ Breaking changes
   `ContainerElement`. See `docs/MIGRATION.md` for automated transformations.
 
 Upgrade notes
-- Update imports and usages to `from tui_engine.container import ContainerElement`
-  and adjust code to use `container.text(...)`, `container.input(...)` and
-  `container.button(..., on_click=...)`.
+- Update imports to:
+
+    from tui_engine.container import ContainerElement
+    import tui_engine.factories as widgets
+
+  Replace old helper calls (previously `container.text`, `container.input`,
+  `container.button`) with explicit factories and `add()`. For example:
+
+    # old: header.text('title', 'My App')
+    header.add(widgets.text('title', 'My App'))
+
+    # old: footer.button('OK', on_click=cb)
+    footer.add(widgets.button('OK', on_click=cb))
 
 Tests & CI
 - Added unit and integration tests for widget mapping and sync behavior. The

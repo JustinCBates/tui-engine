@@ -19,8 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Type hints throughout the codebase
 
 ### Changed
+- The public API was refactored for internal-only development:
 
-- N/A (initial release)
+- Removed legacy container-level helper constructors (e.g. `container.text`,
+  `container.input`, `container.button`). Widgets are now provided by the
+  domain factories in `tui_engine.factories` and should be attached via
+  `container.add(widget)`.
+
+  This was a deliberate hard-move for internal development; see
+  `INTERNAL_ONLY.md` for the repository policy on breaking changes.
 
 ### Deprecated
 

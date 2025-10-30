@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import threading
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Optional
 
 
 class DependencyMap:
@@ -20,7 +20,7 @@ class DependencyMap:
     """
 
     def __init__(self) -> None:
-        self._map: Dict[Any, Any] = {}
+        self._map: dict[Any, Any] = {}
         self._lock = threading.Lock()
 
     def get(self, key: Any, default: Any = None) -> Any:
@@ -52,7 +52,7 @@ class DefaultApplier:
     `asyncio.get_event_loop().run_until_complete` when required.
     """
 
-    def __init__(self, target: Dict[Any, Any]) -> None:
+    def __init__(self, target: dict[Any, Any]) -> None:
         self._target = target
         self._lock = threading.Lock()
 

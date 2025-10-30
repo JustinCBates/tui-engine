@@ -1,15 +1,17 @@
+import tui_engine.factories as widgets
 from tui_engine.container import ContainerElement
 from tui_engine.ptk_widget_factory import map_element_to_widget
 
 
-def test_button_on_click_descriptor_present():
+def test_button_on_click_descriptor_present() -> None:
     root = ContainerElement('root')
     called = {}
 
-    def handler():
+    def handler() -> None:
         called['ok'] = True
 
-    btn = root.button('ok', on_click=handler)
+    btn = widgets.button('ok', on_click=handler)
+    root.add(btn)
     desc = map_element_to_widget(btn)
     assert desc['type'] == 'button'
     assert 'on_click' in desc

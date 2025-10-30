@@ -22,17 +22,20 @@ Old (Card/Section style):
 
 New:
 
-    from tui_engine.container import ContainerElement
+  from tui_engine.container import ContainerElement
+  import tui_engine.factories as widgets
 
-    root = ContainerElement('root')
-    header = root.child('header')
-    header.text('title', 'My App')
+  root = ContainerElement('root')
+  header = root.child('header')
+  header.add(widgets.text('title', 'My App'))
 
 Handlers and callbacks
 ----------------------
-- Buttons: pass `on_click` to `container.button(label, on_click=...)`.
-- Input values: `Element.get_value()` / `Element.set_value()` are provided; use
-  `element._value` for quick access in tests if necessary.
+- Buttons: create buttons via the factories and attach them. Example:
+
+    footer.add(widgets.button('OK', on_click=my_handler))
+
+- Input values: create inputs with `widgets.input(...)` and use `Element.get_value()` / `Element.set_value()`; `element._value` remains available for tests.
 
 Adapter considerations
 ---------------------

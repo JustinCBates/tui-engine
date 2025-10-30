@@ -4,25 +4,27 @@ This is the same demo that writes `demos/form_output.json`. Kept logic and
 imports but placed under the new module name expected by the main menu.
 """
 import json
+import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
-from tui_engine.page import Page
+import tui_engine.factories as widgets
 from tui_engine.container import ContainerElement, Element
-from tui_engine.ptk_adapter import PTKAdapter, ApplicationWrapper
+from tui_engine.page import Page
+from tui_engine.ptk_adapter import ApplicationWrapper, PTKAdapter
 
 
-def _collect_values(root: ContainerElement) -> dict:
+def _collect_values(root: ContainerElement) -> Dict[str, Any]:
     out = {}
 
-    def walk(node):
-        if hasattr(node, 'children'):
-            for c in getattr(node, 'children', []):
+    def walk(node: Any) -> None:
+        if hasattr(node, "children"):
+            for c in getattr(node, "children", []):
                 walk(c)
         else:
             # Only include non-container elements
             try:
-                val = getattr(node, 'get_value')()
+                val = node.get_value()
             except Exception:
                 val = getattr(node, '_value', None)
             out[node.path] = val
@@ -31,14 +33,17 @@ def _collect_values(root: ContainerElement) -> dict:
     return out
 
 
-def run_demo():
+def run_demo() -> None:
     p = Page(title="Form demo")
     form = p.container("user_form")
 
     # Inputs with defaults
-    name = form.input("name", value="Alice")
-    email = form.input("email", value="alice@example.com")
-    age = form.input("age", value="30")
+    name = widgets.input("name", value="Alice")
+    form.add(name)
+    email = widgets.input("email", value="alice@example.com")
+    form.add(email)
+    age = widgets.input("age", value="30")
+    form.add(age)
 
     # Instructions shown to the user (also rendered in the PTK UI)
     INSTRUCTIONS = (
@@ -50,25 +55,26 @@ def run_demo():
     # Add a non-editable text block to the form so the instructions are visible
     # inside the full-screen UI.
     try:
-        form.text("instructions", INSTRUCTIONS)
+        form.add(widgets.text("instructions", INSTRUCTIONS))
     except Exception:
-        # If the form API doesn't expose `text()` in some runtime, we still
-        # ensure instructions are printed in the console fallback below.
         pass
 
     # A checkbox_list style element (multi-select). We construct a raw
     # Element and attach options via metadata; adapters/factory will honor it.
-    topics = Element("topics", variant="checkbox_list", focusable=True, value=set())
+    # Start without assigning a typed value to avoid static type warnings
+    topics = Element("topics", variant="checkbox_list", focusable=True, value=None)
     topics.metadata['options'] = [("py", "Python"), ("ptk", "Prompt Toolkit"), ("ui", "TUI Engine")]
     form.add(topics)
 
-    submit = form.button("Submit")
-    cancel = form.button("Cancel")
+    submit = widgets.button("Submit")
+    form.add(submit)
+    cancel = widgets.button("Cancel")
+    form.add(cancel)
 
     output_path = Path(__file__).parent / "form_output.json"
 
     # Simple validation helper
-    def validate_and_save():
+    def validate_and_save() -> bool:
         vals = _collect_values(p.root)
         # very small validations
         if not vals.get('root.user_form.name'):
@@ -100,7 +106,7 @@ def run_demo():
     # after creation; closures will read it at runtime.
     adapter = None
 
-    def _on_submit():
+    def _on_submit() -> None:
         ok = validate_and_save()
         if ok:
             try:
@@ -109,7 +115,7 @@ def run_demo():
             except Exception:
                 pass
 
-    def _on_cancel():
+    def _on_cancel() -> None:
         print("Cancelled")
         try:
             if adapter is not None:
@@ -119,12 +125,12 @@ def run_demo():
 
     # Attach handlers to elements
     try:
-        setattr(submit, 'on_click', _on_submit)
+        submit.on_click = _on_submit
     except Exception:
         submit.metadata['on_click'] = _on_submit
 
     try:
-        setattr(cancel, 'on_click', _on_cancel)
+        cancel.on_click = _on_cancel
     except Exception:
         cancel.metadata['on_click'] = _on_cancel
 
@@ -132,51 +138,18 @@ def run_demo():
     adapter = PTKAdapter(p.root, p.page_state, p.events, app=ApplicationWrapper())
     root_container = adapter.build_real_layout(p.root)
 
-    if root_container is not None:
-        print("Launching interactive PTK form — use Tab to move focus, Enter to accept.")
-        print(INSTRUCTIONS)
-        try:
-            adapter.app.run()
-        except Exception:
-            pass
-    else:
-        # headless interactive fallback
-        print("Prompt-toolkit not available — falling back to console prompts.")
-        print(INSTRUCTIONS)
-        # Simple sequential prompts with defaults and validation
-        def prompt_input(elem: Element, label: str):
-            cur = elem.get_value()
-            while True:
-                resp = input(f"{label} [{cur}]: ")
-                if resp == "":
-                    resp = cur
-                elem.set_value(resp)
-                return
+    if root_container is None:
+        # We assume prompt-toolkit and a TTY are always available in this
+        # project. Fail fast to make issues obvious instead of falling back
+        # to a non-interactive console UI.
+        print("Error: prompt-toolkit layout could not be built. This demo requires prompt-toolkit and a TTY.", file=sys.stderr)
+        sys.exit(1)
 
-        prompt_input(name, "Name")
-        prompt_input(email, "Email")
-        prompt_input(age, "Age")
-
-        # topics multi-select simple console interface
-        opts = topics.metadata.get('options', [])
-        print("Select topics (comma-separated indexes):")
-        for i, (_, lbl) in enumerate(opts, start=1):
-            print(f"  {i}. {lbl}")
-        sel = input("Selected (e.g. 1,3) []: ")
-        chosen = set()
-        if sel.strip():
-            for part in sel.split(','):
-                try:
-                    idx = int(part.strip()) - 1
-                    if 0 <= idx < len(opts):
-                        chosen.add(opts[idx][0])
-                except Exception:
-                    pass
-        topics.set_selected_values(chosen) if hasattr(topics, 'set_selected_values') else topics.set_value(chosen)
-
-        # Final validation and save
-        if validate_and_save():
-            print(f"Saved: {output_path}")
+    # Launch the interactive PTK form — the environment is expected to be
+    # a Linux terminal with prompt-toolkit installed.
+    print("Launching interactive PTK form — use Tab to move focus, Enter to accept.")
+    print(INSTRUCTIONS)
+    adapter.app.run()
 
 
 if __name__ == "__main__":

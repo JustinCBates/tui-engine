@@ -4,14 +4,14 @@ from tui_engine.widgets.radio_list_adapter import RadioListAdapter
 
 
 class _FakeRadio:
-    def __init__(self, current=None):
+    def __init__(self, current: str | None = None) -> None:
         self.current_value = current
 
-    def focus(self):
+    def focus(self) -> None:
         self._focused = True
 
 
-def test_fake_radio_adapter_get_set_and_sync():
+def test_fake_radio_adapter_get_set_and_sync() -> None:
     fake = _FakeRadio(current='opt1')
     adapter = RadioListAdapter(fake)
 
@@ -24,7 +24,7 @@ def test_fake_radio_adapter_get_set_and_sync():
     assert adapter._tui_sync() == 'opt2'
 
 
-def test_prompt_toolkit_radiolist_if_available():
+def test_prompt_toolkit_radiolist_if_available() -> None:
     try:
         from prompt_toolkit.widgets import RadioList
     except Exception:

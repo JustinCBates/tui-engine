@@ -3,9 +3,10 @@
 Minimal exports for the early scaffold. This file lets tests import `tui_engine`.
 """
 
-from .page import Page
-from .container import ContainerElement, Element
+from .container import ContainerElement
+from .element import Element
 from .events import EventBus
+from .page import Page
 from .page_state import PageState
 from .ptk_widget_factory import map_element_to_widget
 

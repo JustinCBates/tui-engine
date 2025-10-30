@@ -6,8 +6,9 @@ headless unit tests. The PTKAdapter.build_layout() currently returns a
 lightweight layout summary (a nested dict) that describes the domain tree.
 Phase B will extend build_layout to produce prompt-toolkit containers.
 """
-from typing import Any, Optional, Dict, List
 import asyncio
+from typing import Any, Dict, List, Optional, Callable, Set
+
 from tui_engine.focus import FocusRegistry
 from tui_engine.ptk_widget_factory import map_element_to_widget
 
@@ -18,17 +19,17 @@ class ApplicationWrapper:
     API intentionally minimal: run(), stop(), invalidate(), create_background_task().
     """
 
-    def __init__(self, app: Optional[Any] = None):
+    def __init__(self, app: Optional[Any] = None) -> None:
         # app may be a real prompt_toolkit Application or None
-        self._app = app
+        self._app: Optional[Any] = app
         # background loop used when no running event loop is present
-        self._bg_loop = None
-        self._bg_thread = None
+        self._bg_loop: Optional[Any] = None
+        self._bg_thread: Optional[Any] = None
         # expose a public hook so tests can inject a real_app without touching
         # private attributes
-        self._real_app = None
+        self._real_app: Optional[Any] = None
 
-    def run(self, *args, **kwargs):
+    def run(self, *args: Any, **kwargs: Any) -> Any:
         if self._app is not None:
             try:
                 return self._app.run(*args, **kwargs)
@@ -37,11 +38,11 @@ class ApplicationWrapper:
         # headless no-op
         return None
 
-    def stop(self):
+    def stop(self) -> Any:
         if self._app is not None:
             return self._app.exit()
 
-    def invalidate(self):
+    def invalidate(self) -> None:
         if self._app is not None:
             try:
                 self._app.invalidate()
@@ -49,7 +50,7 @@ class ApplicationWrapper:
                 pass
         # headless: no-op
 
-    def create_background_task(self, coro):
+    def create_background_task(self, coro: Any) -> Any:
         # If there's a running loop in this thread, schedule on it.
         try:
             loop = asyncio.get_running_loop()
@@ -69,7 +70,7 @@ class ApplicationWrapper:
                     except Exception:
                         pass
 
-    def _ensure_background_loop(self):
+    def _ensure_background_loop(self) -> Any:
         """Start a background event loop in a thread and return it."""
         if self._bg_loop is not None:
             return self._bg_loop
@@ -79,7 +80,7 @@ class ApplicationWrapper:
         loop = asyncio.new_event_loop()
         self._bg_loop = loop
 
-        def _run():
+        def _run() -> None:
             try:
                 asyncio.set_event_loop(loop)
                 loop.run_forever()
@@ -91,7 +92,7 @@ class ApplicationWrapper:
         self._bg_thread = t
         return loop
 
-    def register_application(self, container, key_bindings=None, full_screen: bool = False):
+    def register_application(self, container: Any, key_bindings: Optional[Any] = None, full_screen: bool = False) -> bool:
         """If prompt_toolkit is available, create a real Application instance.
 
         This is a best-effort method: it constructs a prompt_toolkit Application
@@ -102,16 +103,16 @@ class ApplicationWrapper:
             from prompt_toolkit.application import Application
             from prompt_toolkit.layout import Layout
 
-            app = Application(layout=Layout(container), full_screen=full_screen, key_bindings=key_bindings)
-            self._app = app
-            self._real_app = app
+            ptk_app: Any = Application(layout=Layout(container), full_screen=full_screen, key_bindings=key_bindings)
+            self._app = ptk_app
+            self._real_app = ptk_app
             self._key_bindings = key_bindings
             self._container = container
             return True
         except Exception:
             return False
 
-    def register_keybinding(self, key: str, handler, filter=None):
+    def register_keybinding(self, key: str, handler: Any, filter: Optional[Any] = None) -> bool:
         """Register a keybinding if prompt_toolkit is available; otherwise no-op.
 
         The handler signature is `handler(event)` following prompt_toolkit.
@@ -158,7 +159,7 @@ class ApplicationWrapper:
         """
         self._key_bindings = kb
 
-    def register_ctrlc(self, handler):
+    def register_ctrlc(self, handler: Any) -> bool:
         """Best-effort register a Ctrl-C handler.
 
         If prompt-toolkit is available this registers a keybinding for Ctrl-C.
@@ -179,13 +180,13 @@ class PTKAdapter:
     tests can assert on it without needing a terminal or prompt_toolkit.
     """
 
-    def __init__(self, page: Any, page_state: Any, events: Any, app: Optional[ApplicationWrapper] = None):
+    def __init__(self, page: Any, page_state: Any, events: Any, app: Optional[ApplicationWrapper] = None) -> None:
         self.page = page
         self.page_state = page_state
         self.events = events
-        self.app = app or ApplicationWrapper()
+        self.app: ApplicationWrapper = app if app is not None else ApplicationWrapper()
         self.cached_visibility: Dict[str, bool] = {}
-        self.dependency_map: Dict[str, set] = {}
+        self.dependency_map: Dict[str, Set[str]] = {}
         # focus registry tracks focusable element paths and traverses them
         self.focus_registry = FocusRegistry()
         self._invalidate_scheduled = False
@@ -196,11 +197,11 @@ class PTKAdapter:
             # ignore failures in headless/no-ptk environments
             pass
         # mapping from element.path -> real prompt-toolkit widget (when created)
-        self._path_to_widget = {}
+        self._path_to_widget: Dict[str, Any] = {}
         # mapping from element.path -> callable that will sync widget -> element
         # typically the callable is the widget._tui_sync attached by the
         # widget factory. Stored so adapter can call sync on accept/focus-change.
-        self._path_to_sync = {}
+        self._path_to_sync: Dict[str, Callable[[], Any]] = {}
 
     def build_layout(self, root: Any) -> Dict[str, Any]:
         """Return a headless layout summary (nested dict) for the given root element.
@@ -244,26 +245,26 @@ class PTKAdapter:
 
         return walk(root)
 
-    def wrap_with_visibility(self, container: Any, path: str):
+    def wrap_with_visibility(self, container: Any, path: str) -> Any:
         # Phase B: return a ConditionalContainer bound to cached_visibility[path]
         return container
 
-    def register_dependencies(self, path: str, keys):
+    def register_dependencies(self, path: str, keys: Any) -> None:
         for k in keys:
             self.dependency_map.setdefault(k, set()).add(path)
 
-    def handle_state_change(self, changed_keys: List[str]):
+    def handle_state_change(self, changed_keys: List[str]) -> List[str]:
         # Phase B will recompute affected visibility and call mount/unmount hooks
-        affected = set()
+        affected: set[str] = set()
         for k in changed_keys:
             affected.update(self.dependency_map.get(k, ()))
         return list(affected)
 
-    def _schedule_invalidate(self):
+    def _schedule_invalidate(self) -> None:
         if not self._invalidate_scheduled:
             self._invalidate_scheduled = True
             # coalesce to next loop tick
-            async def _do():
+            async def _do() -> None:
                 await asyncio.sleep(0)
                 self._invalidate_scheduled = False
                 try:
@@ -278,14 +279,14 @@ class PTKAdapter:
                     self.app.invalidate()
                 except Exception:
                     pass
-    def _setup_focus_keybindings(self):
+    def _setup_focus_keybindings(self) -> None:
         """Register Tab and Shift-Tab to move focus via the FocusRegistry.
 
         This is a best-effort helper: if ApplicationWrapper can't register
         keybindings (no prompt_toolkit available), it silently does nothing.
         """
 
-        def _on_tab(event=None):
+        def _on_tab(event: Any = None) -> None:
             try:
                 # sync the currently-focused widget before moving focus
                 self._sync_focused_widget()
@@ -305,7 +306,7 @@ class PTKAdapter:
             except Exception:
                 pass
 
-        def _on_shift_tab(event=None):
+        def _on_shift_tab(event: Any = None) -> None:
             try:
                 # sync before moving focus back
                 self._sync_focused_widget()
@@ -358,7 +359,7 @@ class PTKAdapter:
         # current focused widget. This is best-effort and will no-op in
         # headless environments.
         try:
-            def _on_enter(event=None):
+            def _on_enter(event: Any = None) -> None:
                 try:
                     # Sync widget value first
                     self._sync_focused_widget()
@@ -389,7 +390,7 @@ class PTKAdapter:
         except Exception:
             pass
 
-    def _sync_focused_widget(self):
+    def _sync_focused_widget(self) -> None:
         """Call the registered _tui_sync callable for the currently-focused element, if any."""
         try:
             focused = self.focus_registry.get_focused()
@@ -412,7 +413,7 @@ class PTKAdapter:
                             if hasattr(elem, 'set_value'):
                                 elem.set_value(ret)
                             else:
-                                setattr(elem, '_value', ret)
+                                elem._value = ret
                             try:
                                 elem.mark_dirty()
                             except Exception:
@@ -431,7 +432,7 @@ class PTKAdapter:
         except Exception:
             pass
 
-    def _find_element_by_path(self, path: str):
+    def _find_element_by_path(self, path: str) -> Any:
         """Walk the page tree to find the element with the given dotted path."""
         try:
             root = self.page
@@ -442,7 +443,7 @@ class PTKAdapter:
             if getattr(root, 'path', None) == path:
                 return root
 
-            def walk(node):
+            def walk(node: Any) -> Any:
                 if getattr(node, 'path', None) == path:
                     return node
                 if hasattr(node, 'children'):
@@ -469,7 +470,7 @@ class PTKAdapter:
         except Exception:
             pass
 
-    def _apply_focus_to_ptk(self):
+    def _apply_focus_to_ptk(self) -> None:
         """If a real Application exists and we have a widget mapped for the
         currently-focused element path, focus that widget in the PTK layout.
         """
@@ -481,9 +482,9 @@ class PTKAdapter:
             if widget is None:
                 return
             # If ApplicationWrapper has a real app, try to set focus
-            if hasattr(self.app, "_real_app") and getattr(self.app, "_real_app") is not None:
+            if hasattr(self.app, "_real_app") and self.app._real_app is not None:
                 try:
-                    app = getattr(self.app, "_real_app")
+                    app = self.app._real_app
                     # Some prompt-toolkit apps provide layout.focus(widget)
                     if hasattr(app, "layout") and hasattr(app.layout, "focus"):
                         # If widget is a wrapper (implements .ptk_widget), unwrap
@@ -496,7 +497,7 @@ class PTKAdapter:
                         except Exception:
                             # As a fallback, try calling focus() on the wrapper
                             try:
-                                if hasattr(widget, 'focus') and callable(getattr(widget, 'focus')):
+                                if hasattr(widget, 'focus') and callable(widget.focus):
                                     widget.focus()
                             except Exception:
                                 pass
@@ -505,7 +506,7 @@ class PTKAdapter:
         except Exception:
             pass
 
-    def build_real_layout(self, root: Any):
+    def build_real_layout(self, root: Any) -> Any:
         """Attempt to build a real prompt-toolkit layout from the domain tree.
 
         Returns the root prompt-toolkit container when successful, or None if
@@ -518,7 +519,7 @@ class PTKAdapter:
         except Exception:
             return None
 
-        def build(node: Any):
+        def build(node: Any) -> Any:
             # container
             if hasattr(node, 'children'):
                 widgets = []
@@ -564,10 +565,9 @@ class PTKAdapter:
                         # Prefer wrapper _tui_sync if present, otherwise
                         # check the real layout widget for a sync helper.
                         sync_candidate = None
-                        if hasattr(w, '_tui_sync'):
-                            sync_candidate = getattr(w, '_tui_sync')
-                        elif hasattr(layout_w, '_tui_sync'):
-                            sync_candidate = getattr(layout_w, '_tui_sync')
+                        sync_candidate = getattr(w, '_tui_sync', None)
+                        if sync_candidate is None:
+                            sync_candidate = getattr(layout_w, '_tui_sync', None)
 
                         if sync_candidate is not None:
                             self._path_to_sync[path] = sync_candidate

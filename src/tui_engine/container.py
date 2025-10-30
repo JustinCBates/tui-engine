@@ -1,63 +1,7 @@
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
-class IElement:
-    """Minimal interface for elements"""
-    def __init__(self, name: str, variant: str = "container"):
-        self.name = name
-        self.variant = variant
-        self.parent: Optional["ContainerElement"] = None
-        self.visible: bool = True
-        self.metadata: dict = {}
-        self._dirty = True
-
-    @property
-    def path(self) -> str:
-        parts = []
-        node = self
-        while node is not None and getattr(node, "name", None) is not None:
-            parts.append(node.name)
-            node = node.parent
-        return ".".join(reversed(parts))
-
-    def get_render_lines(self, width: int = 80) -> List[str]:
-        raise NotImplementedError()
-
-    def to_ptk_container(self, adapter: Any):
-        raise NotImplementedError()
-
-    def mark_dirty(self):
-        self._dirty = True
-
-    def clear_dirty(self):
-        self._dirty = False
-
-    def is_dirty(self) -> bool:
-        return self._dirty
-
-    def on_mount(self, page_state: Any):
-        pass
-
-    def on_unmount(self, page_state: Any):
-        pass
-
-
-class Element(IElement):
-    def __init__(self, name: str, variant: str = "text", *, focusable: bool = False, value: Optional[str] = None):
-        super().__init__(name, variant=variant)
-        self.focusable = focusable
-        self._value = value
-        self.validators = []
-
-    def get_value(self):
-        return self._value
-
-    def set_value(self, v):
-        self._value = v
-        self.mark_dirty()
-
-    def get_render_lines(self, width: int = 80) -> List[str]:
-        text = str(self._value) if self._value is not None else ""
-        return [text]
+from .element import Element
+from .interfaces import IElement
 
 
 class ContainerElement(IElement):
@@ -65,8 +9,8 @@ class ContainerElement(IElement):
         super().__init__(name, variant=variant)
         self.children: List[IElement] = []
         self.layout_hint = layout_hint
-        self.focus_scope = False
-        self.include_hidden_in_validity = False
+        self.focus_scope: bool = False
+        self.include_hidden_in_validity: bool = False
 
     def add(self, child: IElement) -> "ContainerElement":
         child.parent = self
@@ -80,32 +24,17 @@ class ContainerElement(IElement):
             child.parent = None
             self.mark_dirty()
 
-    def child(self, name: str, variant: str = "container", **kwargs) -> "ContainerElement":
+    def child(self, name: str, variant: str = "container", **kwargs: Any) -> "ContainerElement":
+        # kwargs are accepted for forward-compatibility with factory-style
+        # constructors; keep them typed as Any to avoid mypy disallow_untyped_defs
+        # errors while preserving runtime flexibility.
         c = ContainerElement(name, variant=variant)
         self.add(c)
         return c
-
-    def text(self, name: str, value: str = "") -> Element:
-        e = Element(name, variant="text", value=value)
-        self.add(e)
-        return e
-
-    def input(self, name: str, value: str = "") -> Element:
-        e = Element(name, variant="input", value=value, focusable=True)
-        self.add(e)
-        return e
-
-    def button(self, label: str, *, on_click=None) -> Element:
-        e = Element(label, variant="button", focusable=True)
-        # attach a simple on_click handler if provided so adapters/factories
-        # can wire it into real widgets
-        if on_click is not None:
-            try:
-                setattr(e, 'on_click', on_click)
-            except Exception:
-                e.metadata['on_click'] = on_click
-        self.add(e)
-        return e
+    # NOTE: previously this class exposed convenience constructors for
+    # concrete widgets (text/input/button). Those were removed to keep
+    # `ContainerElement` strictly structural. Use the factories in
+    # `tui_engine.widgets` and `container.add(...)` to attach widgets.
 
     def get_focusable_children(self) -> List[IElement]:
         return [c for c in self.children if getattr(c, "focusable", False)]

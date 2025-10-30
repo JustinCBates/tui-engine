@@ -6,7 +6,7 @@ PTK adapter can coordinate actions and state.
 """
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from tui_engine.widgets.protocols import ActionWidgetProtocol
 
@@ -19,10 +19,10 @@ class ButtonAdapter(ActionWidgetProtocol):
         element: optional domain element this widget is bound to
     """
 
-    _tui_path: Optional[str]
+    _tui_path: str | None
     _tui_focusable: bool
 
-    def __init__(self, widget: Any, element: Optional[Any] = None) -> None:
+    def __init__(self, widget: Any, element: Any | None = None) -> None:
         self._widget = widget
         self._element = element
 
@@ -37,7 +37,7 @@ class ButtonAdapter(ActionWidgetProtocol):
 
     def focus(self) -> None:
         try:
-            if hasattr(self._widget, "focus") and callable(getattr(self._widget, "focus")):
+            if hasattr(self._widget, "focus") and callable(self._widget.focus):
                 try:
                     self._widget.focus()
                     return
@@ -52,7 +52,7 @@ class ButtonAdapter(ActionWidgetProtocol):
         except Exception:
             pass
 
-    def _tui_sync(self) -> Optional[Any]:
+    def _tui_sync(self) -> Any | None:
         """Buttons typically do not carry value; ensure element state is preserved.
 
         This is a no-op for most buttons but kept for symmetry with other

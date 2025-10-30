@@ -1,11 +1,12 @@
-from src.tui_engine.container import ContainerElement, Element
+import tui_engine.factories as widgets
+from tui_engine.container import ContainerElement
 
 
-def test_container_add_and_render():
+def test_container_add_and_render() -> None:
     c = ContainerElement("root", variant="page")
-    c.text("t1", "hello")
+    c.add(widgets.text("t1", "hello"))
     sub = c.child("sub", variant="section")
-    sub.text("s1", "child text")
+    sub.add(widgets.text("s1", "child text"))
 
     lines = c.get_render_lines(80)
     assert any("hello" in l for l in lines)

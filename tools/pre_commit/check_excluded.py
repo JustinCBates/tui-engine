@@ -16,7 +16,7 @@ ROOT = Path(__file__).parents[2].resolve()
 COVRC = ROOT / ".coveragerc"
 
 
-def _read_omit_list(coveragerc_path: Path):
+def _read_omit_list(coveragerc_path: Path) -> list[str]:
     cfg = configparser.ConfigParser()
     cfg.read(coveragerc_path)
     if "run" not in cfg or "omit" not in cfg["run"]:
@@ -26,7 +26,7 @@ def _read_omit_list(coveragerc_path: Path):
     return items
 
 
-def _is_trivial_ast(path: Path):
+def _is_trivial_ast(path: Path) -> list[str]:
     """Return list of problems found in AST; empty = trivial."""
     problems = []
     try:
@@ -59,7 +59,7 @@ def _is_trivial_ast(path: Path):
     return problems
 
 
-def main():
+def main() -> int:
     if not COVRC.exists():
         print(".coveragerc not found; skipping check")
         return 0
@@ -107,8 +107,8 @@ def main():
             print("AST complexity problems in excluded files:")
             for fname, probs in ast_problems:
                 print(f"  - {fname}:")
-                for p in probs:
-                    print("     ", p)
+                for prob in probs:
+                    print("     ", prob)
             print()
         print(
             "Please either add the header or move complex logic into non-excluded modules."

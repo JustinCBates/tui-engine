@@ -7,9 +7,10 @@ callable which will be imported and executed.
 import importlib
 import sys
 from pathlib import Path
+from typing import Optional
 
 
-def _ensure_demos_package():
+def _ensure_demos_package() -> None:
     """Ensure the repo root (parent of this demos/ folder) is on sys.path.
 
     This makes `importlib.import_module('demos.x')` work even when the user
@@ -43,7 +44,7 @@ DEMOS = [
 ]
 
 
-def show_menu():
+def show_menu() -> None:
     print("TUI Engine - Demos")
     print("===================")
     for i, (name, desc) in enumerate(DEMOS, start=1):
@@ -51,7 +52,7 @@ def show_menu():
     print("0. Quit")
 
 
-def choose_demo():
+def choose_demo() -> Optional[str]:
     while True:
         try:
             choice = input("Choose demo number: ")
@@ -68,7 +69,7 @@ def choose_demo():
             print("Please enter a number")
 
 
-def run():
+def run() -> None:
     _ensure_demos_package()
     show_menu()
     sel = choose_demo()
