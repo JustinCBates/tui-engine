@@ -10,7 +10,7 @@ import importlib
 import runpy
 import sys
 import types
-from typing import Any, Callable, Iterable, Mapping, Dict, Literal, cast
+from typing import Any, Callable, Dict, Iterable, Literal, Mapping, cast
 
 
 def make_stub_prompt(value: Any = None) -> Callable[..., Any]:

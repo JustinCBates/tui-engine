@@ -1,10 +1,10 @@
 import tui_engine.factories as widgets
-from tui_engine.container import ContainerElement
+from tui_engine.container import Container
 from tui_engine.ptk_widget_factory import map_element_to_widget
 
 
 def test_button_on_click_descriptor_present() -> None:
-    root = ContainerElement('root')
+    root = Container('root')
     called = {}
 
     def handler() -> None:

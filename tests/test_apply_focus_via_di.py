@@ -2,7 +2,7 @@
 using dependency injection only (no monkeypatching)."""
 from typing import Any
 
-from tui_engine.container import ContainerElement
+from tui_engine.container import Container
 from tui_engine.element import Element
 from tui_engine.ptk_adapter import ApplicationWrapper, PTKAdapter
 
@@ -22,7 +22,7 @@ class FakeApp:
 
 def test_apply_focus_to_ptk_via_injection() -> None:
     # Build domain tree with one focusable element
-    root = ContainerElement('root')
+    root = Container('root')
     c = root.child('body')
     import tui_engine.factories as widgets
     btn = widgets.button('ok')

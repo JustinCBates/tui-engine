@@ -1,7 +1,7 @@
 from typing import Optional
 
 import tui_engine.factories as widgets
-from tui_engine.container import ContainerElement
+from tui_engine.container import Container
 from tui_engine.ptk_adapter import PTKAdapter
 from tui_engine.ptk_widget_factory import map_element_to_widget
 
@@ -19,7 +19,7 @@ class FakeWidget:
 
 
 def test_adapter_calls_tui_sync_and_updates_element() -> None:
-    root = ContainerElement('root')
+    root = Container('root')
     leaf = widgets.text('leaf', value='orig')
     root.add(leaf)
     # create a fake widget via factory descriptor

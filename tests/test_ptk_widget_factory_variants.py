@@ -1,4 +1,4 @@
-from tui_engine.container import ContainerElement
+from tui_engine.container import Container
 from tui_engine.ptk_widget_factory import map_element_to_widget
 
 
@@ -11,15 +11,15 @@ def make_options() -> list[tuple[str, str]]:
 
 
 def test_select_descriptor_contains_options_and_selected() -> None:
-    root = ContainerElement('root')
+    root = Container('root')
     _el = root.child('sel')
     # make a leaf element to carry variant
-    leaf = ContainerElement('leaf')
+    leaf = Container('leaf')
     # attach metadata for options
     leaf.variant = 'select'
     leaf.metadata['options'] = make_options()
     # use attribute assignment similar to Element to simulate value
-    setattr(leaf, '_value', 'b')
+    leaf._value = 'b'
     desc = map_element_to_widget(leaf)
     assert desc['type'] == 'select'
     assert 'options' in desc and len(desc['options']) == 3
@@ -27,7 +27,7 @@ def test_select_descriptor_contains_options_and_selected() -> None:
 
 
 def test_radio_descriptor_normalized() -> None:
-    leaf = ContainerElement('r')
+    leaf = Container('r')
     leaf.variant = 'radio'
     leaf.metadata['options'] = ['x', 'y']
     desc = map_element_to_widget(leaf)
@@ -36,10 +36,10 @@ def test_radio_descriptor_normalized() -> None:
 
 
 def test_checkbox_list_selected_as_set() -> None:
-    leaf = ContainerElement('cb')
+    leaf = Container('cb')
     leaf.variant = 'checkbox_list'
     leaf.metadata['options'] = ['one', 'two']
-    setattr(leaf, '_value', ['one'])
+    leaf._value = ['one']
     desc = map_element_to_widget(leaf)
     assert desc['type'] == 'checkbox_list'
     assert isinstance(desc['selected'], set)

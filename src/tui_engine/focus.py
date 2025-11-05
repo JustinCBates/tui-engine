@@ -15,7 +15,7 @@ will integrate with prompt-toolkit key bindings and Application.invalidate().
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Optional, Any, Iterable, Set, Iterator
+from typing import Any, Iterable, Iterator, Optional, Set
 
 
 class FocusRegistry:
@@ -24,7 +24,7 @@ class FocusRegistry:
         self._order: list[str] = []
         self._focused: str | None = None
         # If set, traversal is limited to entries in this set
-        self._trap_set: Optional[Set[str]] = None
+        self._trap_set: set[str] | None = None
 
     def register(self, element: Any) -> None:
         pid = getattr(element, "path", None)
@@ -45,7 +45,7 @@ class FocusRegistry:
         if self._focused == pid:
             self._focused = self._order[0] if self._order else None
 
-    def set_focused(self, element_or_path: Any | str) -> Optional[str]:
+    def set_focused(self, element_or_path: Any | str) -> str | None:
         pid = element_or_path if isinstance(element_or_path, str) else getattr(element_or_path, "path", None)
         if pid is None:
             return None

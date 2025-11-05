@@ -1,5 +1,6 @@
-import pytest
 from typing import Any
+
+import pytest
 
 from tui_engine import ptk_widget_factory
 

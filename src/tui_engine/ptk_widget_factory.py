@@ -1,11 +1,12 @@
 """PTK widget factory
 
-Map domain elements (Element / ContainerElement) into prompt-toolkit widgets when
+Map domain elements (Element / Container) into prompt-toolkit widgets when
 prompt-toolkit is available, or return a stable descriptor for headless/testing.
 """
 from typing import Any, Dict
-from tui_engine.widgets.protocols import TuiWidgetProtocol
+
 from tui_engine.interfaces import IElement
+from tui_engine.widgets.protocols import TuiWidgetProtocol
 
 try:
     # Try best-effort import of common prompt-toolkit widgets
@@ -107,16 +108,16 @@ def _sync_widget_to_element(widget: TuiWidgetProtocol | Any, element: IElement |
         val = None
         # RadioList typically exposes `current_value` or a similar attr
         if getattr(widget, "current_value", None) is not None:
-            val = getattr(widget, "current_value")
+            val = widget.current_value
         # Some CheckboxList implementations expose `checked_values` or
         # `current_values` as an iterable of selected keys
         elif getattr(widget, "checked_values", None) is not None:
-            val = list(getattr(widget, "checked_values"))
+            val = list(widget.checked_values)
         elif getattr(widget, "current_values", None) is not None:
-            val = list(getattr(widget, "current_values"))
+            val = list(widget.current_values)
         # fallback: some widget may expose `values` or `selected` names
         elif getattr(widget, "selected", None) is not None:
-            val = getattr(widget, "selected")
+            val = widget.selected
 
         if val is not None:
             # Normalize single-selection into scalar, multi-selection into list
@@ -132,7 +133,7 @@ def _sync_widget_to_element(widget: TuiWidgetProtocol | Any, element: IElement |
                     setter(newv)
                 else:
                     try:
-                        setattr(element, "_value", newv)
+                        element._value = newv
                     except Exception:
                         pass
                 # mark dirty if available
@@ -145,7 +146,7 @@ def _sync_widget_to_element(widget: TuiWidgetProtocol | Any, element: IElement |
             except Exception:
                 # best-effort write; ignore failures
                 try:
-                    setattr(element, "_value", newv)
+                    element._value = newv
                 except Exception:
                     pass
 
@@ -198,11 +199,11 @@ def map_element_to_widget(element: IElement | Any) -> Dict[str, Any]:
 
                 # Apply runtime contract attributes to the underlying widget
                 try:
-                    setattr(raw_button, "_tui_path", path)
+                    raw_button._tui_path = path
                 except Exception:
                     pass
                 try:
-                    setattr(raw_button, "_tui_focusable", True)
+                    raw_button._tui_focusable = True
                 except Exception:
                     pass
 
@@ -216,14 +217,14 @@ def map_element_to_widget(element: IElement | Any) -> Dict[str, Any]:
                                     adapter_button.click()
                                 else:
                                     try:
-                                        getattr(element, 'on_click')()
+                                        element.on_click()
                                     except Exception:
                                         pass
                             except Exception:
                                 pass
 
                         try:
-                            setattr(raw_button, 'handler', _handler)
+                            raw_button.handler = _handler
                         except Exception:
                             # If attribute is read-only, attempt to wrap via
                             # existing attribute names; ignore failures
@@ -241,7 +242,7 @@ def map_element_to_widget(element: IElement | Any) -> Dict[str, Any]:
                                             pass
 
                                 try:
-                                    setattr(raw_button, 'handler', _wrap_handler)
+                                    raw_button.handler = _wrap_handler
                                 except Exception:
                                     pass
                             except Exception:
@@ -283,11 +284,11 @@ def map_element_to_widget(element: IElement | Any) -> Dict[str, Any]:
 
                 # Apply runtime contract attributes to the underlying widget
                 try:
-                    setattr(raw_input, "_tui_path", path)
+                    raw_input._tui_path = path
                 except Exception:
                     pass
                 try:
-                    setattr(raw_input, "_tui_focusable", True)
+                    raw_input._tui_focusable = True
                 except Exception:
                     pass
 
@@ -411,7 +412,7 @@ def map_element_to_widget(element: IElement | Any) -> Dict[str, Any]:
                     # prefer whichever wrapper variable was actually created
                     candidate = w_radio if w_radio is not None else (w_checkbox if w_checkbox is not None else w_window)
                     if candidate is not None:
-                        setattr(candidate, '_tui_path', getattr(element, 'path', None))
+                        candidate._tui_path = getattr(element, 'path', None)
                 except Exception:
                     pass
                 try:
@@ -422,7 +423,7 @@ def map_element_to_widget(element: IElement | Any) -> Dict[str, Any]:
                         candidate = w_checkbox
                     else:
                         candidate = w_window
-                    setattr(candidate, '_tui_focusable', True)
+                    candidate._tui_focusable = True
                 except Exception:
                     pass
 
@@ -435,7 +436,7 @@ def map_element_to_widget(element: IElement | Any) -> Dict[str, Any]:
                         _sync_widget_to_element(candidate, element, variant)
 
                     try:
-                        setattr(candidate, '_tui_sync', _do_sync)
+                        candidate._tui_sync = _do_sync
                     except Exception:
                         pass
                 except Exception:
@@ -512,18 +513,18 @@ def map_element_to_widget(element: IElement | Any) -> Dict[str, Any]:
                             wrapped = candidate2
 
                         try:
-                            setattr(wrapped, '_tui_path', getattr(element, 'path', None))
+                            wrapped._tui_path = getattr(element, 'path', None)
                         except Exception:
                             pass
                         try:
-                            setattr(wrapped, '_tui_focusable', True)
+                            wrapped._tui_focusable = True
                         except Exception:
                             pass
                         try:
                             def _do_sync2() -> None:
                                 _sync_widget_to_element(wrapped, element, variant)
 
-                            setattr(wrapped, '_tui_sync', _do_sync2)
+                            wrapped._tui_sync = _do_sync2
                         except Exception:
                             pass
 

@@ -1,13 +1,13 @@
 from typing import Any
 
 import tui_engine.factories as widgets
-from tui_engine.container import ContainerElement
+from tui_engine.container import Container
 from tui_engine.element import Element
 from tui_engine.focus import FocusRegistry
 
 
 def make_sample_tree() -> Any:
-    root = ContainerElement("root")
+    root = Container("root")
     header = root.child("header")
     b1 = widgets.button("ok")
     header.add(b1)

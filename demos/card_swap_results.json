@@ -1,0 +1,5 @@
+{
+  "deployment_type": "local",
+  "environment": "development",
+  "linux_distro": "debian"
+}

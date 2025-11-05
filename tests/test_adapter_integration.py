@@ -1,5 +1,6 @@
-import pytest
 from typing import Any
+
+import pytest
 
 # Try to import PTK symbols; if unavailable we keep None values and the
 # module-level variables typed as Any so type-checker won't complain about
@@ -11,7 +12,9 @@ _TextArea: Any
 
 try:
     from prompt_toolkit.layout.containers import Window as _Window
-    from prompt_toolkit.widgets import Button as _Button, RadioList as _RadioList, TextArea as _TextArea
+    from prompt_toolkit.widgets import Button as _Button
+    from prompt_toolkit.widgets import RadioList as _RadioList
+    from prompt_toolkit.widgets import TextArea as _TextArea
 except Exception:  # pragma: no cover - skip on systems without PTK
     _Window = None
     _Button = None

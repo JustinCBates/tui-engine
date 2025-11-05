@@ -9,12 +9,12 @@ from pathlib import Path
 from typing import Any, Dict
 
 import tui_engine.factories as widgets
-from tui_engine.container import ContainerElement, Element
+from tui_engine.container import Container, Element
 from tui_engine.page import Page
 from tui_engine.ptk_adapter import ApplicationWrapper, PTKAdapter
 
 
-def _collect_values(root: ContainerElement) -> Dict[str, Any]:
+def _collect_values(root: Container) -> Dict[str, Any]:
     out = {}
 
     def walk(node: Any) -> None:
@@ -149,7 +149,7 @@ def run_demo() -> None:
     # a Linux terminal with prompt-toolkit installed.
     print("Launching interactive PTK form — use Tab to move focus, Enter to accept.")
     print(INSTRUCTIONS)
-    import pdb; pdb.set_trace()
+    # Debug helper removed for linting; use a debugger if you need to break here.
     adapter.app.run()
 
 

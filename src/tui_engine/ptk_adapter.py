@@ -7,7 +7,7 @@ lightweight layout summary (a nested dict) that describes the domain tree.
 Phase B will extend build_layout to produce prompt-toolkit containers.
 """
 import asyncio
-from typing import Any, Dict, List, Optional, Callable, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 
 from tui_engine.focus import FocusRegistry
 from tui_engine.ptk_widget_factory import map_element_to_widget
@@ -28,6 +28,18 @@ class ApplicationWrapper:
         # expose a public hook so tests can inject a real_app without touching
         # private attributes
         self._real_app: Optional[Any] = None
+        # Visible/invalidated flag can be toggled by tests or consumers; define
+        # it here to satisfy type-checkers and editor hovers that inspect
+        # attributes on ApplicationWrapper instances.
+        self.invalidated: bool = False
+        # Optional storage for the last style mapping applied via adapter so
+        # tests and consumers can inspect requested styles.
+        self._last_style: Optional[Dict[str, str]] = None
+        # Optional key_bindings and container references may be set later
+        # by register_keybinding/register_application. Declare them here to
+        # satisfy static analysis and editor hovers.
+        self._key_bindings: Optional[Any] = None
+        self._container: Optional[Any] = None
 
     def run(self, *args: Any, **kwargs: Any) -> Any:
         if self._app is not None:
@@ -228,6 +240,11 @@ class PTKAdapter:
                     'type': 'container',
                     'name': getattr(node, 'name', ''),
                     'variant': getattr(node, 'variant', ''),
+                    # alignment and sizing hints (may be None)
+                    'align': getattr(node, 'align', None),
+                    'min_height': getattr(node, 'min_height', None),
+                    'max_height': getattr(node, 'max_height', None),
+                    'offset': getattr(node, 'offset', None),
                     'children': children,
                 }
             else:
@@ -241,13 +258,43 @@ class PTKAdapter:
                     'type': 'leaf',
                     'name': getattr(node, 'name', ''),
                     'variant': getattr(node, 'variant', ''),
+                    'min_height': getattr(node, 'min_height', None),
+                    'max_height': getattr(node, 'max_height', None),
+                    'offset': getattr(node, 'offset', None),
                 }
 
         return walk(root)
 
     def wrap_with_visibility(self, container: Any, path: str) -> Any:
-        # Phase B: return a ConditionalContainer bound to cached_visibility[path]
-        return container
+        # Phase B: when prompt-toolkit is available wrap the provided
+        # container in a ConditionalContainer whose filter consults
+        # self.cached_visibility[path]. Otherwise default the cached
+        # visibility and return the original container.
+        try:
+            from prompt_toolkit.filters import Condition
+            from prompt_toolkit.layout.containers import ConditionalContainer
+        except Exception:
+            # headless: ensure cached_visibility has a default and return
+            # the original container
+            try:
+                self.cached_visibility.setdefault(path, True)
+            except Exception:
+                pass
+            return container
+
+        # Ensure a default visibility value exists for the path
+        try:
+            self.cached_visibility.setdefault(path, True)
+        except Exception:
+            pass
+
+        # Build a Condition that reads the cached_visibility dictionary
+        try:
+            cond = Condition(lambda: bool(self.cached_visibility.get(path, True)))
+            return ConditionalContainer(container, filter=cond)
+        except Exception:
+            # Fallback: return the raw container but keep cached_visibility
+            return container
 
     def register_dependencies(self, path: str, keys: Any) -> None:
         for k in keys:
@@ -620,10 +667,71 @@ class PTKAdapter:
 
         root_container = build(root)
 
+        # If the root (or Page) has floats attached, wrap the main layout
+        # in a FloatContainer so overlays are rendered above the main UI.
+        try:
+            floats_attached = getattr(root, 'floats', None) or []
+            if floats_attached:
+                try:
+                    from prompt_toolkit.layout.containers import Float, FloatContainer
+
+                    float_list = []
+                    for f in floats_attached:
+                        try:
+                            float_content = build(f)
+                            top = f.metadata.get('top', None)
+                            left = f.metadata.get('left', None)
+                            right = f.metadata.get('right', None)
+                            bottom = f.metadata.get('bottom', None)
+                            float_list.append(Float(content=float_content, top=top, left=left, right=right, bottom=bottom))
+                        except Exception:
+                            pass
+                    # Only wrap if we successfully built at least one Float
+                    if float_list:
+                        root_container = FloatContainer(root_container, floats=float_list)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         # Do not force the root to expand vertically here. Keep the natural
         # size so each input renders as a single line unless individual
         # widgets request more space. This avoids occupying the whole terminal
         # height and keeps the layout compact.
+
+        # Collect simple style mapping for frames/borders so tests and
+        # consumers can inspect requested colors. This is a lightweight
+        # convention: keys are selector-like strings ending with '.border'.
+        try:
+            styles: Dict[str, str] = {}
+            def collect_styles(node: Any) -> None:
+                try:
+                    if getattr(node, 'border', False):
+                        color = getattr(node, 'border_color', None)
+                        if color:
+                            p = getattr(node, 'path', None) or getattr(node, 'name', '')
+                            key = f".{p}.border"
+                            styles[key] = color
+                except Exception:
+                    pass
+                try:
+                    if hasattr(node, 'children'):
+                        for c in getattr(node, 'children', []):
+                            collect_styles(c)
+                except Exception:
+                    pass
+
+            try:
+                collect_styles(root)
+            except Exception:
+                pass
+            # Expose the last computed style dict on the ApplicationWrapper
+            try:
+                self.app._last_style = styles
+            except Exception:
+                pass
+        except Exception:
+            pass
 
         # register Application with prompt-toolkit if possible
         try:

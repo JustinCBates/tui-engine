@@ -6,7 +6,7 @@ try:
 except Exception:
     _PTK_AVAILABLE = False
 
-from tui_engine.container import ContainerElement
+from tui_engine.container import Container
 from tui_engine.ptk_adapter import PTKAdapter
 
 
@@ -14,7 +14,7 @@ from tui_engine.ptk_adapter import PTKAdapter
 def test_build_real_layout_and_syncs_checkbox_list() -> None:
     from tui_engine.element import Element
 
-    root = ContainerElement('root')
+    root = Container('root')
     # create a real Element (leaf) and add it to root so build_real_layout will
     # treat it as a leaf (no 'children' attribute)
     leaf = Element('leaf', variant='checkbox_list')

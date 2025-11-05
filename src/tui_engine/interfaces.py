@@ -10,7 +10,7 @@ class IElement:
     def __init__(self, name: str, variant: str = "container"):
         self.name = name
         self.variant = variant
-        # Use Any here to avoid circular import with ContainerElement.
+        # Use Any here to avoid circular import with Container.
         self.parent: Optional[Any] = None
         self.visible: bool = True
         self.metadata: dict = {}

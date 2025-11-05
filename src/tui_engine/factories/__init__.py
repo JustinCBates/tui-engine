@@ -4,14 +4,27 @@ These are backend-agnostic; adapters map the created Element instances to
 concrete UI widgets (for example prompt-toolkit adapters in
 `tui_engine.widgets`).
 """
-from typing import Optional, Callable, Any
+from typing import Any, Callable, Optional
 
-from ..container import ContainerElement
+from ..container import Container
 from ..element import Element
 
 
-def text(name: str, value: str = "") -> Element:
-    return Element(name, variant="text", value=value)
+def text(name: str, value: str = "", *, offset: Optional[int] = None, **metadata: Any) -> Element:
+    # Accept offset and arbitrary metadata to support adapter layout hints.
+    e = Element(name, variant="text", value=value)
+    if offset is not None:
+        try:
+            e.metadata['offset'] = int(offset)
+        except Exception:
+            pass
+    # Merge any extra metadata provided by callers
+    try:
+        for k, v in metadata.items():
+            e.metadata.setdefault(k, v)
+    except Exception:
+        pass
+    return e
 
 
 def input(name: str, value: str = "", on_enter: Optional[Callable[..., Any]] = None, *, enter_moves_focus: Optional[bool] = None) -> Element:

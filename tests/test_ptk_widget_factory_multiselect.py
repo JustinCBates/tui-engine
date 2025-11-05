@@ -1,12 +1,12 @@
-from tui_engine.container import ContainerElement
+from tui_engine.container import Container
 from tui_engine.ptk_widget_factory import map_element_to_widget
 
 
 def test_checkbox_list_descriptor_and_real_widget_when_available() -> None:
-    leaf = ContainerElement('multi')
+    leaf = Container('multi')
     leaf.variant = 'checkbox_list'
     leaf.metadata['options'] = [('one', 'One'), ('two', 'Two'), ('three', 'Three')]
-    setattr(leaf, '_value', ['two', 'three'])
+    leaf._value = ['two', 'three']
 
     desc = map_element_to_widget(leaf)
     assert desc['type'] == 'checkbox_list'

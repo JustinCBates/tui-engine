@@ -3,7 +3,7 @@
 These provide minimal fallback implementations when certain PTK widgets are missing.
 They are intentionally tiny and only implement the API surface the adapters/factory use.
 """
-from typing import Iterable, List, Tuple, Any
+from typing import Any, Iterable, List, Tuple
 
 
 def maybe_checkboxlist(values: Iterable[Tuple[str, str]]) -> Any:

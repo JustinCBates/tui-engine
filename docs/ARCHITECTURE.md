@@ -2,36 +2,264 @@
 
 This document consolidates the current design decisions, reconciles prior design documents, and lays out a concrete implementation plan for the new TUI Engine core.
 
-This file intentionally replaces the earlier multi-class model (Card, Section, Assembly, Spatial engine) with a single, recursive container primitive (ContainerElement) and a prompt-toolkit driven rendering/input pipeline.
+**UPDATED**: This file now incorporates critical insights about prompt-toolkit mapping and introduces the Section-based architecture that resolves border rendering issues.
+
+This file intentionally replaces the earlier multi-class model (Card, Section, Assembly, Spatial engine) with a refined three-tier architecture (Page/Section/Container) that maps cleanly to prompt-toolkit primitives.
 
 ## Goals
 
 - Provide a small, consistent core API for composing UI trees.
 - Use prompt-toolkit as the canonical rendering and input backbone.
- - Replace the legacy spatial layout engine and adapter indirection with the new ContainerElement core. (If the legacy core has already been removed in the active branch, proceed to scaffold the new core under `src/tui_engine`.)
+- **NEW**: Implement a three-tier architecture (Page/Section/Container) that maps cleanly to prompt-toolkit primitives and resolves border rendering issues.
+- Replace the legacy spatial layout engine and adapter indirection with the new core architecture.
 - Keep domain logic (state, validation, business rules) separate from rendering.
 - Ship an explicit migration/refactor plan that is destructive by design (no adapters).
 
+## Critical Architectural Insights (Updated)
+
+**DEPRECATED APPROACH**: The original plan for a single `ContainerElement` primitive has been refined based on prompt-toolkit analysis.
+
+**NEW APPROACH**: Three-tier architecture with clean prompt-toolkit mapping:
+
+### Prompt-toolkit to TUI Engine Mapping
+
+| Prompt-toolkit Component | TUI Engine Equivalent | Purpose |
+|-------------------------|----------------------|---------|
+| `Frame` | `Container` | Provides borders, grouping, and styling around content |
+| Individual widgets (`Button`, `TextArea`, etc.) | `Component` | Interactive elements that handle user input and display |
+| `HSplit`/`VSplit` + `Layout` | `Page` | Overall screen layout management and arrangement |
+| `Frame` containing `HSplit`/`VSplit` | `Section` | Grouped layout areas with internal direction |
+
 ## High-level decisions
 
-1. Single container primitive
-   - Replace `Card`, `Section`, and `Assembly` with `ContainerElement`.
-   - `ContainerElement` is recursive and can contain other `ContainerElement`s and leaf elements.
-   - A `variant`/`style` property controls presentation (e.g. `section`, `card`, `header`, `footer`), not behavior.
+**UPDATED ARCHITECTURE DECISIONS**:
 
-2. Prompt-toolkit as renderer and input system
+1. **Three-tier hierarchy** (replaces single container primitive)
+   - `Page`: Manages overall screen layout using HSplit/VSplit
+   - `Section`: Frame containing internal layout direction (HSplit/VSplit)  
+   - `Container`: Frame wrapper for individual bordered areas
+   - `Component`: Individual interactive widgets
+
+2. **Layout direction abstraction**
+   - Replace complex HSplit/VSplit with simple direction properties
+   - `Section(direction="vertical")` → HSplit internally
+   - `Section(direction="horizontal")` → VSplit internally
+   - Dynamic section addition/removal from pages
+
+3. **Frame-based border rendering**
+   - All bordered elements use prompt-toolkit Frame widgets
+   - Proper dimension expansion with `Dimension(weight=1)`
+   - Resolves border alignment issues identified in demo analysis
+
+4. Prompt-toolkit as renderer and input system
    - All rendering, layout, keyboard handling, and widget behavior will be implemented using `prompt_toolkit` primitives (HSplit, VSplit, Frame, Window, Controls, Widgets, KeyBindings, Application).
    - Use `PromptSession` for blocking prompts and `Application` for continuous UIs.
 
-3. Event and state model
+5. Event and state model
    - Implement a thin domain-level pub/sub event bus for business events (state changes, validation results, navigation events).
    - Map domain events to prompt-toolkit redraws via `app.invalidate()` and prompt-toolkit scheduling (`create_background_task`, asyncio).
 
-4. Dependency Injection
+6. Dependency Injection
    - Adopt a module-level factory/provider pattern for external dependencies (questionary replacements, prompt-toolkit factories, etc.). See the DI design notes.
 
-5. Destructive refactor policy
-  - The plan is deliberately destructive in that we do not plan to maintain adapters for the old spatial engine. Before removing any legacy sources create an archival branch/tag. If the legacy core has already been removed in your working branch, continue by scaffolding the new core under `src/tui_engine` and ensure a backup exists in git history or on the remote.
+7. Destructive refactor policy
+  - The plan is deliberately destructive in that we do not plan to maintain adapters for the old spatial engine. Before removing any legacy sources create an archival branch/tag.
+
+## Why these choices
+
+- **Clean mapping**: Direct correspondence between TUI concepts and prompt-toolkit primitives reduces complexity
+- **Border rendering solution**: Using Frame widgets properly resolves alignment and dimension issues
+- **Layout simplification**: Direction-based abstraction is more intuitive than HSplit/VSplit trees
+- **Dynamic sections**: Sections can be added/removed at runtime while maintaining proper layout
+- **Separation of concerns**: Domain model and UI rendering are cleanly separated
+
+---
+
+# Updated TUI Engine Architecture
+
+## Core Architecture Mapping
+
+Based on analysis of prompt-toolkit integration and border rendering challenges, the TUI Engine now implements a refined three-tier architecture:
+
+### Architecture Hierarchy
+
+```
+Page (manages overall layout)
+├── Section (Frame + internal layout direction)
+│   ├── Container (Frame)
+│   │   └── Component (Widget)
+│   └── Container (Frame)
+│       └── Component (Widget)
+└── Section (Frame + internal layout direction)
+    ├── Container (Frame)
+    └── Container (Frame)
+```
+
+### Key Architectural Insights
+
+#### 1. Frame as Container Foundation
+
+Prompt-toolkit's `Frame` widget serves as the conceptual equivalent of TUI Engine's `Container`:
+
+```python
+# Prompt-toolkit approach
+body = Window(width=Dimension(weight=1), height=Dimension(weight=1))
+root = Frame(body, title="Demo", width=Dimension(weight=1), height=Dimension(weight=1))
+```
+
+**Key Properties:**
+- Frames can contain any widget or layout container
+- Frames automatically provide borders and titles
+- Frames handle dimension expansion through weight-based sizing
+- Frames can contain complex nested layouts (HSplit/VSplit)
+
+#### 2. Layout Direction Abstraction
+
+The complex `HSplit`/`VSplit` system can be abstracted into simple layout directions:
+
+```python
+# Instead of prompt-toolkit complexity:
+HSplit([widget1, widget2, widget3])  # vertical stacking
+VSplit([widget1, widget2, widget3])  # horizontal arrangement
+
+# TUI Engine abstraction:
+Section(direction="vertical", components=[comp1, comp2, comp3])
+Section(direction="horizontal", components=[comp1, comp2, comp3])
+```
+
+#### 3. Section Concept Resolution
+
+The "Section" concept maps to **Frame containing HSplit/VSplit**:
+
+- Each Section manages its own internal layout direction
+- Sections can be dynamically added/removed from Pages
+- Sections encapsulate layout logic within bordered containers
+- Pages arrange Sections using their own layout direction
+
+## Implementation Strategy
+
+### Section Class Design
+
+```python
+class Section:
+    def __init__(self, direction="vertical", components=None, title=None):
+        self.direction = direction  # "vertical" or "horizontal" 
+        self.components = components or []
+        self.title = title
+    
+    def to_prompt_toolkit(self):
+        if self.direction == "vertical":
+            content = HSplit([comp.to_widget() for comp in self.components])
+        else:
+            content = VSplit([comp.to_widget() for comp in self.components])
+        return Frame(content, title=self.title)
+
+class Page:
+    def __init__(self, sections=None, direction="vertical"):
+        self.sections = sections or []
+        self.direction = direction
+    
+    def to_layout(self):
+        section_frames = [section.to_prompt_toolkit() for section in self.sections]
+        if self.direction == "vertical":
+            root = HSplit(section_frames)
+        else:
+            root = VSplit(section_frames)
+        return Layout(root)
+```
+
+### Border Rendering Solution
+
+#### Problem Identified
+The border rendering issue stemmed from improper mapping between TUI Engine's "boxes on a page" concept and prompt-toolkit's explicit directional layout system.
+
+#### Solution Approach
+- Use Frame widgets for all bordered containers
+- Ensure proper dimension expansion with `Dimension(weight=1)`
+- Generate correct HSplit/VSplit tree structures
+- Maintain proper parent-child relationships for focus management
+
+### Dimension Management
+```python
+# Correct expansion pattern
+body = Window(width=Dimension(weight=1), height=Dimension(weight=1))
+root = Frame(body, title="Title", width=Dimension(weight=1), height=Dimension(weight=1))
+```
+
+## Benefits of This Architecture
+
+### 1. Simplified Mental Model
+- "Put containers in sections on a page" vs "Build HSplit/VSplit trees"
+- Layout direction instead of learning Split classes
+- Automatic border and styling management
+
+### 2. Dynamic Layout Management
+- Sections can be added/removed at runtime
+- Components can be rearranged within sections
+- Pages can change overall layout direction
+
+### 3. Clean API Surface
+```python
+# Simple, declarative API
+page = Page([
+    Section(
+        title="Input Section", 
+        direction="horizontal",
+        components=[name_input, email_input, submit_button]
+    ),
+    Section(
+        title="Results Section",
+        direction="vertical", 
+        components=[results_label, results_list]
+    )
+], direction="vertical")
+```
+
+### 4. Prompt-toolkit Compatibility
+- Compiles cleanly to prompt-toolkit primitives
+- Maintains full prompt-toolkit feature access
+- Preserves performance characteristics
+- Enables gradual migration strategies
+
+## Implementation Considerations
+
+### Focus Management
+- Sections must properly delegate focus to contained components
+- Tab navigation should work seamlessly across section boundaries
+- Key bindings need to propagate correctly through the hierarchy
+
+### Styling Consistency
+- Frame styling should be consistent across all containers
+- Component styling should inherit from section/page themes
+- Style conflicts between nested frames need resolution
+
+### Performance Implications
+- Layout compilation should be cached when possible
+- Dynamic section changes should minimize full re-renders
+- Component updates should not trigger unnecessary layout recalculations
+
+## Migration Strategy
+
+### Phase 1: Core Implementation
+1. Implement Section class with layout direction abstraction
+2. Create Page class with section management
+3. Build prompt-toolkit compilation layer
+
+### Phase 2: Component Integration
+1. Adapt existing Components to work within Sections
+2. Implement Container-to-Frame mapping
+3. Test border rendering across all scenarios
+
+### Phase 3: API Refinement
+1. Optimize layout compilation performance
+2. Add advanced styling capabilities
+3. Implement dynamic layout modification APIs
+
+---
+
+# Legacy Architecture (Deprecated)
+
+**NOTE**: The following sections describe the original single-container approach that has been superseded by the Section-based architecture above. They are retained for reference during migration but should not be used for new implementation.
 
 ## Why these choices
 
@@ -39,7 +267,11 @@ This file intentionally replaces the earlier multi-class model (Card, Section, A
 - Predictability: Mapping directly to prompt-toolkit reduces the amount of custom layout code we must maintain and leverages a mature layout/event system.
 - Separation of concerns: Domain model and UI rendering are cleanly separated. The UI layer is an adapter over the domain tree.
 
-## Public API contract (sketch)
+## Public API contract (sketch) - DEPRECATED
+
+**DEPRECATION NOTICE**: This API design has been superseded by the Section-based architecture. The ContainerElement approach is deprecated in favor of Page/Section/Container/Component hierarchy.
+
+**For current API design, see the "Updated TUI Engine Architecture" section above.**
 
 - ContainerElement(name: str, variant: str = "container", style: Optional[dict] = None)
   - add_child(child)
@@ -55,9 +287,11 @@ This file intentionally replaces the earlier multi-class model (Card, Section, A
 
 Note: `to_ptk_container()` is an internal adapter used to transform a ContainerElement tree into a prompt-toolkit layout (HSplit/VSplit/Frame). It is not intended for library consumers.
 
-## Fluent API (end-consumer)
+## Fluent API (end-consumer) - DEPRECATED
 
-This section describes the recommended fluent, chainable API that end-users (library consumers) will use to compose UI trees. The design favors readability and small, composable calls that return the element they operate on for chaining.
+**DEPRECATION NOTICE**: This fluent API design has been superseded by the Section-based architecture. See "Updated TUI Engine Architecture" section for current approach.
+
+This section describes the original fluent, chainable API that was planned for end-users but has been replaced with the Section/Container model.
 
 Goals for the fluent API
 - Small, discoverable surface area. Chainable methods for composition and configuration.
@@ -622,44 +856,54 @@ This diagram pairs with the earlier pseudo-code and the event list to clarify ho
 
 ## Implementation Plan
 
+**UPDATED**: This implementation plan reflects the new Section-based architecture.
+
 This section expands the earlier milestone list into a concrete implementation plan with deliverables, acceptance criteria, and rough estimates. The plan is organized into phases so we can stop at any point with a usable system.
 
-Phase A — Scaffold & API (2–3 days)
+Phase A — Core Architecture Scaffold (3–4 days)
 - Deliverables:
-  - `src/tui_engine/container.py` implementing `ContainerElement` and `Element` (leaf).
-  - `src/tui_engine/page.py` with `Page` and a non-ptk `get_render_lines()` fallback renderer.
-  - Unit tests for tree composition and `get_render_lines()` behavior.
+  - `src/tui_engine/section.py` implementing `Section` with layout direction abstraction.
+  - `src/tui_engine/container.py` implementing `Container` as Frame wrapper.
+  - `src/tui_engine/component.py` implementing base `Component` class.
+  - `src/tui_engine/page.py` with `Page` class managing Sections and fallback renderer.
+  - Unit tests for Section direction compilation and Page section management.
 - Acceptance criteria:
   - Library imports cleanly.
-  - `run_section_demo()` can be implemented using the fallback renderer and produces readable output.
+  - `Page` can manage Sections with different layout directions.
+  - Fallback renderer produces readable output without prompt-toolkit.
 
-Phase B — Prompt-toolkit adapter (2–4 days)
+Phase B — Prompt-toolkit Integration (3–4 days)
 - Deliverables:
-  - `src/tui_engine/ptk_adapter.py` that converts a `ContainerElement` tree into prompt-toolkit containers (HSplit/VSplit/Frame).
-  - An `Application` wrapper that supports redraws via `app.invalidate()` and integrates keybindings for navigation/exit.
-  - One demo refactored to run under the adapter.
+  - `src/tui_engine/ptk_adapter.py` that converts Page/Section/Container hierarchy into prompt-toolkit layouts.
+  - Proper Frame widget usage with dimension expansion.
+  - Application wrapper with keyboard navigation (Tab/Ctrl-C).
+  - Demo showing Section-based layout with borders rendering correctly.
 - Acceptance criteria:
-  - Adapter renders header/body/footer and nested containers correctly in non-fullscreen mode.
-  - Keybindings (Tab/Enter/Ctrl-C) behave predictably and trigger domain events / redraws.
+  - Borders render properly aligned without artifacts.
+  - Sections can be added/removed dynamically.
+  - Layout direction changes compile correctly to HSplit/VSplit.
 
-Phase C — Create new core & CI migration (1–2 days)
+Phase C — Migration & Cleanup (2–3 days)
 - Deliverables:
-  - Ensure an archival branch exists with the legacy core (if it wasn't created before the deletion). If the legacy core already exists on a remote backup branch, note its name in the release notes.
-  - Create the `src/tui_engine` package layout and move scaffolded modules there. Remove any remaining references to the legacy core in imports across the repo.
-  - CI configuration updated to run new tests, lint checks, and any headless prompt-toolkit-friendly test harnesses.
+  - Archive legacy core on backup branch.
+  - Update all imports to use new architecture.
+  - Migration guide documenting ContainerElement → Section/Container patterns.
+  - CI updated for new test structure.
 - Acceptance criteria:
-  - New core scaffolds import cleanly and basic unit tests run locally.
-  - CI runs the new test suite and linting; failures are documented and triaged.
-  - No stale imports to removed legacy modules remain in the repository.
+  - No legacy imports remain in codebase.
+  - New architecture tests pass in CI.
+  - Migration examples demonstrate common patterns.
 
-Phase D — Tests, polish & docs (2–3 days)
+Phase D — Polish & Documentation (2–3 days)
 - Deliverables:
-  - Integration tests exercising the adapter in headless/non-fullscreen mode.
-  - Developer docs and migration notes updated in `docs/`.
-  - A small sample app demonstrating the new API and prompt-toolkit interaction.
+  - Comprehensive documentation of Section/Container/Component APIs.
+  - Integration tests for dynamic layout scenarios.
+  - Performance validation for layout compilation.
+  - Sample applications demonstrating architecture benefits.
 - Acceptance criteria:
-  - Tests covering at least the container rendering contract and a smoke test of the prompt-toolkit Application.
-  - README/documentation for contributors describing how to extend container styles and adapter mapping.
+  - Documentation covers all public APIs with examples.
+  - Performance meets or exceeds legacy implementation.
+  - Sample apps demonstrate real-world usage patterns.
 
 ## Backlog (prioritized)
 
@@ -688,14 +932,40 @@ Notes about prioritization
 
 ## Conflicts with prior design docs and resolution
 
-- Prior: Spatial engine provided per-section reservation, clipping, and incremental buffer diffing.
-  - Decision: Remove the custom spatial engine. prompt-toolkit provides robust sizing/scrolling and redraw semantics. The domain model will provide size hints only where necessary; the adapter will use prompt-toolkit sizing rules.
+**UPDATED**: This section has been expanded to address the architectural refinements.
 
-- Prior: Adapters around `questionary` and multiple fallback factories.
-  - Decision: Replace complex fallback with a module-level provider/factory for external prompt modules. Use prompt-toolkit primitives directly for interactive UIs; keep `PromptSession` wrappers for simple backward-compatible prompts.
+- **Prior**: Single `ContainerElement` primitive was planned to replace Card/Section/Assembly.
+  - **Resolution**: Refined to a three-tier Page/Section/Container/Component hierarchy that maps better to prompt-toolkit primitives and resolves border rendering issues.
 
-- Prior: Multiple container classes (Card/Section/Assembly).
-  - Decision: Remove them. Implement a single `ContainerElement` with `variant` and `style` to differentiate visual treatment only.
+- **Prior**: Spatial engine provided per-section reservation, clipping, and incremental buffer diffing.
+  - **Decision**: Remove the custom spatial engine. prompt-toolkit provides robust sizing/scrolling and redraw semantics. The domain model will provide size hints only where necessary; the adapter will use prompt-toolkit sizing rules.
+
+- **Prior**: Adapters around `questionary` and multiple fallback factories.
+  - **Decision**: Replace complex fallback with a module-level provider/factory for external prompt modules. Use prompt-toolkit primitives directly for interactive UIs; keep `PromptSession` wrappers for simple backward-compatible prompts.
+
+- **Prior**: Multiple container classes (Card/Section/Assembly).
+  - **Decision**: Replace with Section (Frame + layout direction) and Container (Frame wrapper) that map directly to prompt-toolkit primitives.
+
+**NEW CONFLICTS IDENTIFIED**:
+
+- **Border Rendering Issues**: The original ContainerElement approach had fundamental issues with border alignment when mapping to prompt-toolkit.
+  - **Resolution**: Use Frame widgets exclusively for borders and ensure proper dimension management with `Dimension(weight=1)`.
+
+- **Layout Complexity**: HSplit/VSplit trees were too complex for the intended "boxes on a page" mental model.
+  - **Resolution**: Abstract to layout direction properties on Sections that compile to HSplit/VSplit internally.
+
+- **Dynamic Layout**: The original approach didn't adequately address dynamic addition/removal of UI sections.
+  - **Resolution**: Sections as self-contained Frame units can be easily added/removed from Page layouts.
+
+## Architecture Evolution Summary
+
+1. **Original Design**: Single ContainerElement with variants
+2. **Issue Discovered**: Border rendering problems and layout complexity 
+3. **Analysis**: Deep dive into prompt-toolkit Frame/HSplit/VSplit relationships
+4. **New Design**: Page/Section/Container/Component hierarchy with direct prompt-toolkit mapping
+5. **Benefits**: Resolves border issues, simplifies layout, enables dynamic sections
+
+The updated architecture maintains the original goals (simplicity, prompt-toolkit backbone, separation of concerns) while solving the identified implementation challenges.
 
 ## Quality gates
 
@@ -802,11 +1072,11 @@ These consolidated notes are intentionally brief; they are here to ensure the im
 
 ## Session-tracked implementation TODO
 
-Below is a session-friendly, numbered TODO list that mirrors the implementation plan and can be used to populate dropdowns or UI trackers. Each item includes a short description, primary target files, and an acceptance criterion.
+**UPDATED**: Below is a session-friendly, numbered TODO list that reflects the new Section-based architecture and can be used to populate dropdowns or UI trackers. Each item includes a short description, primary target files, and an acceptance criterion.
 
 1. (ID 1) [x] Remove Card references — Completed
    - Description: Remove legacy `Card` exports and update docs; provide clear shim for accidental imports.
-  - Files: `src/tui_engine/core/card.py`, `src/tui_engine/core/__init__.py`, `src/tui_engine/__init__.py`, `docs/`
+   - Files: `src/tui_engine/core/card.py`, `src/tui_engine/core/__init__.py`, `src/tui_engine/__init__.py`, `docs/`
    - Acceptance: accidental imports raise a clear ImportError; no runtime references remain.
 
 2. (ID 2) [ ] Create backup branch
@@ -819,97 +1089,97 @@ Below is a session-friendly, numbered TODO list that mirrors the implementation 
    - Files: `src/tui_engine/__init__.py`
    - Acceptance: `import src.tui_engine` (with `sys.path.insert(0,'src')`) succeeds.
 
-4. (ID 4) [ ] Implement ContainerElement core
-   - Description: Implement `ContainerElement` and `Element` leaf types with tree API and simple render lines.
+4. (ID 4) [x] Implement Section core — **UPDATED**
+   - Description: Implement `Section` class with layout direction abstraction and Frame compilation.
+   - Files: `src/tui_engine/section.py`
+   - Acceptance: Section can compile to HSplit/VSplit and Frame correctly.
+
+5. (ID 5) [x] Implement Container wrapper — **UPDATED**
+   - Description: Implement `Container` as Frame wrapper for bordered areas.
    - Files: `src/tui_engine/container.py`
-   - Acceptance: unit tests for tree composition and `get_render_lines()` pass.
+   - Acceptance: Container properly wraps content with Frame and handles dimensions.
 
-5. (ID 5) [ ] Implement Page fallback renderer
-   - Description: Add `Page` with `add_element`, `render()` fallback, and `run_application()` stub.
+6. (ID 6) [x] Implement Component base — **UPDATED**
+   - Description: Base `Component` class for interactive widgets.
+   - Files: `src/tui_engine/component.py`
+   - Acceptance: Component base class provides widget interface and focus management.
+
+7. (ID 7) [x] Implement Page with Sections — **UPDATED**
+   - Description: `Page` class managing Sections instead of ContainerElements.
    - Files: `src/tui_engine/page.py`
-   - Acceptance: `Page.render()` returns readable lines; demos can use headless rendering.
+   - Acceptance: Page can add/remove Sections and compile to Layout.
 
-6. (ID 6) [ ] Add events pub/sub
+8. (ID 8) [ ] Add events pub/sub
    - Description: Minimal domain pub/sub used by domain objects and adapter.
    - Files: `src/tui_engine/events.py`
    - Acceptance: publish/subscribe unit tests pass.
 
-7. (ID 7) [ ] Add DI provider skeleton
+9. (ID 9) [ ] Add DI provider skeleton
    - Description: Module-level providers for external dependencies (questionary/prompt factories).
    - Files: `src/tui_engine/di.py` (or `questionary_factory.py`)
    - Acceptance: tests can inject a fake factory and `get_questionary()` returns it.
 
-8. (ID 8) [ ] PTK adapter skeleton
-   - Description: Convert ContainerElement -> prompt-toolkit containers and expose Application wrapper.
-   - Files: `src/tui_engine/ptk_adapter.py`
-   - Acceptance: `build_container()` and `run_app()` APIs exist and produce no exceptions for simple trees.
+10. (ID 10) [x] PTK adapter for Sections — **UPDATED**
+    - Description: Convert Page/Section/Container hierarchy to prompt-toolkit layouts with proper Frame usage.
+    - Files: `src/tui_engine/ptk_adapter.py`
+    - Acceptance: Sections compile to Frame+HSplit/VSplit; borders render correctly.
 
-9. (ID 9) [ ] Application wrapper & keybindings
-   - Description: Implement Tab/Enter/Ctrl-C and `app.invalidate()` integration.
-   - Files: `src/tui_engine/ptk_adapter.py`
-   - Acceptance: in interactive mode keys work as expected; adapters expose hooks for callbacks.
+11. (ID 11) [ ] Application wrapper & keybindings
+    - Description: Implement Tab/Enter/Ctrl-C and `app.invalidate()` integration.
+    - Files: `src/tui_engine/ptk_adapter.py`
+    - Acceptance: in interactive mode keys work as expected; adapters expose hooks for callbacks.
 
-10. (ID 10) [ ] Theming & styles mapping
-  - Description: Map `variant -> prompt-toolkit style` and small styling helpers.
-  - Files: `src/tui_engine/styles.py`
-  - Acceptance: demo variants render with distinct styles.
+12. (ID 12) [ ] Theming & styles mapping
+    - Description: Map Section/Container variants to prompt-toolkit styles.
+    - Files: `src/tui_engine/styles.py`
+    - Acceptance: demo variants render with distinct styles and borders.
 
-11. (ID 11) [ ] Container demo/example
-  - Description: Example showing Page(title) with nested ContainerElement variants printed via fallback renderer.
-  - Files: `examples/container_demo.py`
-  - Acceptance: running the example prints a readable page with title/header/body and no prompts.
+13. (ID 13) [x] Section-based demo — **UPDATED**
+    - Description: Example showing Page with Sections using different layout directions.
+    - Files: `examples/section_demo.py`
+    - Acceptance: demo shows horizontal and vertical sections with proper borders.
 
-12. (ID 12) [ ] Unit tests — container tree
-  - Description: Tests for add/remove children, visibility toggles, `get_render_lines()`.
-  - Files: `tests/test_container.py`
-  - Acceptance: tests pass locally.
+14. (ID 14) [ ] Unit tests — Section architecture
+    - Description: Tests for Section direction compilation, Page section management, Container Frame wrapping.
+    - Files: `tests/test_section.py`, `tests/test_container.py`, `tests/test_page.py`
+    - Acceptance: tests pass locally and cover layout direction scenarios.
 
-13. (ID 13) [ ] Unit tests — page renderer
-  - Description: Tests for `Page.render()` output and headless demo wiring.
-  - Files: `tests/test_page_render.py`
-  - Acceptance: deterministic output matches snapshots/assertions.
+15. (ID 15) [ ] Integration tests — border rendering
+    - Description: Tests specifically for border alignment and Frame dimension handling.
+    - Files: `tests/test_border_rendering.py`
+    - Acceptance: tests verify no border artifacts and proper Frame expansion.
 
-14. (ID 14) [ ] Integration tests — ptk adapter
-  - Description: Headless smoke tests for ptk adapter mapping; skip or mock when prompt_toolkit not available.
-  - Files: `tests/test_ptk_adapter.py`
-  - Acceptance: adapter mapping runs without terminal errors in CI or is skipped with a clear marker.
+16. (ID 16) [ ] Dynamic Section tests
+    - Description: Tests for adding/removing Sections at runtime and layout recompilation.
+    - Files: `tests/test_dynamic_sections.py`
+    - Acceptance: Sections can be added/removed without breaking layout or focus.
 
-15. (ID 15) [ ] Snapshot tests for render lines
-  - Description: Add snapshot outputs for common demo render lines.
-  - Files: `tests/snapshots/` (yaml/txt)
-  - Acceptance: snapshots run and detect regressions.
+17. (ID 17) [ ] Migration guide for ContainerElement → Section
+    - Description: Documentation showing how to convert ContainerElement patterns to Section/Container.
+    - Files: `docs/MIGRATION_SECTIONS.md`
+    - Acceptance: guide provides clear examples and conversion patterns.
 
-16. (ID 16) [ ] Keyboard focus & utilities
-  - Description: Focus traversal helpers and modal focus-trap utilities.
-  - Files: `src/tui_engine/focus.py`
-  - Acceptance: unit tests exercise traversal order.
+18. (ID 18) [ ] CI updates for new architecture
+    - Description: Update CI workflows for Section-based tests and remove ContainerElement references.
+    - Files: `.github/workflows/*` or CI config
+    - Acceptance: CI runs are green with new architecture tests.
 
-17. (ID 17) [ ] PromptSession adapter
-  - Description: Small adapter to use PromptSession for blocking prompts without full Application.
-  - Files: `src/tui_engine/prompt_adapter.py`
-  - Acceptance: blocking prompts run without fullscreen requirement.
+19. (ID 19) [ ] Performance validation
+    - Description: Ensure Section compilation performance meets or exceeds legacy implementation.
+    - Files: `benchmarks/test_section_performance.py`
+    - Acceptance: Section-based layouts compile and render as fast as legacy approach.
 
-18. (ID 18) [ ] CI updates & test matrix
-  - Description: Update CI workflows to run pytest, headless ptk adapter tests, and lints.
-  - Files: `.github/workflows/*` or CI config
-  - Acceptance: CI runs are green or fail with actionable errors; headless tests stable.
+20. (ID 20) [ ] Remove legacy ContainerElement (destructive)
+    - Description: Delete ContainerElement files after Section migration is complete.
+    - Files: legacy container files removed; imports updated to Section-based architecture
+    - Acceptance: no ContainerElement imports remain and CI passes Section tests.
 
-19. (ID 19) [ ] Migrate docs & migration guide
-  - Description: Update `docs/` and add `docs/MIGRATION.md` describing Card -> ContainerElement migration patterns.
-  - Files: `docs/MIGRATION.md`, updates across `docs/`
-  - Acceptance: migration guide provides examples and checklists.
+21. (ID 21) [ ] Release notes for architecture change
+    - Description: Document the ContainerElement → Section migration and breaking changes.
+    - Files: `CHANGELOG.md`, release notes drafts
+    - Acceptance: release explains border rendering fix and provides migration examples.
 
-20. (ID 20) [ ] Remove legacy core (destructive)
-  - Description: Delete legacy core files after backup and adapter validation; references now point at `src/tui_engine`.
-  - Files: deletions across legacy core are expected; tests/docs should reference `src/tui_engine` instead.
-  - Acceptance: no imports refer to removed files and CI passes new tests.
-
-21. (ID 21) [ ] Release notes & changelog
-  - Description: Draft release notes explaining breaking changes and migration guidance.
-  - Files: `CHANGELOG.md`, release notes drafts
-  - Acceptance: release draft links to migration docs and backup branches.
-
-Use these IDs to map to your UI dropdown tracker and mark items completed as you progress. The todo list in the workspace has been synced to these same items for programmatic tracking.
+**MIGRATION PRIORITY**: Items 4-7, 10, 13-16 are critical for proving the Section-based architecture resolves the border rendering issues.
 
 ## Prompt-toolkit integration
 
