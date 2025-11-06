@@ -1,15 +1,27 @@
+# Core testing dependencies
 pytest>=7.4.3
 pytest-cov>=4.1.0
 pytest-asyncio>=0.21.1
 pytest-mock>=3.12.0
 pytest-xdist>=3.4.0
+pytest-benchmark>=4.0.0
 coverage>=7.3.2
+
+# TUI dependencies for development
+questionary>=2.0.1  # Compatible with prompt-toolkit>=3.0.43
+prompt-toolkit>=3.0.43
+
+# Development tools
 pre-commit>=3.5.0
 black>=23.11.0
 isort>=5.12.0
 mypy>=1.7.1
 ruff>=0.1.6
+
+# Security
 bandit>=1.7.5
 safety>=3.0.0
 pip-audit>=2.6.0
+
+# Profiling
 memory-profiler>=0.61.0

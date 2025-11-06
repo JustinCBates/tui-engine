@@ -1,13 +1,182 @@
-Demo environment and run instructions
-=================================
+# TUI Engine Demos
 
-This folder contains interactive demo scripts that exercise the `tui-engine` package.
-To make the demos easy to run for end-consumers we provide a small helper that
-creates a Python virtual environment and installs the package and its runtime
-dependencies.
+This directory contains comprehensive demonstration scripts showcasing the complete TUI Engine questionary integration.
 
-Quick start
------------
+## Available Demos
+
+### Comprehensive Showcase
+- `comprehensive_demo.py` - **Complete demo suite with interactive menu**
+  - All 5 professional themes
+  - 20+ widgets with validation
+  - Dynamic form building
+  - Real-world applications
+  - Performance demonstrations
+  - Integration examples
+  - Interactive playground
+
+### Performance & Benchmarking
+- `performance_benchmark.py` - **Performance testing suite**
+  - Form creation benchmarks with varying field counts
+  - Validation performance under load
+  - Theme switching performance
+  - Memory usage analysis
+  - Concurrent form handling
+  - Large dataset performance
+  - Serialization/deserialization speed
+
+### Real-World Applications
+- `real_world_employee_system.py` - **Complete employee management system**
+  - Multi-step employee onboarding workflow
+  - Employee data management with CRUD operations
+  - Performance review system
+  - Reports and analytics
+  - System configuration
+  - Data import/export
+  - Search and filtering
+  - Role-based workflows
+
+### Integration Testing
+- `integration_test.py` - **Comprehensive integration test suite**
+  - Theme integration testing
+  - Validation system integration
+  - Form builder compatibility
+  - Widget compatibility across themes
+  - Cross-theme validation consistency
+  - Complex scenario testing
+  - Performance integration testing
+  - Error handling verification
+  - Data persistence testing
+  - Questionary compatibility verification
+
+### Legacy Demos (Updated with New Features)
+- `demo_alignment.py` - Alignment and layout with new themes
+- `demo_container.py` - Container components with validation
+- `demo_form.py` - Enhanced form demonstrations
+- `demo_swap_cards.py` - Card swapping with new styling
+- `demo_form_new.py` - Updated form examples
+- `main_menu.py` - Enhanced main demo menu
+- `questionary_adapter_demo.py` - Questionary integration examples
+- `theme_integration_demo.py` - Theme system demonstrations
+
+### Configuration
+- `setup_env.sh` - Environment setup script
+- `form_output.json` - Sample form output data
+
+## Quick Start
+
+### Run the Complete Demo Suite
+```bash
+python comprehensive_demo.py
+```
+This provides an interactive menu to explore all TUI Engine features.
+
+### Run Performance Benchmarks
+```bash
+python performance_benchmark.py
+```
+Tests performance across all components with detailed metrics.
+
+### Try the Employee Management System
+```bash
+python real_world_employee_system.py
+```
+A complete real-world application showcasing all integration patterns.
+
+### Verify Integration
+```bash
+python integration_test.py
+```
+Comprehensive test suite verifying all components work together.
+
+## Demo Features Showcased
+
+### 🎨 Professional Themes (5 Themes)
+- `professional_blue` - Clean corporate styling
+- `elegant_dark` - Modern dark theme
+- `vibrant_green` - Energy and nature inspired
+- `warm_amber` - Comfortable warm tones
+- `cool_slate` - Sophisticated minimalism
+
+### 🧩 Widget Collection (20+ Widgets)
+- **Text Widgets**: Text, Password, Email, URL, Phone
+- **Selection Widgets**: Select, Multi-Select, Checkbox, Radio
+- **Input Widgets**: Number, Date, Time, DateTime, File
+- **Specialized**: Credit Card, Color Picker, Progress, Editor
+- **Interactive**: Autocomplete, Path Browser, Key Press
+
+### 📋 Form Building Capabilities
+- Schema-based form creation
+- Dynamic field generation
+- Conditional logic (8 operators)
+- Multi-step forms
+- Form serialization/deserialization
+- Validation integration
+- Real-time field updates
+
+### ✅ Validation Framework
+- 11+ built-in validators
+- Validation chains with fluent interface
+- Custom validation rules
+- Field-level and form-level validation
+- Error messaging and themes
+- Performance optimized caching
+
+### 🏢 Real-World Scenarios
+- Employee onboarding workflows
+- Customer registration systems
+- Contact and feedback forms
+- E-commerce checkout processes
+- Survey and questionnaire builders
+- System configuration interfaces
+- Bug reporting systems
+
+### ⚡ Performance Features
+- Large form handling (100+ fields)
+- Concurrent form processing
+- Memory usage optimization
+- Fast validation chains
+- Efficient serialization
+- Background processing
+
+### 🔗 Integration Patterns
+- Theme switching at runtime
+- Cross-platform compatibility
+- API integration examples
+- Database schema mapping
+- Configuration file generation
+- Export/import utilities
+
+## Running Specific Demo Categories
+
+### Interactive Demos
+```bash
+# Main comprehensive demo suite
+python comprehensive_demo.py
+
+# Employee management system
+python real_world_employee_system.py
+```
+
+### Testing & Validation
+```bash
+# Performance benchmarks
+python performance_benchmark.py
+
+# Integration tests
+python integration_test.py
+```
+
+### Legacy Compatibility
+```bash
+# Original demo menu
+python main_menu.py
+
+# Specific feature demos
+python demo_form.py
+python theme_integration_demo.py
+```
+
+## Environment Setup
 
 1. Create a demo virtual environment and install runtime dependencies:
 
@@ -22,97 +191,55 @@ cd demos
 source .venv/bin/activate
 ```
 
-3. Run an interactive demo (these require a real terminal / TTY):
+3. Run any demo script:
 
 ```bash
-python ../demos/demo_form.py
+python comprehensive_demo.py
 ```
 
-Notes
------
+## Demo Architecture
 
-- The `setup_env.sh` script creates a venv at `demos/.venv` by default and installs
-  the package in editable mode (`pip install -e .`) so you can iterate on the
-  code while using the demos.
-- If you want development extras (linters, test deps, etc) run:
+Each demo is designed to be:
+- **Self-contained**: No external dependencies beyond TUI Engine
+- **Educational**: Clear code examples with comprehensive comments
+- **Interactive**: User-friendly interfaces with guided workflows
+- **Comprehensive**: Coverage of all major features and use cases
+- **Performance-aware**: Optimized for real-world usage patterns
 
-```bash
-./setup_env.sh --dev
-```
+## Development Notes
 
-- If you prefer a different location for the virtual environment:
+- All demos are compatible with Python 3.8+
+- Demos use mock widgets for testing (no external questionary dependency required)
+- Performance benchmarks include memory profiling and timing analysis
+- Integration tests verify component compatibility across all themes
+- Real-world demos demonstrate production-ready patterns
 
-```bash
-./setup_env.sh --venv ../.env
-source ../.env/bin/activate
-```
+## TTY and Terminal Requirements
 
-- To force recreation of the venv (useful to recover from a broken venv):
+Many of the demos use interactive terminal features and expect to run in a real TTY:
+- Use a normal terminal (GNOME Terminal, xterm, Alacritty, iTerm2, etc.)
+- Windows WSL/PowerShell when appropriate
+- Some CI systems or limited editor consoles may not work
 
-```bash
-./setup_env.sh --recreate
-```
+## Troubleshooting
 
-TTY and prompt-toolkit
-----------------------
+- Make sure you have Python 3.8+ available as `python3` on PATH
+- If `setup_env.sh` fails, try removing the venv and re-running with `--recreate`
+- For development extras (linters, test deps), use `./setup_env.sh --dev`
+- If demos fail to start, verify you're in a real TTY environment
 
-Many of the demos use `prompt-toolkit` and expect to run in an interactive terminal.
-If you run them in an environment without a real TTY (for example, some CI systems
-or inside certain editors' limited consoles) the demo may fail. Use a normal terminal
-or run inside a compatible emulator (e.g. GNOME Terminal, xterm, Alacritty, iTerm2,
-or Windows WSL/PowerShell when appropriate).
+## Next Steps
 
-When things go wrong
---------------------
+After exploring the demos:
+1. Review the source code in `src/tui_engine/`
+2. Check the documentation in `docs/`
+3. Run the test suite with `pytest`
+4. Build your own applications using the patterns demonstrated
 
-- Make sure you have Python 3.8+ available as `python3` on PATH.
-- If `setup_env.sh` fails, try removing the venv and re-running with `--recreate`.
-- If you need to run tests or linters, use `./setup_env.sh --dev` and then run
-  your tools from the activated venv (e.g. `pytest`, `ruff`, `mypy`).
+## Support
 
-More
-----
-
-See the project `pyproject.toml` for declared runtime dependencies and "optional"
-extras. The demos are lightweight and should work once `prompt-toolkit` and the
-dependencies listed in `pyproject.toml` are installed into the venv.
-TUI Engine demos
-================
-
-Recommended invocation (from the repository root):
-
-```bash
-python -m demos.main_menu
-```
-
-This will run the interactive main menu that lets you pick and run demos.
-
-Requirements and behaviour
-- The demos assume `prompt-toolkit` is installed in the environment.
-- The demos require a real TTY (Linux terminal). They will fail fast if a
-    prompt-toolkit full-screen layout cannot be constructed.
-
-Convenience: you can also run the script directly from the `demos/` directory
-with `python ./main_menu.py`. The `main_menu.py` script contains a small
-helper that inserts the project root into `sys.path` so imports still work
-when running from inside `demos/` — this is intentionally kept for
-developer convenience.
-
-Files
-- `main_menu.py` - demo selector and runner
-- `demo_form.py` - form demo (interactive, writes `form_output.json`)
-- `demo_container.py` - simple container render demo
-- `container_demo.py` - backward-compatible delegating wrapper
-First working prototype example
-
-This folder contains a minimal, non-interactive prototype demonstrating how
-to assemble a Page, Assembly, and Components and write namespaced state into
-the PageState object. The script `first_working_prototype.py` is safe to run in
-CI because it simulates answers instead of requiring interactive input.
-
-Run:
-
-    python .\examples\first_working_prototype.py
-
-This exercise demonstrates Task 12 (First Working Prototype) in the project's
-todo list.
+For questions or issues with the demos:
+- Check the main README.md for setup instructions
+- Review the architecture documentation in `docs/`
+- Examine the test suite for additional examples
+- See the integration test for compatibility verification

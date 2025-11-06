@@ -1,0 +1,46 @@
+{
+  "theme": "professional_blue",
+  "company_name": "TUI Corp",
+  "hr_email": "hr@tuicorp.com",
+  "departments": [
+    "Engineering",
+    "Sales",
+    "Marketing",
+    "HR",
+    "Finance",
+    "Operations"
+  ],
+  "positions": {
+    "Engineering": [
+      "Software Engineer",
+      "Senior Engineer",
+      "Tech Lead",
+      "Engineering Manager"
+    ],
+    "Sales": [
+      "Sales Rep",
+      "Account Manager",
+      "Sales Director"
+    ],
+    "Marketing": [
+      "Marketing Specialist",
+      "Content Creator",
+      "Marketing Manager"
+    ],
+    "HR": [
+      "HR Specialist",
+      "HR Business Partner",
+      "HR Director"
+    ],
+    "Finance": [
+      "Financial Analyst",
+      "Accountant",
+      "Finance Manager"
+    ],
+    "Operations": [
+      "Operations Specialist",
+      "Operations Manager",
+      "COO"
+    ]
+  }
+}

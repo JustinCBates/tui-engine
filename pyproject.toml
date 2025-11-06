@@ -36,15 +36,18 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    # keep questionary as a runtime dependency if consumers use it directly
-    "questionary>=2.0.1",
-    "prompt-toolkit>=3.0.43",
-    "rich>=13.7.0",
-    "click>=8.1.7",
-    "pydantic>=2.5.0",
-    "python-dateutil>=2.8.2",
-    "colorama>=0.4.6",
-    "typing-extensions>=4.8.0; python_version<'3.10'",
+    # Core TUI Framework Dependencies
+    # questionary and prompt-toolkit are version-coordinated for compatibility
+    "questionary>=2.0.1",        # Enhanced prompts and styling system
+    "prompt-toolkit>=3.0.43",    # Terminal interaction framework (compatible with questionary 2.0.1+)
+    
+    # Additional UI and Utility Dependencies
+    "rich>=13.7.0",              # Rich text and beautiful formatting
+    "click>=8.1.7",              # Command line interface creation toolkit
+    "pydantic>=2.5.0",           # Data validation and settings management
+    "python-dateutil>=2.8.2",   # Extensions to the standard datetime module
+    "colorama>=0.4.6",           # Cross-platform colored terminal text
+    "typing-extensions>=4.8.0; python_version<'3.10'",  # Backport of new typing features
 ]
 
 [project.optional-dependencies]

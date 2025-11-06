@@ -9,5 +9,9 @@ __all__ = [
     'button_adapter',
     'radio_list_adapter',
     'checkbox_list_adapter',
+    'select_adapter',
+    'password_adapter',
+    'autocomplete_adapter',
+    'file_path_adapter',
     'protocols',
 ]
